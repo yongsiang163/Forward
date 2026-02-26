@@ -1,5 +1,6 @@
 
 # Forward
+
 **An intentional, attention-aware productivity companion.**
 
 Forward is a mobile-first web prototype designed to rethink how we interact with our tasks and projects. Built as a companion to "Rewind," Forward moves away from overwhelming backlogs and instead adapts to your current energy levels, offering right-sized next steps and gentle focus protection.
@@ -17,14 +18,15 @@ Currently, this repository contains a high-fidelity frontend prototype utilizing
 
 ### ✦ Tech Stack & Current State
 
-This project is currently a single-file, highly interactive frontend prototype. 
+This project is currently a single-file, highly interactive frontend prototype.
+
 * **UI/UX:** Custom CSS with fluid animations, a dark ambient aesthetic, grain overlays, and breathing "orb" indicators.
 * **State Management:** Vanilla JavaScript relying on `localStorage` for data persistence.
-* **AI Integration:** Currently uses simulated delays (`setTimeout`) to mock LLM categorization and advice generation. 
+* **AI Integration:** Currently uses simulated delays (`setTimeout`) to mock LLM categorization and advice generation.
 
 ### ✦ Roadmap
 
 * [ ] Refactor monolithic architecture into a modern component-based framework (e.g., React/Next.js or SvelteKit).
 * [ ] Wire up live LLM integration (e.g., Claude or Gemini APIs) for the categorisation and "Help Me Start" features.
 * [ ] Replace `localStorage` with a persistent backend database (e.g., Supabase or Firebase).
-* [ ] Implement full PWA (Progressive Web App) support for offline use and native-like installation.
+* [x] Implement full PWA (Progressive Web App) support for offline use and native-like installation.
