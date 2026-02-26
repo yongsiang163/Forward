@@ -1433,6 +1433,29 @@
       gap: 12px;
     }
 
+    .capture-project-btn {
+      background: rgba(126, 184, 164, 0.08);
+      border: 1px solid rgba(126, 184, 164, 0.25);
+      color: var(--teal);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 6px 12px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .capture-project-btn:active {
+      background: rgba(126, 184, 164, 0.15);
+      border-color: var(--teal);
+    }
+
     .capture-trash {
       background: none;
       border: none;
@@ -2868,10 +2891,30 @@
       <div class="capture-footer">
         <span class="capture-char" id="capture-char">0</span>
         <div class="capture-actions">
+          <button class="capture-project-btn" id="capture-project-btn" onclick="toggleCaptureProjectSelect()">@
+            Project</button>
           <button class="capture-trash" onclick="trashCapture()" title="Discard">✕</button>
           <button class="capture-save" onclick="saveCapture()">Keep it →</button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- CAPTURE PROJECT SELECT MODAL -->
+  <div class="capture-project-sheet" id="capture-project-sheet"
+    style="display:none; position:fixed; inset:0; z-index:110; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); align-items:flex-end;">
+    <div
+      style="background:var(--surface); width:100%; border-radius:24px 24px 0 0; padding:20px; max-height:60vh; overflow-y:auto; border-top:1px solid var(--border-soft);">
+      <div style="width:36px; height:4px; border-radius:2px; background:var(--border-soft); margin:0 auto 20px;"></div>
+      <p
+        style="font-size:10px; letter-spacing:3px; text-transform:uppercase; color:var(--text-muted); margin-bottom:16px;">
+        Assign to project</p>
+      <div id="capture-project-list"></div>
+      <button onclick="clearCaptureProject()"
+        style="width:100%; padding:14px; background:none; border:1px dashed var(--border-soft); border-radius:12px; color:var(--text-muted); cursor:pointer; margin-top:10px;">Select
+        none</button>
+      <button onclick="closeCaptureProjectSelect()"
+        style="width:100%; margin-top:10px; padding:14px; background:transparent; border:none; color:var(--text-muted); text-transform:uppercase; letter-spacing:2px; font-size:11px; cursor:pointer;">Cancel</button>
     </div>
   </div>
 
@@ -3109,6 +3152,7 @@
     };
 
     let items = [];
+    let projects = [];
 
     // ── STORAGE ─────────────────────────────────────────────
     function save() {
@@ -3120,6 +3164,17 @@
         const d = localStorage.getItem('forward_items');
         if (d) items = JSON.parse(d);
       } catch (e) { items = []; }
+    }
+
+    function saveProjects() {
+      try { localStorage.setItem('forward_projects', JSON.stringify(projects)); } catch (e) { }
+    }
+
+    function loadProjects() {
+      try {
+        const d = localStorage.getItem('forward_projects');
+        if (d) projects = JSON.parse(d);
+      } catch (e) { projects = []; }
     }
 
     function loadRewind() {
@@ -3210,11 +3265,16 @@
     }
 
     // ── CAPTURE ──────────────────────────────────────────────
+    let activeCaptureProjectId = null;
+
     function openCapture() {
       const sheet = document.getElementById('capture-sheet');
       const ta = document.getElementById('capture-textarea');
       sheet.classList.add('active');
       ta.value = '';
+      activeCaptureProjectId = null;
+      document.getElementById('capture-project-btn').textContent = '@ Project';
+      document.getElementById('capture-project-btn').style.borderColor = '';
       onCaptureType();
       setTimeout(() => ta.focus(), 380);
     }
@@ -3238,39 +3298,107 @@
 
     async function saveCapture() {
       const ta = document.getElementById('capture-textarea');
-      const text = ta.value.trim();
+      const rawText = ta.value.trim();
 
       // Under 2 chars = accidental — discard silently
-      if (text.length < 2) { trashCapture(); return; }
+      if (rawText.length < 2) { trashCapture(); return; }
 
-      const item = {
-        id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2),
-        content: text,
-        category: 'uncategorised',
-        status: 'fresh',
-        createdAt: new Date().toISOString(),
-        touchedAt: new Date().toISOString(),
-        projectId: null,
-        projectPhase: null,
-        aiCategory: null,
-        confirmed: false,
-        mvnaSteps: null,
-        mvnaCurrentStep: 0,
-        aiPending: !navigator.onLine
-      };
+      // Look for inline @mentions of projects if no explicit project was selected
+      let finalProjectId = activeCaptureProjectId;
+      let finalCategory = 'uncategorised';
 
-      items.unshift(item);
-      save();
+      if (!finalProjectId) {
+        // Sort by longest name first to match "Master Bedroom" before "Master"
+        const sortedProjects = [...projects].sort((a, b) => (b.name || '').length - (a.name || '').length);
+        for (let p of sortedProjects) {
+          if (p.name && rawText.toLowerCase().includes('@' + p.name.toLowerCase())) {
+            finalProjectId = p.id;
+            break;
+          }
+        }
+      }
+
+      if (finalProjectId) finalCategory = 'task';
+
+      // Split text by lines to create independent items
+      const lines = rawText.split(/\r?\n/).filter(l => l.trim().length > 0);
+      let itemsSaved = 0;
+
+      for (let lineText of lines) {
+        const item = {
+          id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2),
+          content: lineText.trim(),
+          category: finalCategory,
+          status: 'fresh',
+          createdAt: new Date().toISOString(),
+          touchedAt: new Date().toISOString(),
+          projectId: finalProjectId,
+          projectPhase: null,
+          aiCategory: finalProjectId ? finalCategory : null,
+          confirmed: finalProjectId ? true : false,
+          mvnaSteps: null,
+          mvnaCurrentStep: 0,
+          aiPending: !finalProjectId && !navigator.onLine
+        };
+
+        items.unshift(item);
+        itemsSaved++;
+
+        if (!finalProjectId && navigator.onLine) {
+          categoriseItem(item);
+        }
+      }
+
+      if (itemsSaved > 0) {
+        save();
+        showToast(itemsSaved > 1 ? `Captured ${itemsSaved} items ✦` : 'Captured ✦');
+        updateStats();
+        if (S.screen === 'inbox') renderInbox();
+      }
 
       // Dismiss
       ta.value = '';
       document.getElementById('capture-sheet').classList.remove('active');
-      showToast('Captured ✦');
-      updateStats();
-      if (S.screen === 'inbox') renderInbox();
+    }
 
-      // Queue AI categorisation
-      if (navigator.onLine) categoriseItem(item);
+    // Capture Project Assignment Methods
+    function toggleCaptureProjectSelect() {
+      document.getElementById('capture-project-sheet').style.display = 'flex';
+      const list = document.getElementById('capture-project-list');
+      const activeProjects = projects.filter(p => p.status !== 'archived');
+
+      if (activeProjects.length === 0) {
+        list.innerHTML = '<p style="color:var(--text-muted); font-size:12px;">No active projects.</p>';
+        return;
+      }
+
+      list.innerHTML = activeProjects.map(p => `
+          <div onclick="selectCaptureProject('${p.id}', '${esc(p.name)}')" style="padding:16px; background:var(--surface2); border:1px solid var(--border-soft); border-radius:12px; margin-bottom:8px; display:flex; justify-content:space-between; cursor:pointer;">
+             <span style="color:var(--text); font-size:14px;">${esc(p.name)}</span>
+             ${p.id === activeCaptureProjectId ? '<span style="color:var(--teal)">✓</span>' : ''}
+          </div>
+       `).join('');
+    }
+
+    function selectCaptureProject(id, name) {
+      activeCaptureProjectId = id;
+      const btn = document.getElementById('capture-project-btn');
+      btn.textContent = `@ ${name}`;
+      btn.style.borderColor = 'var(--teal)';
+      closeCaptureProjectSelect();
+    }
+
+    function clearCaptureProject() {
+      activeCaptureProjectId = null;
+      const btn = document.getElementById('capture-project-btn');
+      btn.textContent = '@ Project';
+      btn.style.borderColor = '';
+      closeCaptureProjectSelect();
+    }
+
+    function closeCaptureProjectSelect() {
+      document.getElementById('capture-project-sheet').style.display = 'none';
+      document.getElementById('capture-textarea').focus();
     }
 
     async function categoriseItem(item) {
@@ -4081,12 +4209,24 @@
       document.querySelectorAll('.item-action-cat-btn').forEach(b => {
         b.classList.toggle('active', b.dataset.cat === iaCurrentCat);
       });
+
+      const syncBtn = document.getElementById('ia-sync-btn');
+      if (syncBtn) {
+        syncBtn.style.display = (iaCurrentCat === 'reminder') ? 'block' : 'none';
+      }
+
       document.getElementById('item-action-sheet').classList.add('active');
     }
 
     function iaSetCat(cat) {
       iaCurrentCat = cat;
       document.querySelectorAll('.item-action-cat-btn').forEach(b => b.classList.toggle('active', b.dataset.cat === cat));
+
+      const syncBtn = document.getElementById('ia-sync-btn');
+      if (syncBtn) {
+        syncBtn.style.display = (cat === 'reminder') ? 'block' : 'none';
+      }
+
       // Save immediately
       const item = items.find(i => i.id === activeItemId);
       if (item) { item.category = cat; item.aiCategory = cat; item.confirmed = true; save(); }
@@ -4386,6 +4526,9 @@
           onclick="iaSetCat('uncategorised')">Unsorted</button>
       </div>
       <div class="item-action-divider"></div>
+      <button class="item-action-main-btn" id="ia-sync-btn" onclick="iaSyncToReminders()"
+        style="display:none; background:rgba(0,122,255,0.08); border-color:rgba(0,122,255,0.25); color:#0a84ff; margin-bottom:12px;">Sync
+        to Apple Reminders ↑</button>
       <button class="item-action-main-btn promote" onclick="iaPromote()">Develop into project →</button>
       <button class="item-action-main-btn archive" onclick="iaArchive()">Archive</button>
       <button class="item-action-main-btn cancel" onclick="closeItemAction()">Cancel</button>
@@ -4394,6 +4537,27 @@
   </div>
 
   <script>
+    // ── NATIVE SYNC ──────────────────────────────────────────
+    function iaSyncToReminders() {
+      if (!activeItemId) return;
+      const item = items.find(i => i.id === activeItemId);
+      if (!item) return;
+
+      if (navigator.share) {
+        navigator.share({
+          title: 'Reminder',
+          text: item.content
+        }).then(() => {
+          showToast('Synced to Reminders');
+          closeItemAction();
+        }).catch((err) => {
+          console.log('Share error:', err);
+          // User cancelled or it failed
+        });
+      } else {
+        showToast('Share API not supported on this browser');
+      }
+    }
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')
