@@ -1,10 +1,19 @@
-const CACHE_NAME = 'forward-cache-v4';
+const CACHE_NAME = 'forward-cache-v5';
 const urlsToCache = [
     './',
     './index.html',
     './manifest.json',
     './icon-192.png',
-    './icon-512.png'
+    './icon-512.png',
+    './js/data.js',
+    './js/ai.js',
+    './js/actions.js',
+    './js/render.js',
+    './js/app.js',
+    './css/main.css',
+    './css/layout.css',
+    './css/components.css',
+    './css/modals.css'
 ];
 
 self.addEventListener('install', event => {

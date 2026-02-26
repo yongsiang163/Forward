@@ -393,4 +393,32 @@
       document.getElementById('np-step-1').classList.remove('active');
       document.getElementById('np-step-2').classList.add('active');
     }
-
+
+
+function iaSyncToReminders() {
+      if (!activeItemId) return;
+      const item = items.find(i => i.id === activeItemId);
+      if (!item) return;
+
+      if (navigator.share) {
+        navigator.share({
+          title: 'Reminder',
+          text: item.content
+        }).then(() => {
+          showToast('Synced & Archived');
+
+          item.status = 'archived';
+          item.touchedAt = new Date().toISOString();
+          save();
+          renderInbox();
+
+          closeItemAction();
+        }).catch((err) => {
+          console.log('Share error:', err);
+          // User cancelled or it failed
+        });
+      } else {
+        showToast('Share API not supported on this browser');
+      }
+    }
+    

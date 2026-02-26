@@ -267,6 +267,299 @@
   <script src="js/actions.js"></script>
   <script src="js/render.js"></script>
   <script src="js/app.js"></script>
+<!-- PROJECT DETAIL SHEET -->
+  <div class="project-sheet" id="project-sheet">
+    <div class="project-sheet-modal">
+      <div class="project-sheet-handle"></div>
+      <div class="project-sheet-scroll">
+
+        <!-- Name -->
+        <div class="project-sheet-section">
+          <p class="project-sheet-eyebrow">Project</p>
+          <input class="project-sheet-name" id="ps-name" type="text" placeholder="Project name" />
+        </div>
+
+        <!-- Vision — locked -->
+        <div class="project-sheet-section">
+          <p class="project-sheet-eyebrow">The Vision</p>
+          <div class="project-vision-text" id="ps-vision"></div>
+          <p class="project-vision-locked">captured when you believed in this · cannot be edited</p>
+        </div>
+
+        <!-- Phase -->
+        <div class="project-sheet-section">
+          <p class="project-sheet-eyebrow">Phase</p>
+          <div class="phase-pills">
+            <button class="phase-pill-btn" data-phase="concept" onclick="setProjectPhase('concept')">Concept</button>
+            <button class="phase-pill-btn" data-phase="development"
+              onclick="setProjectPhase('development')">Development</button>
+            <button class="phase-pill-btn" data-phase="procurement"
+              onclick="setProjectPhase('procurement')">Procurement</button>
+            <button class="phase-pill-btn" data-phase="site" onclick="setProjectPhase('site')">Site</button>
+            <button class="phase-pill-btn" data-phase="delivery" onclick="setProjectPhase('delivery')">Delivery</button>
+          </div>
+        </div>
+
+        <!-- Next action -->
+        <div class="project-sheet-section">
+          <p class="project-sheet-eyebrow">Next Action</p>
+          <input class="project-input" id="ps-next-action" type="text" placeholder="The one small next step…" />
+        </div>
+
+        <!-- Notes -->
+        <div class="project-sheet-section">
+          <p class="project-sheet-eyebrow">Notes</p>
+          <textarea class="project-input" id="ps-notes" rows="4" placeholder="Anything else worth holding…"></textarea>
+        </div>
+
+        <button class="project-save-btn" onclick="saveProjectSheet()">Save</button>
+      </div>
+    </div>
+    <div style="flex:1" onclick="closeProjectSheet()"></div>
+  </div>
+
+  <!-- NEW PROJECT SHEET — 2 steps -->
+  <div class="new-project-sheet" id="new-project-sheet">
+    <div class="new-project-modal">
+      <div class="new-project-handle"></div>
+
+      <!-- Step 1: Name + Category + Vision -->
+      <div class="new-project-step active" id="np-step-1">
+        <p class="new-project-label">New Project — Step 1 of 2</p>
+        <p class="new-project-title">Name it, place it, capture the vision</p>
+        <input class="project-input" id="np-name" type="text" placeholder="Project name…" style="margin-bottom:14px" />
+        <div class="np-category-grid" id="np-category-grid">
+          <button class="np-cat-btn active" data-npcat="idwork" onclick="npSetCat('idwork')">
+            <div class="np-cat-btn-name">ID Work</div>
+            <div class="np-cat-btn-desc">Interior design project</div>
+          </button>
+          <button class="np-cat-btn" data-npcat="life" onclick="npSetCat('life')">
+            <div class="np-cat-btn-name">Life</div>
+            <div class="np-cat-btn-desc">Personal, family, home</div>
+          </button>
+          <button class="np-cat-btn" data-npcat="business" onclick="npSetCat('business')">
+            <div class="np-cat-btn-name">Business</div>
+            <div class="np-cat-btn-desc">Ideas, ventures, freelance</div>
+          </button>
+          <button class="np-cat-btn" data-npcat="learning" onclick="npSetCat('learning')">
+            <div class="np-cat-btn-name">Learning</div>
+            <div class="np-cat-btn-desc">Courses, skills, reading</div>
+          </button>
+          <button class="np-cat-btn" data-npcat="open" onclick="npSetCat('open')" style="grid-column:span 2">
+            <div class="np-cat-btn-name">Open</div>
+            <div class="np-cat-btn-desc">I'll define my own path</div>
+          </button>
+        </div>
+        <textarea class="project-input" id="np-vision" rows="3"
+          placeholder="What did you see when you believed in this? Capture it now, while it's alive…"
+          style="margin-top:14px"></textarea>
+        <button class="new-project-next" onclick="npNextStep()">Next →</button>
+        <button class="new-project-back" onclick="closeNewProject()">Cancel</button>
+      </div>
+
+      <!-- Step 2: Phase -->
+      <div class="new-project-step" id="np-step-2">
+        <p class="new-project-label">New Project — Step 2 of 2</p>
+        <p class="new-project-title">Where is it right now?</p>
+        <div class="phase-pills" id="np-phase-pills">
+          <button class="phase-pill-btn" data-phase="concept" onclick="npSetPhase('concept')">Concept</button>
+          <button class="phase-pill-btn" data-phase="development"
+            onclick="npSetPhase('development')">Development</button>
+          <button class="phase-pill-btn" data-phase="procurement"
+            onclick="npSetPhase('procurement')">Procurement</button>
+          <button class="phase-pill-btn" data-phase="site" onclick="npSetPhase('site')">Site</button>
+          <button class="phase-pill-btn" data-phase="delivery" onclick="npSetPhase('delivery')">Delivery</button>
+        </div>
+        <button class="new-project-next" onclick="npCreate()"
+          style="background:rgba(196,149,106,0.1);border-color:rgba(196,149,106,0.25);color:var(--warm)">Create
+          project</button>
+        <button class="new-project-back" onclick="npBackStep()">← Back</button>
+      </div>
+    </div>
+    <div style="flex:1" onclick="closeNewProject()"></div>
+  </div>
+
+
+  <!-- INBOX ITEM ACTION SHEET -->
+  <div class="item-action-sheet" id="item-action-sheet">
+    <div class="item-action-modal">
+      <div class="item-action-handle"></div>
+      <p class="item-action-content" id="ia-content"></p>
+      <p class="item-action-label">Category</p>
+      <div class="item-action-row" id="ia-cat-row">
+        <button class="item-action-cat-btn" data-cat="task" onclick="iaSetCat('task')">Task</button>
+        <button class="item-action-cat-btn" data-cat="spark" onclick="iaSetCat('spark')">Spark</button>
+        <button class="item-action-cat-btn" data-cat="reminder" onclick="iaSetCat('reminder')">Reminder</button>
+        <button class="item-action-cat-btn" data-cat="uncategorised"
+          onclick="iaSetCat('uncategorised')">Unsorted</button>
+      </div>
+      <div class="item-action-divider"></div>
+      <button class="item-action-main-btn" id="ia-sync-btn" onclick="iaSyncToReminders()"
+        style="display:none; background:rgba(0,122,255,0.08); border-color:rgba(0,122,255,0.25); color:#0a84ff; margin-bottom:12px;">Sync
+        to Apple Reminders ↑</button>
+      <button class="item-action-main-btn promote" onclick="iaPromote()">Develop into project →</button>
+      <button class="item-action-main-btn archive" onclick="iaArchive()">Archive</button>
+      <button class="item-action-main-btn cancel" onclick="closeItemAction()">Cancel</button>
+    </div>
+    <div style="flex:1" onclick="closeItemAction()"></div>
+  </div>
+
+  
+  <script src="js/ai.js"></script>
+  <script src="js/actions.js"></script>
+  <script src="js/render.js"></script>
+  <script src="js/app.js"></script>
+<!-- PROJECT DETAIL SHEET -->
+  <div class="project-sheet" id="project-sheet">
+    <div class="project-sheet-modal">
+      <div class="project-sheet-handle"></div>
+      <div class="project-sheet-scroll">
+
+        <!-- Name -->
+        <div class="project-sheet-section">
+          <p class="project-sheet-eyebrow">Project</p>
+          <input class="project-sheet-name" id="ps-name" type="text" placeholder="Project name" />
+        </div>
+
+        <!-- Vision — locked -->
+        <div class="project-sheet-section">
+          <p class="project-sheet-eyebrow">The Vision</p>
+          <div class="project-vision-text" id="ps-vision"></div>
+          <p class="project-vision-locked">captured when you believed in this · cannot be edited</p>
+        </div>
+
+        <!-- Phase -->
+        <div class="project-sheet-section">
+          <p class="project-sheet-eyebrow">Phase</p>
+          <div class="phase-pills">
+            <button class="phase-pill-btn" data-phase="concept" onclick="setProjectPhase('concept')">Concept</button>
+            <button class="phase-pill-btn" data-phase="development"
+              onclick="setProjectPhase('development')">Development</button>
+            <button class="phase-pill-btn" data-phase="procurement"
+              onclick="setProjectPhase('procurement')">Procurement</button>
+            <button class="phase-pill-btn" data-phase="site" onclick="setProjectPhase('site')">Site</button>
+            <button class="phase-pill-btn" data-phase="delivery" onclick="setProjectPhase('delivery')">Delivery</button>
+          </div>
+        </div>
+
+        <!-- Next action -->
+        <div class="project-sheet-section">
+          <p class="project-sheet-eyebrow">Next Action</p>
+          <input class="project-input" id="ps-next-action" type="text" placeholder="The one small next step…" />
+        </div>
+
+        <!-- Notes -->
+        <div class="project-sheet-section">
+          <p class="project-sheet-eyebrow">Notes</p>
+          <textarea class="project-input" id="ps-notes" rows="4" placeholder="Anything else worth holding…"></textarea>
+        </div>
+
+        <button class="project-save-btn" onclick="saveProjectSheet()">Save</button>
+      </div>
+    </div>
+    <div style="flex:1" onclick="closeProjectSheet()"></div>
+  </div>
+
+  <!-- NEW PROJECT SHEET — 2 steps -->
+  <div class="new-project-sheet" id="new-project-sheet">
+    <div class="new-project-modal">
+      <div class="new-project-handle"></div>
+
+      <!-- Step 1: Name + Category + Vision -->
+      <div class="new-project-step active" id="np-step-1">
+        <p class="new-project-label">New Project — Step 1 of 2</p>
+        <p class="new-project-title">Name it, place it, capture the vision</p>
+        <input class="project-input" id="np-name" type="text" placeholder="Project name…" style="margin-bottom:14px" />
+        <div class="np-category-grid" id="np-category-grid">
+          <button class="np-cat-btn active" data-npcat="idwork" onclick="npSetCat('idwork')">
+            <div class="np-cat-btn-name">ID Work</div>
+            <div class="np-cat-btn-desc">Interior design project</div>
+          </button>
+          <button class="np-cat-btn" data-npcat="life" onclick="npSetCat('life')">
+            <div class="np-cat-btn-name">Life</div>
+            <div class="np-cat-btn-desc">Personal, family, home</div>
+          </button>
+          <button class="np-cat-btn" data-npcat="business" onclick="npSetCat('business')">
+            <div class="np-cat-btn-name">Business</div>
+            <div class="np-cat-btn-desc">Ideas, ventures, freelance</div>
+          </button>
+          <button class="np-cat-btn" data-npcat="learning" onclick="npSetCat('learning')">
+            <div class="np-cat-btn-name">Learning</div>
+            <div class="np-cat-btn-desc">Courses, skills, reading</div>
+          </button>
+          <button class="np-cat-btn" data-npcat="open" onclick="npSetCat('open')" style="grid-column:span 2">
+            <div class="np-cat-btn-name">Open</div>
+            <div class="np-cat-btn-desc">I'll define my own path</div>
+          </button>
+        </div>
+        <textarea class="project-input" id="np-vision" rows="3"
+          placeholder="What did you see when you believed in this? Capture it now, while it's alive…"
+          style="margin-top:14px"></textarea>
+        <button class="new-project-next" onclick="npNextStep()">Next →</button>
+        <button class="new-project-back" onclick="closeNewProject()">Cancel</button>
+      </div>
+
+      <!-- Step 2: Phase -->
+      <div class="new-project-step" id="np-step-2">
+        <p class="new-project-label">New Project — Step 2 of 2</p>
+        <p class="new-project-title">Where is it right now?</p>
+        <div class="phase-pills" id="np-phase-pills">
+          <button class="phase-pill-btn" data-phase="concept" onclick="npSetPhase('concept')">Concept</button>
+          <button class="phase-pill-btn" data-phase="development"
+            onclick="npSetPhase('development')">Development</button>
+          <button class="phase-pill-btn" data-phase="procurement"
+            onclick="npSetPhase('procurement')">Procurement</button>
+          <button class="phase-pill-btn" data-phase="site" onclick="npSetPhase('site')">Site</button>
+          <button class="phase-pill-btn" data-phase="delivery" onclick="npSetPhase('delivery')">Delivery</button>
+        </div>
+        <button class="new-project-next" onclick="npCreate()"
+          style="background:rgba(196,149,106,0.1);border-color:rgba(196,149,106,0.25);color:var(--warm)">Create
+          project</button>
+        <button class="new-project-back" onclick="npBackStep()">← Back</button>
+      </div>
+    </div>
+    <div style="flex:1" onclick="closeNewProject()"></div>
+  </div>
+
+
+  <!-- INBOX ITEM ACTION SHEET -->
+  <div class="item-action-sheet" id="item-action-sheet">
+    <div class="item-action-modal">
+      <div class="item-action-handle"></div>
+      <p class="item-action-content" id="ia-content"></p>
+      <p class="item-action-label">Category</p>
+      <div class="item-action-row" id="ia-cat-row">
+        <button class="item-action-cat-btn" data-cat="task" onclick="iaSetCat('task')">Task</button>
+        <button class="item-action-cat-btn" data-cat="spark" onclick="iaSetCat('spark')">Spark</button>
+        <button class="item-action-cat-btn" data-cat="reminder" onclick="iaSetCat('reminder')">Reminder</button>
+        <button class="item-action-cat-btn" data-cat="uncategorised"
+          onclick="iaSetCat('uncategorised')">Unsorted</button>
+      </div>
+      <div class="item-action-divider"></div>
+      <button class="item-action-main-btn" id="ia-sync-btn" onclick="iaSyncToReminders()"
+        style="display:none; background:rgba(0,122,255,0.08); border-color:rgba(0,122,255,0.25); color:#0a84ff; margin-bottom:12px;">Sync
+        to Apple Reminders ↑</button>
+      <button class="item-action-main-btn promote" onclick="iaPromote()">Develop into project →</button>
+      <button class="item-action-main-btn archive" onclick="iaArchive()">Archive</button>
+      <button class="item-action-main-btn cancel" onclick="closeItemAction()">Cancel</button>
+    </div>
+    <div style="flex:1" onclick="closeItemAction()"></div>
+  </div>
+
+  <script>
+    // ── NATIVE SYNC ──────────────────────────────────────────
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(registration => {
+            console.log('ServiceWorker registration successful with scope: ', registration.scope);
+          })
+          .catch(err => {
+            console.log('ServiceWorker registration failed: ', err);
+          });
+      });
+    }
+</script>
 </body>
 
 </html>

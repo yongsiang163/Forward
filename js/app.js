@@ -1,4 +1,4 @@
-    // ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
     // FORWARD v1.0 · Core Logic
     // ═══════════════════════════════════════════════════════
 
@@ -134,9 +134,13 @@
     }
 
     init();
-  </script>
 
-  <!-- PROJECT DETAIL SHEET -->
+</script>
+  <script src="js/ai.js"></script>
+  <script src="js/actions.js"></script>
+  <script src="js/render.js"></script>
+  <script src="js/app.js"></script>
+<!-- PROJECT DETAIL SHEET -->
   <div class="project-sheet" id="project-sheet">
     <div class="project-sheet-modal">
       <div class="project-sheet-handle"></div>
@@ -274,41 +278,3 @@
   </div>
 
   <script>
-    // ── NATIVE SYNC ──────────────────────────────────────────
-    function iaSyncToReminders() {
-      if (!activeItemId) return;
-      const item = items.find(i => i.id === activeItemId);
-      if (!item) return;
-
-      if (navigator.share) {
-        navigator.share({
-          title: 'Reminder',
-          text: item.content
-        }).then(() => {
-          showToast('Synced & Archived');
-
-          item.status = 'archived';
-          item.touchedAt = new Date().toISOString();
-          save();
-          renderInbox();
-
-          closeItemAction();
-        }).catch((err) => {
-          console.log('Share error:', err);
-          // User cancelled or it failed
-        });
-      } else {
-        showToast('Share API not supported on this browser');
-      }
-    }
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-          .then(registration => {
-            console.log('ServiceWorker registration successful with scope: ', registration.scope);
-          })
-          .catch(err => {
-            console.log('ServiceWorker registration failed: ', err);
-          });
-      });
-    }
