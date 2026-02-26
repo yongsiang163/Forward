@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -16,7 +16,7 @@
     href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:wght@300;400&display=swap"
     rel="stylesheet">
   <style>
-    /* â”€â”€ DESIGN TOKENS â€” exact match to Rewind â”€â”€ */
+    /* ── DESIGN TOKENS — exact match to Rewind ── */
     :root {
       --bg: #0e0b09;
       --surface: #1a1410;
@@ -59,7 +59,7 @@
       font-weight: 300;
     }
 
-    /* â”€â”€ AMBIENT â€” same as Rewind â”€â”€ */
+    /* ── AMBIENT — same as Rewind ── */
     .ambient {
       position: fixed;
       inset: 0;
@@ -104,7 +104,7 @@
       background: radial-gradient(circle, rgba(77, 138, 120, 0.09), transparent 70%);
     }
 
-    /* â”€â”€ GRAIN â€” same as Rewind â”€â”€ */
+    /* ── GRAIN — same as Rewind ── */
     .grain {
       position: fixed;
       inset: 0;
@@ -115,7 +115,7 @@
       background-size: 128px;
     }
 
-    /* â”€â”€ APP SHELL â”€â”€ */
+    /* ── APP SHELL ── */
     .app {
       position: relative;
       z-index: 2;
@@ -125,9 +125,9 @@
       overflow: hidden;
     }
 
-    /* mode-bar removed â€” navigation is gesture + orb */
+    /* mode-bar removed — navigation is gesture + orb */
 
-    /* â”€â”€ SCREENS â”€â”€ */
+    /* ── SCREENS ── */
     .screen {
       position: fixed;
       top: 0;
@@ -151,12 +151,12 @@
       transform: translateY(0);
     }
 
-    /* Home screen â€” no scroll, hero must fill exactly */
+    /* Home screen — no scroll, hero must fill exactly */
     #screen-home {
       overflow: hidden;
     }
 
-    /* â”€â”€ HOME SCREEN â€” full viewport hero â”€â”€ */
+    /* ── HOME SCREEN — full viewport hero ── */
     /* (layout handled by .screen + #screen-home override above) */
 
     /* The hero fills the full viewport between mode bar and bottom nav */
@@ -175,7 +175,7 @@
       overflow: hidden;
     }
 
-    /* Wordmark â€” Forward, above the orb */
+    /* Wordmark — Forward, above the orb */
     .home-wordmark {
       font-family: 'Cormorant Garamond', serif;
       font-size: 13px;
@@ -190,7 +190,7 @@
       /* Sits naturally below safe-area, no fixed top needed */
     }
 
-    /* State line â€” mood context, below wordmark */
+    /* State line — mood context, below wordmark */
     .home-state-line {
       font-size: 13px;
       color: var(--text-muted);
@@ -209,7 +209,7 @@
       font-size: 16px;
     }
 
-    /* â”€â”€ HERO ORB â€” ring + inner fill + pulse â”€â”€ */
+    /* ── HERO ORB — ring + inner fill + pulse ── */
     .hero-orb-wrap {
       position: relative;
       width: 130px;
@@ -233,7 +233,7 @@
       transition: border-color 0.3s;
     }
 
-    /* Second ring â€” offset phase */
+    /* Second ring — offset phase */
     .hero-ring-2 {
       position: absolute;
       inset: 10px;
@@ -243,7 +243,7 @@
       animation-delay: -2s;
     }
 
-    /* Glow halo â€” outermost, very soft */
+    /* Glow halo — outermost, very soft */
     .hero-ring-halo {
       position: absolute;
       inset: -14px;
@@ -307,7 +307,7 @@
       margin-bottom: 0;
     }
 
-    /* Swipe direction hints â€” fade in late */
+    /* Swipe direction hints — fade in late */
     .home-swipe-hints {
       display: flex;
       justify-content: space-between;
@@ -348,8 +348,8 @@
       color: var(--warm-soft);
     }
 
-    /* Scroll-down section â€” stats revealed below fold */
-    /* Stats drawer â€” fixed to bottom, hidden below viewport, revealed on swipe-up */
+    /* Scroll-down section — stats revealed below fold */
+    /* Stats drawer — fixed to bottom, hidden below viewport, revealed on swipe-up */
     .home-below-fold {
       position: fixed;
       bottom: 68px;
@@ -380,7 +380,7 @@
       visibility: visible;
     }
 
-    /* Pull handle â€” fixed above bottom nav, only on home */
+    /* Pull handle — fixed above bottom nav, only on home */
     .stats-handle {
       position: fixed;
       bottom: calc(68px + 10px);
@@ -411,7 +411,7 @@
       opacity: 0;
     }
 
-    /* â”€â”€ ANIMATIONS â€” orb life â”€â”€ */
+    /* ── ANIMATIONS — orb life ── */
     @keyframes ringBreathe {
 
       0%,
@@ -495,7 +495,7 @@
 
     /* capture hero replaced by hero-orb-wrap */
 
-    /* Stats cards â€” below fold */
+    /* Stats cards — below fold */
     .home-stat-card {
       flex: 1;
       background: var(--surface);
@@ -545,7 +545,7 @@
     }
 
 
-    /* â”€â”€ ORIENTATION PILL â€” fades in on mode entry, dissolves after 2s â”€â”€ */
+    /* ── ORIENTATION PILL — fades in on mode entry, dissolves after 2s ── */
     .mode-pill {
       position: fixed;
       top: max(16px, env(safe-area-inset-top));
@@ -600,7 +600,7 @@
       color: var(--teal);
     }
 
-    /* Plan screen header padding â€” needs space for safe area */
+    /* Plan screen header padding — needs space for safe area */
     .plan-header {
       padding: max(48px, calc(env(safe-area-inset-top) + 28px)) 28px 0;
     }
@@ -615,7 +615,7 @@
       padding: max(48px, calc(env(safe-area-inset-top) + 28px)) 28px;
     }
 
-    /* â”€â”€ PLAN SCREEN â”€â”€ */
+    /* ── PLAN SCREEN ── */
     #screen-plan {
       padding: 0;
     }
@@ -892,7 +892,7 @@
       line-height: 1.6;
     }
 
-    /* â”€â”€ WORK SCREEN â”€â”€ */
+    /* ── WORK SCREEN ── */
     #screen-work {
       padding: max(52px, calc(env(safe-area-inset-top) + 28px)) 28px 20px;
     }
@@ -1175,7 +1175,7 @@
       padding: 8px;
     }
 
-    /* â”€â”€ FOCUS OVERLAY â”€â”€ */
+    /* ── FOCUS OVERLAY ── */
     .focus-overlay {
       position: fixed;
       inset: 0;
@@ -1192,7 +1192,7 @@
       display: flex;
     }
 
-    /* Peripheral time glow â€” edge border only, never intrusive */
+    /* Peripheral time glow — edge border only, never intrusive */
     .focus-time-ring {
       position: fixed;
       inset: 0;
@@ -1278,7 +1278,7 @@
       opacity: 1;
     }
 
-    /* â”€â”€ SETTINGS SCREEN â”€â”€ */
+    /* ── SETTINGS SCREEN ── */
     #screen-settings {
       padding: max(52px, calc(env(safe-area-inset-top) + 28px)) 28px 28px;
     }
@@ -1347,7 +1347,7 @@
       letter-spacing: 1px;
     }
 
-    /* â”€â”€ CAPTURE SHEET â”€â”€ */
+    /* ── CAPTURE SHEET ── */
     .capture-sheet {
       position: fixed;
       inset: 0;
@@ -1469,7 +1469,7 @@
       transform: scale(0.97);
     }
 
-    /* â”€â”€ BOTTOM NAV â€” same structure as Rewind â”€â”€ */
+    /* ── BOTTOM NAV — same structure as Rewind ── */
     .bottom-nav {
       position: fixed;
       bottom: 0;
@@ -1568,7 +1568,7 @@
       transform: scale(0.92);
     }
 
-    /* â”€â”€ TOAST â€” same as Rewind â”€â”€ */
+    /* ── TOAST — same as Rewind ── */
     .toast {
       position: fixed;
       bottom: 90px;
@@ -1593,7 +1593,7 @@
       transform: translateX(-50%) translateY(0);
     }
 
-    /* â”€â”€ ANIMATIONS â€” same as Rewind â”€â”€ */
+    /* ── ANIMATIONS — same as Rewind ── */
     @keyframes fadeUp {
       from {
         opacity: 0;
@@ -1637,7 +1637,7 @@
       flex-shrink: 0;
     }
 
-    /* â”€â”€ ORB RADIAL MENU â€” long press blooms Plan / Work â”€â”€ */
+    /* ── ORB RADIAL MENU — long press blooms Plan / Work ── */
     .orb-menu {
       position: absolute;
       inset: 0;
@@ -1667,7 +1667,7 @@
       pointer-events: all;
     }
 
-    /* Plan â€” blooms upward-left */
+    /* Plan — blooms upward-left */
     .orb-option.opt-plan {
       transform: translate(calc(-50% - 80px), calc(-50% - 90px)) scale(0.6);
     }
@@ -1676,7 +1676,7 @@
       transform: translate(calc(-50% - 80px), calc(-50% - 90px)) scale(1);
     }
 
-    /* Work â€” blooms upward-right */
+    /* Work — blooms upward-right */
     .orb-option.opt-work {
       transform: translate(calc(-50% + 80px), calc(-50% - 90px)) scale(0.6);
     }
@@ -1761,9 +1761,9 @@
     }
 
 
-    /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    /* ══════════════════════════════════════════════════
    LIVING PROJECTS
-   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+   ══════════════════════════════════════════════════ */
 
     /* Project cards in Plan screen */
     .project-section {
@@ -1866,7 +1866,7 @@
     }
 
     .project-next-action::before {
-      content: 'â†’ ';
+      content: '→ ';
       color: var(--warm-soft);
     }
 
@@ -1891,7 +1891,7 @@
       color: var(--teal);
     }
 
-    /* â”€â”€ PROJECT DETAIL SHEET â”€â”€ */
+    /* ── PROJECT DETAIL SHEET ── */
     .project-sheet {
       position: fixed;
       inset: 0;
@@ -2064,7 +2064,7 @@
       background: rgba(196, 149, 106, 0.2);
     }
 
-    /* â”€â”€ NEW PROJECT FLOW â”€â”€ */
+    /* ── NEW PROJECT FLOW ── */
     .new-project-sheet {
       position: fixed;
       inset: 0;
@@ -2177,7 +2177,7 @@
     }
 
 
-    /* â•â• PROJECT CATEGORIES â•â• */
+    /* ══ PROJECT CATEGORIES ══ */
     .cat-badge {
       display: inline-block;
       font-size: 9px;
@@ -2219,7 +2219,7 @@
       border: 1px solid var(--border-soft);
     }
 
-    /* â•â• PROJECTS SCREEN â•â• */
+    /* ══ PROJECTS SCREEN ══ */
     #screen-projects {
       overflow: hidden;
       display: flex;
@@ -2290,7 +2290,7 @@
       padding: 0 20px 20px;
     }
 
-    /* â•â• UPDATED PROJECT CARD â•â• */
+    /* ══ UPDATED PROJECT CARD ══ */
     .project-card {
       background: var(--surface);
       border: 1px solid var(--border-soft);
@@ -2357,7 +2357,7 @@
     }
 
     .project-next-preview::before {
-      content: 'â†’ ';
+      content: '→ ';
       color: var(--warm-soft);
     }
 
@@ -2381,7 +2381,7 @@
       color: var(--teal);
     }
 
-    /* â•â• INBOX SCREEN â•â• */
+    /* ══ INBOX SCREEN ══ */
     #screen-inbox {
       display: flex;
       flex-direction: column;
@@ -2409,7 +2409,7 @@
       margin-bottom: 0;
     }
 
-    /* â•â• INBOX ITEM ACTION SHEET â•â• */
+    /* ══ INBOX ITEM ACTION SHEET ══ */
     .item-action-sheet {
       position: fixed;
       inset: 0;
@@ -2537,7 +2537,7 @@
       opacity: 0.6;
     }
 
-    /* â•â• ARCHIVE SECTION IN INBOX â•â• */
+    /* ══ ARCHIVE SECTION IN INBOX ══ */
     .archive-toggle {
       background: none;
       border: none;
@@ -2606,7 +2606,7 @@
       color: var(--warm);
     }
 
-    /* â•â• UPDATED PROJECT DETAIL SHEET â•â• */
+    /* ══ UPDATED PROJECT DETAIL SHEET ══ */
     .project-sheet-modal {
       max-height: 92vh;
     }
@@ -2714,7 +2714,7 @@
     }
 
     .ai-step-check.done::after {
-      content: 'âœ“';
+      content: '✓';
       font-size: 9px;
       color: var(--warm);
     }
@@ -2798,7 +2798,7 @@
       animation-delay: 0.4s;
     }
 
-    /* â•â• NEW PROJECT FLOW â€” updated for category â•â• */
+    /* ══ NEW PROJECT FLOW — updated for category ══ */
     .np-category-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -2837,22 +2837,22 @@
 
 <body>
 
-  <!-- Ambient + grain â€” exact Rewind pattern -->
+  <!-- Ambient + grain — exact Rewind pattern -->
   <div class="ambient">
     <div class="ambient-orb a1"></div>
     <div class="ambient-orb a2"></div>
   </div>
   <div class="grain"></div>
 
-  <!-- FOCUS TIME RING â€” peripheral awareness, never intrusive -->
+  <!-- FOCUS TIME RING — peripheral awareness, never intrusive -->
   <div class="focus-time-ring" id="focus-time-ring"></div>
 
   <!-- FOCUS OVERLAY -->
   <div class="focus-overlay" id="focus-overlay">
     <p class="focus-task-eyebrow">In focus</p>
-    <p class="focus-task-text" id="focus-task-text">â€”</p>
+    <p class="focus-task-text" id="focus-task-text">—</p>
     <div class="focus-btns">
-      <button class="focus-btn" onclick="completeFocus()">Done âœ“</button>
+      <button class="focus-btn" onclick="completeFocus()">Done ✓</button>
       <button class="focus-btn exit" onclick="exitFocus()">Pause</button>
     </div>
     <p class="focus-gentle-msg" id="focus-gentle-msg">You've been here a while.</p>
@@ -2868,8 +2868,8 @@
       <div class="capture-footer">
         <span class="capture-char" id="capture-char">0</span>
         <div class="capture-actions">
-          <button class="capture-trash" onclick="trashCapture()" title="Discard">âœ•</button>
-          <button class="capture-save" onclick="saveCapture()">Keep it â†’</button>
+          <button class="capture-trash" onclick="trashCapture()" title="Discard">✕</button>
+          <button class="capture-save" onclick="saveCapture()">Keep it →</button>
         </div>
       </div>
     </div>
@@ -2877,12 +2877,12 @@
 
   <div class="app">
 
-    <!-- Orientation pill â€” injected by JS, floats and dissolves -->
+    <!-- Orientation pill — injected by JS, floats and dissolves -->
     <div class="mode-pill" id="mode-pill"></div>
-    <!-- Swipe-up handle â€” fixed, visible only on home -->
+    <!-- Swipe-up handle — fixed, visible only on home -->
     <div class="stats-handle" id="stats-handle"></div>
 
-    <!-- HOME SCREEN â€” full viewport hero with swipe navigation -->
+    <!-- HOME SCREEN — full viewport hero with swipe navigation -->
     <div class="screen active" id="screen-home">
 
       <!-- Hero fills viewport -->
@@ -2890,7 +2890,7 @@
         <p class="home-wordmark">Forward</p>
         <p class="home-state-line" id="home-state-line"></p>
 
-        <!-- The living orb â€” tap to capture -->
+        <!-- The living orb — tap to capture -->
         <div class="hero-orb-wrap" id="hero-orb-wrap" onclick="openCapture()">
           <div class="hero-ring-halo"></div>
           <div class="hero-ring"></div>
@@ -2905,17 +2905,17 @@
         <!-- Swipe direction hints -->
         <div class="home-swipe-hints">
           <div class="swipe-hint swipe-hint-teal">
-            <span class="swipe-hint-arrow">â†</span>
+            <span class="swipe-hint-arrow">←</span>
             <span>Plan</span>
           </div>
           <div class="swipe-hint swipe-hint-warm">
             <span>Work</span>
-            <span class="swipe-hint-arrow">â†’</span>
+            <span class="swipe-hint-arrow">→</span>
           </div>
         </div>
       </div>
 
-      <!-- Stats drawer â€” hidden, slides up from fixed bottom position -->
+      <!-- Stats drawer — hidden, slides up from fixed bottom position -->
       <div class="home-below-fold" id="home-below-fold">
         <div class="home-stat-card" onclick="showScreen('plan')">
           <span class="home-stat-num" id="stat-inbox">0</span>
@@ -2965,7 +2965,7 @@
       <div class="inbox-list" id="inbox-list"></div>
       <!-- Archive section -->
       <button class="archive-toggle" id="archive-toggle" onclick="toggleArchive()">
-        <span class="archive-toggle-arrow">â–¾</span>
+        <span class="archive-toggle-arrow">▾</span>
         <span>Archived</span>
       </button>
       <div class="archive-list" id="archive-list"></div>
@@ -2975,7 +2975,7 @@
     <!-- WORK SCREEN -->
     <div class="screen" id="screen-work">
       <p class="work-eyebrow" id="work-eyebrow">Right now</p>
-      <p class="work-headline" id="work-headline">â€”</p>
+      <p class="work-headline" id="work-headline">—</p>
       <div id="work-area"></div>
       <div class="ai-thinking" id="ai-thinking">
         <div class="ai-thinking-orb"></div>
@@ -2995,7 +2995,7 @@
             <p class="settings-row-text">Back up your Forward data</p>
             <p class="settings-row-sub">Export everything as JSON</p>
           </div>
-          <span class="settings-row-action">â†“</span>
+          <span class="settings-row-action">↓</span>
         </div>
       </div>
 
@@ -3004,7 +3004,7 @@
         <div class="settings-row">
           <div class="settings-row-body">
             <p class="settings-row-text">Gentle time awareness</p>
-            <p class="settings-row-sub">Soft glow at 45 min Â· message at 120 min</p>
+            <p class="settings-row-sub">Soft glow at 45 min · message at 120 min</p>
           </div>
           <span class="settings-row-action on">On</span>
         </div>
@@ -3013,7 +3013,7 @@
             <p class="settings-row-text">Family time hours</p>
             <p class="settings-row-sub">Not yet configured</p>
           </div>
-          <span class="settings-row-action">â†’</span>
+          <span class="settings-row-action">→</span>
         </div>
       </div>
 
@@ -3022,7 +3022,7 @@
         <div class="settings-row" style="cursor:default;">
           <div class="settings-row-body">
             <p class="settings-row-text">Forward</p>
-            <p class="settings-row-sub">Version 1.0 Â· Companion to Rewind</p>
+            <p class="settings-row-sub">Version 1.0 · Companion to Rewind</p>
           </div>
         </div>
       </div>
@@ -3031,25 +3031,25 @@
 
   </div><!-- /app -->
 
-  <!-- BOTTOM NAV â€” Home Â· Projects Â· Capture Â· Inbox Â· More -->
+  <!-- BOTTOM NAV — Home · Projects · Capture · Inbox · More -->
   <nav class="bottom-nav">
     <button class="nav-btn active" id="nav-home" onclick="showScreen('home')">
-      <span class="nav-icon">â¬¡</span>
+      <span class="nav-icon">⬡</span>
       <span class="nav-label">Home</span>
     </button>
     <button class="nav-btn" id="nav-projects" onclick="showScreen('projects')">
-      <span class="nav-icon" style="color:var(--teal)">â—«</span>
+      <span class="nav-icon" style="color:var(--teal)">◫</span>
       <span class="nav-label">Projects</span>
     </button>
     <div class="nav-capture-wrap">
       <button class="nav-capture-btn" onclick="openCapture()">+</button>
     </div>
     <button class="nav-btn" id="nav-inbox" onclick="showScreen('inbox')">
-      <span class="nav-icon" style="color:var(--warm)">â–¤</span>
+      <span class="nav-icon" style="color:var(--warm)">▤</span>
       <span class="nav-label">Inbox</span>
     </button>
     <button class="nav-btn" id="nav-settings" onclick="showScreen('settings')">
-      <span class="nav-icon">â—‹</span>
+      <span class="nav-icon">○</span>
       <span class="nav-label">More</span>
     </button>
   </nav>
@@ -3057,14 +3057,14 @@
   <div class="toast" id="toast"></div>
 
   <script>
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-    // FORWARD v1.0 Â· Core Logic
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // ═══════════════════════════════════════════════════════
+    // FORWARD v1.0 · Core Logic
+    // ═══════════════════════════════════════════════════════
 
-    // â”€â”€ CONSTANTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── CONSTANTS ──────────────────────────────────────────
     const CAT_LABELS = { task: 'Task', project: 'Project', spark: 'Spark', reminder: 'Reminder', uncategorised: 'Uncategorised' };
 
-    // Differentiated lifecycle by category â€” the core graveyard prevention logic
+    // Differentiated lifecycle by category — the core graveyard prevention logic
     const LIFECYCLE = {
       task: { freshHrs: 48, quietDays: 7, archiveDays: 30 },
       project: { freshHrs: Infinity, quietDays: 9, archiveDays: Infinity }, // never auto-archived
@@ -3073,7 +3073,7 @@
       uncategorised: { freshHrs: 48, quietDays: 7, archiveDays: 30 }
     };
 
-    // Rewind mood â†’ attention state map
+    // Rewind mood → attention state map
     const MOOD_MAP = {
       Alive: { state: 'focused', label: 'You\'re alive and ready.', maxSteps: 3 },
       Calm: { state: 'drifting', label: 'Calm today. One steady thing.', maxSteps: 3 },
@@ -3083,7 +3083,7 @@
       Heavy: { state: 'fatigued', label: 'Running heavy. Just one thing.', maxSteps: 1 }
     };
 
-    // Interior design phase context â€” sent to AI for domain-aware suggestions
+    // Interior design phase context — sent to AI for domain-aware suggestions
     const PHASE_CONTEXT = {
       concept: 'Concept phase: mood boards, spatial direction, client brief alignment, reference gathering. Suggestions should be exploratory and creative.',
       development: 'Development phase: drawings, specifications, material selections, design presentations. Suggestions should be precise and document-oriented.',
@@ -3092,7 +3092,7 @@
       delivery: 'Delivery phase: client handover, final documentation, photography, snagging. Suggestions should be completionist and detail-oriented.'
     };
 
-    // â”€â”€ APP STATE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── APP STATE ───────────────────────────────────────────
     const S = {
       screen: 'home',
       filter: 'all',
@@ -3110,7 +3110,7 @@
 
     let items = [];
 
-    // â”€â”€ STORAGE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── STORAGE ─────────────────────────────────────────────
     function save() {
       try { localStorage.setItem('forward_items', JSON.stringify(items)); } catch (e) { }
     }
@@ -3134,7 +3134,7 @@
       } catch (e) { return null; }
     }
 
-    // â”€â”€ LIFECYCLE ENGINE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── LIFECYCLE ENGINE ─────────────────────────────────────
     function computeStatus(item) {
       if (item.status === 'archived') return 'archived';
       const now = Date.now();
@@ -3159,7 +3159,7 @@
       if (changed) save();
     }
 
-    // â”€â”€ AI CATEGORISATION (placeholder â€” swap for Claude API) â”€â”€
+    // ── AI CATEGORISATION (placeholder — swap for Claude API) ──
     function aiCategorise(text) {
       return new Promise(resolve => {
         setTimeout(() => {
@@ -3173,7 +3173,7 @@
       });
     }
 
-    // â”€â”€ HELP ME START (placeholder â€” swap for Claude API) â”€â”€â”€â”€
+    // ── HELP ME START (placeholder — swap for Claude API) ────
     // Full payload shape is ready for real API: task, projectId, projectPhase, moodState, completedSteps
     function helpMeStartAI({ task, projectPhase, moodState, maxSteps, completedSteps = [] }) {
       return new Promise(resolve => {
@@ -3191,7 +3191,7 @@
           } else if (/call|phone|ring/i.test(t)) {
             steps = ['Find the contact in your phone', 'Press call'];
           } else if (/document|write|draft|report|proposal/i.test(t)) {
-            steps = ['Open the document', 'Read the last paragraph you wrote', 'Write one sentence â€” any sentence'];
+            steps = ['Open the document', 'Read the last paragraph you wrote', 'Write one sentence — any sentence'];
           } else if (/research|find|look|search/i.test(t)) {
             steps = ['Open one browser tab', 'Type the first search term that comes to mind'];
           } else {
@@ -3202,14 +3202,14 @@
             ];
           }
 
-          // Enforce hard cap â€” maxSteps is 1 for Heavy/Fatigued states
+          // Enforce hard cap — maxSteps is 1 for Heavy/Fatigued states
           steps = steps.slice(0, maxSteps);
           resolve(steps);
-        }, 1800); // deliberate delay â€” shows loading orb, proves latency handling
+        }, 1800); // deliberate delay — shows loading orb, proves latency handling
       });
     }
 
-    // â”€â”€ CAPTURE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── CAPTURE ──────────────────────────────────────────────
     function openCapture() {
       const sheet = document.getElementById('capture-sheet');
       const ta = document.getElementById('capture-textarea');
@@ -3230,7 +3230,7 @@
     }
 
     function dismissCapture() {
-      // Auto-discard accidental taps â€” under 2 chars
+      // Auto-discard accidental taps — under 2 chars
       const text = document.getElementById('capture-textarea').value.trim();
       if (text.length < 2) { trashCapture(); return; }
       saveCapture();
@@ -3240,7 +3240,7 @@
       const ta = document.getElementById('capture-textarea');
       const text = ta.value.trim();
 
-      // Under 2 chars = accidental â€” discard silently
+      // Under 2 chars = accidental — discard silently
       if (text.length < 2) { trashCapture(); return; }
 
       const item = {
@@ -3265,7 +3265,7 @@
       // Dismiss
       ta.value = '';
       document.getElementById('capture-sheet').classList.remove('active');
-      showToast('Captured âœ¦');
+      showToast('Captured ✦');
       updateStats();
       if (S.screen === 'inbox') renderInbox();
 
@@ -3286,7 +3286,7 @@
       } catch (e) { }
     }
 
-    // Offline â†’ online: process queued items
+    // Offline → online: process queued items
     window.addEventListener('online', () => {
       items.filter(i => i.aiPending).forEach(item => categoriseItem(item));
     });
@@ -3312,7 +3312,7 @@
       showToast('Archived');
     }
 
-    // â”€â”€ INBOX RENDER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── INBOX RENDER ─────────────────────────────────────────
     function setFilter(btn, filter) {
       document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
       btn.classList.add('active');
@@ -3350,12 +3350,12 @@
 
       let html = fresh.map(renderItemHTML).join('');
 
-      // Quiet items â€” collapsed block, not dimmed text
+      // Quiet items — collapsed block, not dimmed text
       if (quiet.length > 0) {
         html += `
       <div class="quiet-block ${S.quietExpanded ? 'open' : ''}" onclick="toggleQuiet()">
         <span class="quiet-block-label">${quiet.length} quiet item${quiet.length !== 1 ? 's' : ''}</span>
-        <span class="quiet-block-chevron">â†“</span>
+        <span class="quiet-block-chevron">↓</span>
       </div>`;
         if (S.quietExpanded) {
           html += quiet.map(i => renderItemHTML(i, true)).join('');
@@ -3377,11 +3377,11 @@
       const isConfirmed = item.confirmed;
       const tagClass = isPending ? 'pending' : (isConfirmed ? 'confirmed' : '');
       const tagAction = isPending ? `onclick="confirmCategory('${item.id}')"` : '';
-      const pendingHint = isPending ? `<span class="ai-suggest-hint">AI suggests Â· tap to confirm</span>` : '';
+      const pendingHint = isPending ? `<span class="ai-suggest-hint">AI suggests · tap to confirm</span>` : '';
       const offlineDot = item.aiPending ? `<span class="ai-pending-dot"></span>` : '';
 
       const developBtn = (cat === 'project')
-        ? `<button class="inbox-item-develop" onclick="promoteToProject('${item.id}')">Develop â†’</button>`
+        ? `<button class="inbox-item-develop" onclick="promoteToProject('${item.id}')">Develop →</button>`
         : '';
 
       return `
@@ -3393,12 +3393,12 @@
         <span class="cat-tag ${tagClass}" ${tagAction}>${label}</span>
         ${pendingHint}
         ${developBtn}
-        <button class="inbox-item-archive" onclick="archiveItem('${item.id}')" title="Archive">â†“</button>
+        <button class="inbox-item-archive" onclick="archiveItem('${item.id}')" title="Archive">↓</button>
       </div>
     </div>`;
     }
 
-    // â”€â”€ WORK MODE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── WORK MODE ─────────────────────────────────────────────
     function renderWork() {
       runLifecycle();
       const eyebrow = document.getElementById('work-eyebrow');
@@ -3449,7 +3449,7 @@
       ${projectContext}
       <p class="task-card-title">${esc(candidate.content)}</p>
       <div class="task-card-btns">
-        <button class="task-btn primary" onclick="enterFocus()">Begin â†’</button>
+        <button class="task-btn primary" onclick="enterFocus()">Begin →</button>
         <button class="task-btn muted" onclick="skipTask()">Not now</button>
       </div>
     </div>
@@ -3458,7 +3458,7 @@
       // Help Me Start button
       const helpBtn = document.createElement('button');
       helpBtn.className = 'help-btn';
-      helpBtn.textContent = 'Help me start â†’';
+      helpBtn.textContent = 'Help me start →';
       helpBtn.onclick = () => runHelpMeStart(candidate);
       area.appendChild(helpBtn);
     }
@@ -3523,9 +3523,9 @@
         const done = i < S.mvnaStep;
         return `
       <div class="mvna-step ${current ? 'current' : ''} ${done ? 'done' : ''}">
-        <div class="mvna-step-num">${done ? 'âœ“' : i + 1}</div>
+        <div class="mvna-step-num">${done ? '✓' : i + 1}</div>
         <p class="mvna-step-text">${esc(step)}</p>
-        ${current ? `<button class="mvna-done-btn" onclick="completeStep(${i})">âœ“</button>` : ''}
+        ${current ? `<button class="mvna-done-btn" onclick="completeStep(${i})">✓</button>` : ''}
       </div>`;
       }).join('');
     }
@@ -3551,7 +3551,7 @@
       if (idx !== -1) { items[idx].touchedAt = new Date().toISOString(); items[idx].status = 'alive'; save(); }
     }
 
-    // â”€â”€ FOCUS STATE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── FOCUS STATE ───────────────────────────────────────────
     function enterFocus() {
       const item = S.currentWorkItem;
       if (!item) return;
@@ -3596,13 +3596,13 @@
       clearInterval(S.focusTimer);
     }
 
-    // â”€â”€ HOME SCREEN â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── HOME SCREEN ───────────────────────────────────────────
     function renderHome() {
       const line = document.getElementById('home-state-line');
-      // rewind card is now inline in hero state line â€” no separate slot
+      // rewind card is now inline in hero state line — no separate slot
       const session = S.rewindSession;
 
-      const ICONS = { Heavy: 'ðŸŒ§', Tired: 'ðŸŒ«', Restless: 'âš¡', Okay: 'ðŸŒ¤', Calm: 'ðŸŒŠ', Alive: 'âœ¨' };
+      const ICONS = { Heavy: '🌧', Tired: '🌫', Restless: '⚡', Okay: '🌤', Calm: '🌊', Alive: '✨' };
 
       if (!session) {
         line.className = 'home-state-line no-session';
@@ -3629,7 +3629,7 @@
       updateOrbPulse();
     }
 
-    // â”€â”€ ORIENTATION PILL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── ORIENTATION PILL ──────────────────────────────────────
     let pillTimer = null;
     function showPill(mode) {
       const pill = document.getElementById('mode-pill');
@@ -3644,7 +3644,7 @@
       pillTimer = setTimeout(() => pill.classList.remove('visible'), 2200);
     }
 
-    // â”€â”€ NAVIGATION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── NAVIGATION ────────────────────────────────────────────
     function showScreen(id) {
       document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
       document.getElementById('screen-' + id).classList.add('active');
@@ -3653,14 +3653,14 @@
       document.body.classList.remove('mode-plan', 'mode-work');
       if (id === 'projects' || id === 'inbox') document.body.classList.add('mode-plan');
 
-      // Orb state â€” shift colour on Plan, return to amber on Work/Home
+      // Orb state — shift colour on Plan, return to amber on Work/Home
       const orb = document.getElementById('hero-orb-wrap');
       if (orb) {
         orb.classList.remove('state-plan');
         if (id === 'projects') orb.classList.add('state-plan');
       }
 
-      // Orientation pill â€” only on plan/work entry
+      // Orientation pill — only on plan/work entry
       if (id === 'projects' || id === 'inbox' || id === 'work') showPill(id);
 
       // Bottom nav active state
@@ -3681,7 +3681,7 @@
       if (id === 'home') renderHome();
     }
 
-    // â”€â”€ DATA EXPORT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── DATA EXPORT ───────────────────────────────────────────
     function exportData() {
       const payload = {
         exported: new Date().toISOString(),
@@ -3696,7 +3696,7 @@
       showToast('Backup downloaded');
     }
 
-    // â”€â”€ UTILS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── UTILS ─────────────────────────────────────────────────
     function timeAgo(iso) {
       const s = (Date.now() - new Date(iso)) / 1000;
       if (s < 60) return 'just now';
@@ -3716,9 +3716,9 @@
       setTimeout(() => t.classList.remove('show'), 2700);
     }
 
-    // â”€â”€ SWIPE NAVIGATION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    // Horizontal: Work â† Home â†’ Plan
-    // Vertical on home: swipe up â†’ reveal stats, swipe down â†’ hide stats
+    // ── SWIPE NAVIGATION ─────────────────────────────────────
+    // Horizontal: Work ← Home → Plan
+    // Vertical on home: swipe up → reveal stats, swipe down → hide stats
     const SCREEN_ORDER = ['work', 'home', 'projects'];
     let statsRevealed = false;
 
@@ -3768,20 +3768,20 @@
         }
 
         if (isVertical && S.screen === 'home') {
-          if (dy < 0) revealStats(true);  // swipe up â†’ show stats
-          else revealStats(false);         // swipe down â†’ hide stats
+          if (dy < 0) revealStats(true);  // swipe up → show stats
+          else revealStats(false);         // swipe down → hide stats
         }
       }, { passive: true });
     }
 
-    // â”€â”€ ORB PULSE INTENSITY â€” reflects inbox activity â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── ORB PULSE INTENSITY — reflects inbox activity ──────────
     function updateOrbPulse() {
       const wrap = document.getElementById('hero-orb-wrap');
       if (!wrap) return;
       const freshCount = items.filter(i => i.status === 'fresh').length;
       const inner = wrap.querySelector('.hero-orb-inner');
       if (!inner) return;
-      // Scale glow with freshness â€” more fresh items = warmer, stronger orb
+      // Scale glow with freshness — more fresh items = warmer, stronger orb
       if (freshCount >= 5) {
         inner.style.background = 'radial-gradient(circle at 40% 38%, rgba(196,149,106,0.52), rgba(196,149,106,0.1) 70%)';
         inner.style.boxShadow = '0 0 44px rgba(196,149,106,0.22), inset 0 1px 1px rgba(255,255,255,0.08)';
@@ -3795,9 +3795,9 @@
     }
 
 
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // ══════════════════════════════════════════════════════════
     // PROJECT CATEGORIES + PHASES
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // ══════════════════════════════════════════════════════════
     const PROJECT_CATS = {
       idwork: { label: 'ID Work', badgeClass: 'cat-badge-idwork', phases: ['concept', 'development', 'procurement', 'site', 'delivery'], phaseLabels: { concept: 'Concept', development: 'Development', procurement: 'Procurement', site: 'Site', delivery: 'Delivery' } },
       life: { label: 'Life', badgeClass: 'cat-badge-life', phases: ['seed', 'shaping', 'inmotion', 'integrating'], phaseLabels: { seed: 'Seed', shaping: 'Shaping', inmotion: 'In Motion', integrating: 'Integrating' } },
@@ -3807,14 +3807,14 @@
     };
 
     const AI_PERSONAS = {
-      idwork: 'You are a calm, experienced interior design project coordinator. You understand design phases deeply â€” concept, development, procurement, site, delivery. Your suggestions are specific, physical, and sequenced.',
+      idwork: 'You are a calm, experienced interior design project coordinator. You understand design phases deeply — concept, development, procurement, site, delivery. Your suggestions are specific, physical, and sequenced.',
       life: 'You are a warm, grounded personal coach. You help people move through life projects with clarity and self-compassion. Your suggestions are gentle, honest, and sized to what feels possible today.',
       business: 'You are a sharp, lean thinking partner for business and entrepreneurial work. You help cut through noise, find the real next move, and keep momentum without overwhelm.',
-      learning: 'You are a patient, curious learning guide. You help people build knowledge and skill progressively. You know that learning compounds â€” you always suggest the smallest step that builds on what\'s already known.',
+      learning: 'You are a patient, curious learning guide. You help people build knowledge and skill progressively. You know that learning compounds — you always suggest the smallest step that builds on what\'s already known.',
       open: 'You are a thoughtful, adaptive thinking partner. You meet the person where they are and help them find the clearest next step.'
     };
 
-    // â”€â”€ PROJECT CATEGORY FILTER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── PROJECT CATEGORY FILTER ──────────────────────────────
     let activeCatFilter = 'all';
 
     function setCatFilter(btn, cat) {
@@ -3823,7 +3823,7 @@
       renderProjects();
     }
 
-    // â”€â”€ RENDER PROJECTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── RENDER PROJECTS ──────────────────────────────────────
     function renderProjects() {
       const container = document.getElementById('project-cards');
       if (!container) return;
@@ -3852,7 +3852,7 @@
       container.innerHTML = cards + addBtn;
     }
 
-    // â”€â”€ PROJECT DETAIL SHEET â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── PROJECT DETAIL SHEET ─────────────────────────────────
     function openProjectSheet(id) {
       const p = projects.find(x => x.id === id);
       if (!p) return;
@@ -3876,7 +3876,7 @@
       // Reset AI thread
       document.getElementById('project-ai-thread').classList.remove('open');
       document.getElementById('ai-messages').innerHTML = '';
-      document.getElementById('project-ai-btn-label').textContent = 'Talk to AI â†’';
+      document.getElementById('project-ai-btn-label').textContent = 'Talk to AI →';
 
       document.getElementById('project-sheet').classList.add('active');
 
@@ -3909,12 +3909,12 @@
       editingProjectId = null;
     }
 
-    // â”€â”€ AUTO-SUGGEST NEXT ACTION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── AUTO-SUGGEST NEXT ACTION ─────────────────────────────
     async function autoSuggestNextAction(p) {
       const nextInput = document.getElementById('ps-next-action');
       if (!nextInput || nextInput.value.trim()) return;
-      nextInput.placeholder = 'AI is thinkingâ€¦';
-      // Simulate for now â€” swap for Claude API
+      nextInput.placeholder = 'AI is thinking…';
+      // Simulate for now — swap for Claude API
       await new Promise(r => setTimeout(r, 1400));
       const catInfo = PROJECT_CATS[p.projectCat] || PROJECT_CATS.open;
       const phase = catInfo.phaseLabels[p.phase] || p.phase;
@@ -3929,14 +3929,14 @@
       nextInput.placeholder = suggestion;
     }
 
-    // â”€â”€ AI COMPANION IN PROJECT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── AI COMPANION IN PROJECT ──────────────────────────────
     function toggleProjectAI() {
       const thread = document.getElementById('project-ai-thread');
       const label = document.getElementById('project-ai-btn-label');
       const isOpen = thread.classList.contains('open');
       if (!isOpen) {
         thread.classList.add('open');
-        label.textContent = 'AI active Â·';
+        label.textContent = 'AI active ·';
         // Auto-read project on first open
         if (document.getElementById('ai-messages').children.length === 0) {
           const p = projects.find(x => x.id === editingProjectId);
@@ -3944,7 +3944,7 @@
         }
       } else {
         thread.classList.remove('open');
-        label.textContent = 'Talk to AI â†’';
+        label.textContent = 'Talk to AI →';
       }
     }
 
@@ -3969,10 +3969,10 @@
       // Phase-aware read for each category
       const reads = {
         idwork: `<em>${p.name}</em> is in ${phase}. ${p.nextAction ? `The declared next step is: "${p.nextAction}".` : 'No next step set yet.'}`,
-        life: `<em>${p.name}</em> â€” you placed this in ${phase}. ${p.vision ? `You wrote: "${p.vision.substring(0, 80)}â€¦"` : ''} Let's find what's true right now.`,
+        life: `<em>${p.name}</em> — you placed this in ${phase}. ${p.vision ? `You wrote: "${p.vision.substring(0, 80)}…"` : ''} Let's find what's true right now.`,
         business: `<em>${p.name}</em> is at ${phase}. ${p.nextAction ? `You said the next move was: "${p.nextAction}".` : 'No move declared yet.'} What's the actual blocker?`,
-        learning: `<em>${p.name}</em> â€” you're in the ${phase} stage. The question is always: what's the one thing to do with the next 20 minutes?`,
-        open: `<em>${p.name}</em> â€” ${phase}. What's true about where this sits right now?`
+        learning: `<em>${p.name}</em> — you're in the ${phase} stage. The question is always: what's the one thing to do with the next 20 minutes?`,
+        open: `<em>${p.name}</em> — ${phase}. What's true about where this sits right now?`
       };
       const read = reads[p.projectCat] || reads.open;
       return { text: read, maxSteps };
@@ -4051,10 +4051,10 @@
       } else if (/next|what|do|start|begin/i.test(msg)) {
         replyText = `Given you're in ${phase} and ${mood ? `feeling ${mood.toLowerCase()}` : 'where you are today'}, here are the right-sized next steps:`;
         steps = fatigued
-          ? ['Do just one thing â€” the very first physical action you can take right now']
-          : ['Open whatever you need to start', 'Do the first action only â€” decide nothing else yet', 'Note what you learn or what shifts'];
+          ? ['Do just one thing — the very first physical action you can take right now']
+          : ['Open whatever you need to start', 'Do the first action only — decide nothing else yet', 'Note what you learn or what shifts'];
       } else {
-        replyText = `Noted. Given where <em>${(p && p.name) ? p.name : 'this project'}</em> is â€” ${phase} â€” what would make the next hour count?`;
+        replyText = `Noted. Given where <em>${(p && p.name) ? p.name : 'this project'}</em> is — ${phase} — what would make the next hour count?`;
       }
 
       const response = { text: replyText, steps: steps.slice(0, maxSteps) };
@@ -4067,7 +4067,7 @@
       if (el) el.classList.toggle('visible', show);
     }
 
-    // â”€â”€ ITEM ACTION SHEET â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── ITEM ACTION SHEET ────────────────────────────────────
     let activeItemId = null;
     let iaCurrentCat = null;
 
@@ -4111,7 +4111,7 @@
       renderInbox();
     }
 
-    // â”€â”€ ARCHIVE RECOVERY â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── ARCHIVE RECOVERY ─────────────────────────────────────
     let archiveOpen = false;
     function toggleArchive() {
       archiveOpen = !archiveOpen;
@@ -4139,7 +4139,7 @@
       if (item) { item.status = 'fresh'; item.touchedAt = new Date().toISOString(); save(); renderArchive(); renderInbox(); showToast('Restored'); }
     }
 
-    // â”€â”€ NEW PROJECT â€” category selection â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── NEW PROJECT — category selection ─────────────────────
     let npCat = 'idwork';
     function npSetCat(cat) {
       npCat = cat;
@@ -4148,7 +4148,7 @@
 
 
 
-    // â”€â”€ NEW PROJECT FLOW â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── NEW PROJECT FLOW ─────────────────────────────────────
     function openNewProject(prefillText) {
       npCat = 'idwork';
       npPhase = 'concept';
@@ -4225,7 +4225,7 @@
       document.getElementById('np-step-2').classList.add('active');
     }
 
-    // â”€â”€ INIT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── INIT ──────────────────────────────────────────────────
     function init() {
       load();
       loadProjects();
@@ -4243,7 +4243,7 @@
       // Swipe navigation
       initSwipe();
 
-      // Backup nudge â€” once, after 7 days of use
+      // Backup nudge — once, after 7 days of use
       if (items.length > 0) {
         const oldest = items[items.length - 1];
         const days = (Date.now() - new Date(oldest.createdAt)) / 86400000;
@@ -4271,11 +4271,11 @@
           <input class="project-sheet-name" id="ps-name" type="text" placeholder="Project name" />
         </div>
 
-        <!-- Vision â€” locked -->
+        <!-- Vision — locked -->
         <div class="project-sheet-section">
           <p class="project-sheet-eyebrow">The Vision</p>
           <div class="project-vision-text" id="ps-vision"></div>
-          <p class="project-vision-locked">captured when you believed in this Â· cannot be edited</p>
+          <p class="project-vision-locked">captured when you believed in this · cannot be edited</p>
         </div>
 
         <!-- Phase -->
@@ -4295,13 +4295,13 @@
         <!-- Next action -->
         <div class="project-sheet-section">
           <p class="project-sheet-eyebrow">Next Action</p>
-          <input class="project-input" id="ps-next-action" type="text" placeholder="The one small next stepâ€¦" />
+          <input class="project-input" id="ps-next-action" type="text" placeholder="The one small next step…" />
         </div>
 
         <!-- Notes -->
         <div class="project-sheet-section">
           <p class="project-sheet-eyebrow">Notes</p>
-          <textarea class="project-input" id="ps-notes" rows="4" placeholder="Anything else worth holdingâ€¦"></textarea>
+          <textarea class="project-input" id="ps-notes" rows="4" placeholder="Anything else worth holding…"></textarea>
         </div>
 
         <button class="project-save-btn" onclick="saveProjectSheet()">Save</button>
@@ -4310,16 +4310,16 @@
     <div style="flex:1" onclick="closeProjectSheet()"></div>
   </div>
 
-  <!-- NEW PROJECT SHEET â€” 2 steps -->
+  <!-- NEW PROJECT SHEET — 2 steps -->
   <div class="new-project-sheet" id="new-project-sheet">
     <div class="new-project-modal">
       <div class="new-project-handle"></div>
 
       <!-- Step 1: Name + Category + Vision -->
       <div class="new-project-step active" id="np-step-1">
-        <p class="new-project-label">New Project â€” Step 1 of 2</p>
+        <p class="new-project-label">New Project — Step 1 of 2</p>
         <p class="new-project-title">Name it, place it, capture the vision</p>
-        <input class="project-input" id="np-name" type="text" placeholder="Project nameâ€¦" style="margin-bottom:14px" />
+        <input class="project-input" id="np-name" type="text" placeholder="Project name…" style="margin-bottom:14px" />
         <div class="np-category-grid" id="np-category-grid">
           <button class="np-cat-btn active" data-npcat="idwork" onclick="npSetCat('idwork')">
             <div class="np-cat-btn-name">ID Work</div>
@@ -4343,15 +4343,15 @@
           </button>
         </div>
         <textarea class="project-input" id="np-vision" rows="3"
-          placeholder="What did you see when you believed in this? Capture it now, while it's aliveâ€¦"
+          placeholder="What did you see when you believed in this? Capture it now, while it's alive…"
           style="margin-top:14px"></textarea>
-        <button class="new-project-next" onclick="npNextStep()">Next â†’</button>
+        <button class="new-project-next" onclick="npNextStep()">Next →</button>
         <button class="new-project-back" onclick="closeNewProject()">Cancel</button>
       </div>
 
       <!-- Step 2: Phase -->
       <div class="new-project-step" id="np-step-2">
-        <p class="new-project-label">New Project â€” Step 2 of 2</p>
+        <p class="new-project-label">New Project — Step 2 of 2</p>
         <p class="new-project-title">Where is it right now?</p>
         <div class="phase-pills" id="np-phase-pills">
           <button class="phase-pill-btn" data-phase="concept" onclick="npSetPhase('concept')">Concept</button>
@@ -4365,7 +4365,7 @@
         <button class="new-project-next" onclick="npCreate()"
           style="background:rgba(196,149,106,0.1);border-color:rgba(196,149,106,0.25);color:var(--warm)">Create
           project</button>
-        <button class="new-project-back" onclick="npBackStep()">â† Back</button>
+        <button class="new-project-back" onclick="npBackStep()">← Back</button>
       </div>
     </div>
     <div style="flex:1" onclick="closeNewProject()"></div>
@@ -4386,7 +4386,7 @@
           onclick="iaSetCat('uncategorised')">Unsorted</button>
       </div>
       <div class="item-action-divider"></div>
-      <button class="item-action-main-btn promote" onclick="iaPromote()">Develop into project â†’</button>
+      <button class="item-action-main-btn promote" onclick="iaPromote()">Develop into project →</button>
       <button class="item-action-main-btn archive" onclick="iaArchive()">Archive</button>
       <button class="item-action-main-btn cancel" onclick="closeItemAction()">Cancel</button>
     </div>
