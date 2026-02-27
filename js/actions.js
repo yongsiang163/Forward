@@ -4,6 +4,93 @@ let editingProjectId = null;
 let npPhase = 'concept';
 let psPhase = null;
 
+// ── VOICE CAPTURE (Web Speech API) ───────────────────────
+let _recognition = null;
+let _voiceActive = false;
+
+function toggleVoiceCapture() {
+  if (_voiceActive) {
+    stopVoiceCapture();
+    return;
+  }
+
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    showToast('Voice capture not supported in this browser');
+    return;
+  }
+
+  const ta = document.getElementById('capture-textarea');
+  const micBtn = document.getElementById('capture-mic-btn');
+  const hint = document.getElementById('capture-voice-hint');
+
+  _recognition = new SpeechRecognition();
+  _recognition.continuous = true;
+  _recognition.interimResults = true;
+  _recognition.lang = 'en-US';
+
+  let finalTranscript = ta.value; // preserve existing text
+  let separator = finalTranscript.length > 0 ? ' ' : '';
+
+  _recognition.onstart = () => {
+    _voiceActive = true;
+    micBtn.classList.add('listening');
+    hint.textContent = 'listening…';
+    hint.classList.add('visible');
+  };
+
+  _recognition.onresult = (event) => {
+    let interim = '';
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      const transcript = event.results[i][0].transcript;
+      if (event.results[i].isFinal) {
+        finalTranscript += separator + transcript;
+        separator = ' ';
+      } else {
+        interim = transcript;
+      }
+    }
+    ta.value = finalTranscript + (interim ? separator + interim : '');
+    onCaptureType();
+  };
+
+  _recognition.onerror = (event) => {
+    console.warn('Speech recognition error:', event.error);
+    if (event.error === 'not-allowed') {
+      showToast('Microphone access denied');
+    } else if (event.error !== 'aborted') {
+      showToast('Voice capture ended');
+    }
+    stopVoiceCapture();
+  };
+
+  _recognition.onend = () => {
+    // Finalise the transcript
+    const ta2 = document.getElementById('capture-textarea');
+    if (ta2 && ta2.value) onCaptureType();
+    stopVoiceCapture();
+  };
+
+  try {
+    _recognition.start();
+  } catch (e) {
+    showToast('Could not start voice capture');
+    stopVoiceCapture();
+  }
+}
+
+function stopVoiceCapture() {
+  _voiceActive = false;
+  if (_recognition) {
+    try { _recognition.stop(); } catch (e) { }
+    _recognition = null;
+  }
+  const micBtn = document.getElementById('capture-mic-btn');
+  const hint = document.getElementById('capture-voice-hint');
+  if (micBtn) micBtn.classList.remove('listening');
+  if (hint) { hint.textContent = ''; hint.classList.remove('visible'); }
+}
+
 function openCapture() {
   const sheet = document.getElementById('capture-sheet');
   const ta = document.getElementById('capture-textarea');
@@ -13,6 +100,7 @@ function openCapture() {
   document.getElementById('capture-project-btn').textContent = '@ Project';
   document.getElementById('capture-project-btn').style.borderColor = '';
   onCaptureType();
+  stopVoiceCapture();
   setTimeout(() => ta.focus(), 380);
 }
 
@@ -22,6 +110,7 @@ function onCaptureType() {
 }
 
 function trashCapture() {
+  stopVoiceCapture();
   document.getElementById('capture-textarea').value = '';
   document.getElementById('capture-sheet').classList.remove('active');
 }

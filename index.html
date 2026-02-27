@@ -59,6 +59,18 @@
       <div class="capture-handle"></div>
       <textarea class="capture-textarea" id="capture-textarea" placeholder="What's on your mind..." rows="4"
         oninput="onCaptureType()"></textarea>
+      <div class="capture-voice-row">
+        <button class="capture-mic-btn" id="capture-mic-btn" onclick="toggleVoiceCapture()" title="Speak to capture">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+            <line x1="12" y1="19" x2="12" y2="23" />
+            <line x1="8" y1="23" x2="16" y2="23" />
+          </svg>
+        </button>
+        <span class="capture-voice-hint" id="capture-voice-hint"></span>
+      </div>
       <div class="capture-footer">
         <span class="capture-char" id="capture-char">0</span>
         <div class="capture-actions">
