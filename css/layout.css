@@ -635,6 +635,14 @@
       color: var(--text);
       line-height: 1.55;
       margin-bottom: 12px;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-height: 4.65em;
+      /* 3 lines * 1.55 line-height */
     }
 
     .inbox-item-footer {
@@ -782,6 +790,106 @@
       color: var(--text-muted);
       font-style: italic;
       line-height: 1.6;
+    }
+
+    /* ── TASKS SCREEN ── */
+    #screen-tasks {
+      padding: max(48px, calc(env(safe-area-inset-top) + 28px)) 28px 0;
+    }
+
+    .tasks-header {
+      margin-bottom: 24px;
+    }
+
+    .tasks-eyebrow {
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--warm-soft);
+      margin-bottom: 6px;
+    }
+
+    .tasks-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 30px;
+      font-weight: 300;
+      color: var(--text);
+    }
+
+    .tasks-list {
+      padding-top: 10px;
+    }
+
+    .task-list-item {
+      background: var(--surface);
+      border: 1px solid var(--border-soft);
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      animation: fadeUp 0.3s ease forwards;
+    }
+
+    .task-ring-toggle {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 2px solid var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+      flex-shrink: 0;
+    }
+
+    .task-ring-toggle.completed {
+      background: transparent;
+      border-color: var(--warm);
+    }
+
+    .task-ring-toggle.completed::after {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--warm);
+      box-shadow: 0 0 8px var(--warm-glow-strong);
+    }
+
+    .task-content {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 18px;
+      color: var(--text);
+      flex: 1;
+      line-height: 1.4;
+    }
+
+    .task-list-item.status-done .task-content {
+      color: var(--text-muted);
+      text-decoration: line-through;
+    }
+
+    .task-item-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .recurring-btn {
+      font-size: 14px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      opacity: 0.5;
+      transition: all 0.2s;
+    }
+
+    .recurring-btn.active {
+      color: var(--teal);
+      opacity: 1;
     }
 
     /* ── WORK SCREEN ── */
@@ -1239,6 +1347,54 @@
       letter-spacing: 1px;
     }
 
+    /* ── EXISTING PROJECT SHEET ── */
+    .existing-project-sheet {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      pointer-events: none;
+    }
+
+    .existing-project-sheet.active {
+      pointer-events: auto;
+    }
+
+    .existing-project-sheet::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      opacity: 0;
+      transition: opacity 0.4s;
+    }
+
+    .existing-project-sheet.active::before {
+      opacity: 1;
+    }
+
+    .ep-list-btn {
+      background: var(--surface);
+      border: 1px solid var(--border-soft);
+      border-radius: 12px;
+      padding: 16px;
+      text-align: left;
+      color: var(--text);
+      font-size: 16px;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+    }
+
     /* ── CAPTURE SHEET ── */
     .capture-sheet {
       position: fixed;
@@ -1385,6 +1541,27 @@
     }
 
     /* ── BOTTOM NAV — same structure as Rewind ── */
+    /* Ghost Settings Button (Top Right) */
+    .ghost-settings-btn {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 100;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-size: 24px;
+      opacity: 0.5;
+      cursor: pointer;
+      mix-blend-mode: overlay;
+      transition: opacity 0.3s ease, transform 0.2s;
+    }
+
+    .ghost-settings-btn:active {
+      opacity: 0.8;
+      transform: scale(0.95);
+    }
+
     .bottom-nav {
       position: fixed;
       bottom: 0;

@@ -315,6 +315,74 @@ function updateStats() {
   updateOrbPulse();
 }
 
+// ── ON-DEMAND / INITIAL ──────────────────────────────────
+// Instead of rendering all immediately in global scope, app.js calls these when data is loaded.
+
+// ── TASKS RENDER ─────────────────────────────────────────
+
+function renderTasks() {
+  const container = document.getElementById('tasks-list-container');
+  const recurringContainer = document.getElementById('recurring-list-container');
+  const recurringHeader = document.getElementById('tasks-recurring-header');
+
+  if (!container) return; // fail gracefully if element doesn't exist
+
+  // Find all items belonging to 'task' category that aren't purely archived/deleted
+  const tasks = items.filter(i => i.category === 'task' && i.status !== 'archived' && !i.recurring);
+  const recurringTasks = items.filter(i => i.category === 'task' && i.status !== 'archived' && i.recurring);
+
+  // 1) Standard Tasks
+  if (tasks.length === 0) {
+    container.innerHTML = `<p class="inbox-empty-text" style="font-size:16px;">No one-off tasks... yet.</p>`;
+  } else {
+    // Sort: active tasks first, then done tasks
+    tasks.sort((a, b) => {
+      if (a.status === 'done' && b.status !== 'done') return 1;
+      if (a.status !== 'done' && b.status === 'done') return -1;
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    });
+
+    container.innerHTML = tasks.map(t => {
+      const isDone = t.status === 'done';
+      return `
+        <div class="task-list-item ${isDone ? 'status-done' : ''}">
+          <div class="task-ring-toggle ${isDone ? 'completed' : ''}" onclick="toggleTaskCompletion('${t.id}')"></div>
+          <div class="task-content">${t.content}</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // 2) Recurring Tasks
+  if (recurringTasks.length === 0) {
+    if (recurringHeader) recurringHeader.style.display = 'none';
+    if (recurringContainer) recurringContainer.innerHTML = '';
+  } else {
+    if (recurringHeader) recurringHeader.style.display = 'block';
+    recurringTasks.sort((a, b) => {
+      if (a.status === 'done' && b.status !== 'done') return 1;
+      if (a.status !== 'done' && b.status === 'done') return -1;
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    });
+
+    if (recurringContainer) {
+      recurringContainer.innerHTML = recurringTasks.map(t => {
+        const isDone = t.status === 'done';
+        const rLabel = t.recurring === 'daily' ? 'D' : t.recurring === 'weekly' ? 'W' : t.recurring === 'monthly' ? 'M' : '↻';
+        return `
+          <div class="task-list-item ${isDone ? 'status-done' : ''}">
+            <div class="task-ring-toggle ${isDone ? 'completed' : ''}" onclick="toggleTaskCompletion('${t.id}')"></div>
+            <div class="task-content">${t.content}</div>
+            <div class="task-item-actions">
+               <button class="recurring-btn active" title="Recurrence: ${t.recurring}">${rLabel}</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+}
+
 // ── ORIENTATION PILL ──────────────────────────────────────
 let pillTimer = null;
 function showPill(mode) {
@@ -365,6 +433,14 @@ function showScreen(id) {
   if (id === 'inbox') renderInbox();
   if (id === 'work') renderWork();
   if (id === 'home') renderHome();
+}
+
+function renderAllViews() {
+  renderInbox();
+  renderProjects();
+  renderWorkScreen();
+  renderArchived();
+  renderTasks();
 }
 
 // ── DATA EXPORT ───────────────────────────────────────────

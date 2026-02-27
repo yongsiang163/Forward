@@ -215,9 +215,9 @@ function renderProjectItems(projectName) {
   if (!section || !list) return;
 
   // We find items linked to this project by checking if it contains @ProjectName
-  const linkedItems = items.filter(i => 
-    i.status !== 'archived' && 
-    i.status !== 'done' && 
+  const linkedItems = items.filter(i =>
+    i.status !== 'archived' &&
+    i.status !== 'done' &&
     i.content.includes('@' + projectName)
   );
 
@@ -262,6 +262,32 @@ function saveProjectSheet() {
 function closeProjectSheet() {
   document.getElementById('project-sheet').classList.remove('active');
   editingProjectId = null;
+}
+
+function archiveProject() {
+  if (!editingProjectId) return;
+  const p = projects.find(x => x.id === editingProjectId);
+  if (!p) return;
+  p.status = 'archived';
+  p.touchedAt = new Date().toISOString();
+  saveProjects();
+  renderProjects();
+  closeProjectSheet();
+  showToast('Project archived');
+}
+
+function deleteProjectPrompt() {
+  if (confirm("Are you sure you want to permanently delete this project? This cannot be undone.")) {
+    if (!editingProjectId) return;
+    const projectIndex = projects.findIndex(x => x.id === editingProjectId);
+    if (projectIndex > -1) {
+      projects.splice(projectIndex, 1);
+      saveProjects();
+      renderProjects();
+      closeProjectSheet();
+      showToast('Project deleted');
+    }
+  }
 }
 
 // ── AUTO-SUGGEST NEXT ACTION ─────────────────────────────
@@ -329,6 +355,67 @@ function iaPromote() {
   }
 }
 
+function changeCategoryStateAndDismiss(itemId, cat) {
+  const item = items.find(i => i.id === itemId);
+  if (!item) return;
+
+  item.category = cat;
+  item.touchedAt = new Date().toISOString();
+
+  // If we assigned it to task or active project, we can dismiss it from Inbox status 
+  // It effectively remains in 'alive', or 'task' list
+  if (cat === 'task') {
+    item.status = 'active'; // Move it out of fresh inbox explicitly
+    showToast('Sent to Tasks');
+  }
+
+  save();
+  renderAllViews();
+}
+
+// ── TASK COMPLETION & RECURRENCE ─────────────────────────────
+function toggleTaskCompletion(itemId) {
+  const item = items.find(i => i.id === itemId);
+  if (!item) return;
+
+  if (item.status === 'done') {
+    item.status = 'active';
+  } else {
+    item.status = 'done';
+
+    // If it's recurring, keep active but note it was touched
+    if (item.recurring) {
+      item.status = 'active';
+      showToast('Task marked done (Recurring)');
+    }
+  }
+  item.touchedAt = new Date().toISOString();
+  save();
+  renderAllViews();
+}
+
+function iaToggleRecurring() {
+  if (!activeItemId) return;
+  const item = items.find(i => i.id === activeItemId);
+  if (!item) return;
+
+  const order = [null, 'daily', 'weekly', 'monthly'];
+  const curIdx = order.indexOf(item.recurring || null);
+  const nextIdx = (curIdx + 1) % order.length;
+  item.recurring = order[nextIdx];
+
+  item.touchedAt = new Date().toISOString();
+  save();
+  renderAllViews();
+
+  const labelMap = { 'daily': 'Daily', 'weekly': 'Weekly', 'monthly': 'Monthly' };
+  const btn = document.getElementById('ia-recurring-btn');
+  if (btn) btn.textContent = item.recurring ? `Recurrence: ${labelMap[item.recurring]}` : 'Recurrence: None';
+
+  showToast(item.recurring ? `Set ${labelMap[item.recurring]}` : 'Recurrence removed');
+}
+
+// ── ITEM ACTION SHEET (Edit/Categorise) ──────────────────
 function iaDone() {
   if (activeItemId) {
     const item = items.find(i => i.id === activeItemId);
@@ -346,6 +433,43 @@ function closeItemAction() {
   document.getElementById('item-action-sheet').classList.remove('active');
   activeItemId = null;
   renderInbox();
+}
+
+// ── ADD TO EXISTING PROJECT ──────────────────────────────────
+function openAddToExistingProject() {
+  closeItemAction();
+  const epSheet = document.getElementById('existing-project-sheet');
+  const list = document.getElementById('ep-list');
+  const activeProjects = projects.filter(p => p.status === 'active');
+  if (activeProjects.length === 0) {
+    showToast('No active projects');
+    return;
+  }
+  list.innerHTML = activeProjects.map(p => `
+      <button class="ep-list-btn" onclick="addToProject('${p.id}', '${activeItemId}')">
+        <strong>${p.name}</strong>
+      </button>
+   `).join('');
+  epSheet.classList.add('active');
+}
+
+function closeExistingProjectSheet() {
+  document.getElementById('existing-project-sheet').classList.remove('active');
+}
+
+function addToProject(projectId, itemId) {
+  const p = projects.find(x => x.id === projectId);
+  const item = items.find(i => i.id === itemId);
+  if (p && item) {
+    p.notes = (p.notes ? p.notes + "\n\n" : "") + item.content;
+    p.touchedAt = new Date().toISOString();
+    item.status = 'archived';
+    save();
+    saveProjects();
+    renderAllViews();
+    showToast(`Added to ${p.name}`);
+  }
+  closeExistingProjectSheet();
 }
 
 // ── NEW PROJECT — category selection ─────────────────────
@@ -414,6 +538,8 @@ function closeNewProject() {
 function promoteToProject(itemId) {
   const item = items.find(i => i.id === itemId);
   if (!item) return;
+  item.status = 'archived'; // Remove from inbox view after promotion
+  save();
   closeItemAction();
   setTimeout(() => openNewProject(item.content), 250);
 }

@@ -191,6 +191,26 @@
       <div class="scroll-pad"></div>
     </div>
 
+    <!-- TASKS SCREEN -->
+    <div class="screen" id="screen-tasks">
+      <div class="tasks-header">
+        <p class="tasks-eyebrow">To Do</p>
+        <h2 class="tasks-title">Tasks</h2>
+      </div>
+      <div class="tasks-list" id="tasks-list-container">
+        <!-- Rendered via JS -->
+      </div>
+
+      <div class="tasks-header" style="margin-top: 32px; display: none;" id="tasks-recurring-header">
+        <p class="tasks-eyebrow">Routine</p>
+        <h2 class="tasks-title" style="font-size: 24px;">Recurring</h2>
+      </div>
+      <div class="tasks-list" id="recurring-list-container">
+        <!-- Rendered via JS -->
+      </div>
+      <div class="scroll-pad"></div>
+    </div>
+
     <!-- WORK SCREEN -->
     <div class="screen" id="screen-work">
       <p class="work-eyebrow" id="work-eyebrow">Right now</p>
@@ -250,7 +270,12 @@
 
   </div><!-- /app -->
 
-  <!-- BOTTOM NAV — Home · Projects · Capture · Inbox · More -->
+  <!-- GHOST SETTINGS BUTTON -->
+  <button class="ghost-settings-btn" id="nav-settings-ghost" onclick="showScreen('settings')" title="Settings">
+    ○
+  </button>
+
+  <!-- BOTTOM NAV — Home · Projects · Capture · Inbox · Tasks -->
   <nav class="bottom-nav">
     <button class="nav-btn active" id="nav-home" onclick="showScreen('home')">
       <span class="nav-icon">⬡</span>
@@ -267,40 +292,45 @@
       <span class="nav-icon" style="color:var(--warm)">▤</span>
       <span class="nav-label">Inbox</span>
     </button>
-    <button class="nav-btn" id="nav-settings" onclick="showScreen('settings')">
+    <button class="nav-btn" id="nav-tasks" onclick="showScreen('tasks')">
       <span class="nav-icon">○</span>
-      <span class="nav-label">More</span>
+      <span class="nav-label">Tasks</span>
     </button>
   </nav>
 
   <div class="toast" id="toast"></div>
 
-  
+
   <!-- AUTH MODAL -->
   <div class="capture-sheet" id="auth-modal">
     <div class="capture-backdrop" onclick="document.getElementById('auth-modal').classList.remove('active')"></div>
     <div class="capture-modal">
       <div class="capture-handle"></div>
       <div style="padding: 24px; text-align: center;">
-        <h3 style="margin: 0 0 8px 0; color: var(--text); font-family: var(--header-font); font-size: 24px;">Link Account</h3>
-        <p style="margin: 0 0 24px 0; color: var(--sub-text); font-size: 15px;">Create an account to sync your Forward data to other devices.</p>
-        
-        <input type="email" id="auth-email" class="project-input" placeholder="Email address" style="margin-bottom: 12px;"/>
-        <input type="password" id="auth-password" class="project-input" placeholder="Password" style="margin-bottom: 16px;"/>
-        
+        <h3 style="margin: 0 0 8px 0; color: var(--text); font-family: var(--header-font); font-size: 24px;">Link
+          Account</h3>
+        <p style="margin: 0 0 24px 0; color: var(--sub-text); font-size: 15px;">Create an account to sync your Forward
+          data to other devices.</p>
+
+        <input type="email" id="auth-email" class="project-input" placeholder="Email address"
+          style="margin-bottom: 12px;" />
+        <input type="password" id="auth-password" class="project-input" placeholder="Password"
+          style="margin-bottom: 16px;" />
+
         <button id="auth-submit-btn" class="item-action-main-btn" onclick="linkEmailAccount()">Link Account</button>
-        <button id="auth-signout-btn" class="item-action-main-btn promote" onclick="signOutAccount()" style="display:none; margin-top:12px;">Sign Out</button>
+        <button id="auth-signout-btn" class="item-action-main-btn promote" onclick="signOutAccount()"
+          style="display:none; margin-top:12px;">Sign Out</button>
         <p id="auth-error-msg" style="color: #ff6b6b; margin-top: 16px; font-size: 14px; display: none;"></p>
       </div>
     </div>
   </div>
-  
+
   <script src="js/data.js"></script>
   <script src="js/ai.js"></script>
   <script src="js/actions.js"></script>
   <script src="js/render.js"></script>
   <script src="js/app.js"></script>
-<!-- PROJECT DETAIL SHEET -->
+  <!-- PROJECT DETAIL SHEET -->
   <div class="project-sheet" id="project-sheet">
     <div class="project-sheet-modal">
       <div class="project-sheet-handle"></div>
@@ -345,7 +375,13 @@
           <textarea class="project-input" id="ps-notes" rows="4" placeholder="Anything else worth holding…"></textarea>
         </div>
 
-        <button class="project-save-btn" onclick="saveProjectSheet()">Save</button>
+        <div style="display:flex; gap:10px; margin-top:20px;">
+          <button class="project-save-btn" onclick="saveProjectSheet()" style="flex:1;">Save</button>
+          <button class="project-save-btn" id="ps-archive-btn" onclick="archiveProject()"
+            style="flex:1; background:rgba(0,0,0,0.1); border-color:var(--border-soft); color:var(--text-muted);">Archive</button>
+          <button class="project-save-btn" id="ps-delete-btn" onclick="deleteProject()"
+            style="flex:1; background:rgba(255,107,107,0.1); border-color:rgba(255,107,107,0.3); color:#ff6b6b;">Delete</button>
+        </div>
       </div>
     </div>
     <div style="flex:1" onclick="closeProjectSheet()"></div>
@@ -430,7 +466,8 @@
       <button class="item-action-main-btn" id="ia-sync-btn" onclick="iaSyncToReminders()"
         style="display:none; background:rgba(0,122,255,0.08); border-color:rgba(0,122,255,0.25); color:#0a84ff; margin-bottom:12px;">Sync
         to Apple Reminders ↑</button>
-      <button class="item-action-main-btn" onclick="iaDone()" style="margin-bottom:12px; border-color:rgba(196,149,106,0.5); color:var(--text);">Mark as Done ✓</button>
+      <button class="item-action-main-btn" onclick="iaDone()"
+        style="margin-bottom:12px; border-color:rgba(196,149,106,0.5); color:var(--text);">Mark as Done ✓</button>
       <button class="item-action-main-btn promote" onclick="iaPromote()">Develop into project →</button>
       <button class="item-action-main-btn archive" onclick="iaArchive()">Archive</button>
       <button class="item-action-main-btn cancel" onclick="closeItemAction()">Cancel</button>
@@ -438,12 +475,12 @@
     <div style="flex:1" onclick="closeItemAction()"></div>
   </div>
 
-  
+
   <script src="js/ai.js"></script>
   <script src="js/actions.js"></script>
   <script src="js/render.js"></script>
   <script src="js/app.js"></script>
-<!-- PROJECT DETAIL SHEET -->
+  <!-- PROJECT DETAIL SHEET -->
   <div class="project-sheet" id="project-sheet">
     <div class="project-sheet-modal">
       <div class="project-sheet-handle"></div>
@@ -488,7 +525,13 @@
           <textarea class="project-input" id="ps-notes" rows="4" placeholder="Anything else worth holding…"></textarea>
         </div>
 
-        <button class="project-save-btn" onclick="saveProjectSheet()">Save</button>
+        <div style="display:flex; gap:10px; margin-top:20px;">
+          <button class="project-save-btn" onclick="saveProjectSheet()" style="flex:1;">Save</button>
+          <button class="project-save-btn" id="ps-archive-btn" onclick="archiveProject()"
+            style="flex:1; background:rgba(0,0,0,0.1); border-color:var(--border-soft); color:var(--text-muted);">Archive</button>
+          <button class="project-save-btn" id="ps-delete-btn" onclick="deleteProjectPrompt()"
+            style="flex:1; background:rgba(255,107,107,0.1); border-color:rgba(255,107,107,0.3); color:#ff6b6b;">Delete</button>
+        </div>
       </div>
     </div>
     <div style="flex:1" onclick="closeProjectSheet()"></div>
@@ -556,11 +599,28 @@
   </div>
 
 
+  <!-- EXISTING PROJECT SHEET -->
+  <div class="existing-project-sheet" id="existing-project-sheet">
+    <div class="new-project-modal">
+      <div class="new-project-handle"></div>
+      <div class="new-project-step active">
+        <p class="new-project-label">Add to Project</p>
+        <p class="new-project-title">Select a project</p>
+        <div class="existing-projects-list" id="ep-list"
+          style="margin-top:20px; max-height: 400px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;">
+        </div>
+        <button class="new-project-back" onclick="closeExistingProjectSheet()" style="margin-top:20px;">Cancel</button>
+      </div>
+    </div>
+    <div style="flex:1" onclick="closeExistingProjectSheet()"></div>
+  </div>
+
   <!-- INBOX ITEM ACTION SHEET -->
   <div class="item-action-sheet" id="item-action-sheet">
     <div class="item-action-modal">
       <div class="item-action-handle"></div>
       <p class="item-action-content" id="ia-content"></p>
+
       <p class="item-action-label">Category</p>
       <div class="item-action-row" id="ia-cat-row">
         <button class="item-action-cat-btn" data-cat="task" onclick="iaSetCat('task')">Task</button>
@@ -570,10 +630,27 @@
           onclick="iaSetCat('uncategorised')">Unsorted</button>
       </div>
       <div class="item-action-divider"></div>
+
+      <!-- Recurring Action -->
+      <button class="item-action-main-btn" id="ia-recurring-btn" onclick="iaToggleRecurring()"
+        style="margin-bottom:12px; border-color:rgba(126,184,164,0.3); color:var(--teal);">Recurrence: None</button>
+
       <button class="item-action-main-btn" id="ia-sync-btn" onclick="iaSyncToReminders()"
         style="display:none; background:rgba(0,122,255,0.08); border-color:rgba(0,122,255,0.25); color:#0a84ff; margin-bottom:12px;">Sync
         to Apple Reminders ↑</button>
-      <button class="item-action-main-btn promote" onclick="iaPromote()">Develop into project →</button>
+
+      <div class="item-action-divider"></div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <span
+          style="color:var(--text-muted); font-size:12px; letter-spacing:2px; text-transform:uppercase;">Develop</span>
+      </div>
+      <button class="item-action-main-btn promote" onclick="iaPromote()" style="margin-bottom:8px;">Create New Project
+        →</button>
+      <button class="item-action-main-btn" onclick="openAddToExistingProject()"
+        style="margin-bottom:12px; border-color:transparent; background: rgba(0,0,0,0.05);">Add to Existing
+        Project</button>
+
+      <div class="item-action-divider"></div>
       <button class="item-action-main-btn archive" onclick="iaArchive()">Archive</button>
       <button class="item-action-main-btn cancel" onclick="closeItemAction()">Cancel</button>
     </div>
@@ -593,7 +670,7 @@
           });
       });
     }
-</script>
+  </script>
 </body>
 
 </html>
