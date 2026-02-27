@@ -1350,19 +1350,18 @@
     /* ── EXISTING PROJECT SHEET ── */
     .existing-project-sheet {
       position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
+      inset: 0;
       z-index: 2000;
-      display: flex;
+      display: none;
       flex-direction: column;
       justify-content: flex-end;
-      pointer-events: none;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
     }
 
     .existing-project-sheet.active {
-      pointer-events: auto;
+      display: flex;
     }
 
     .existing-project-sheet::before {
@@ -1544,7 +1543,7 @@
     /* Ghost Settings Button (Top Right) */
     .ghost-settings-btn {
       position: fixed;
-      top: 20px;
+      top: max(20px, env(safe-area-inset-top));
       right: 20px;
       z-index: 100;
       background: transparent;
