@@ -116,8 +116,10 @@
         <p class="home-wordmark">Forward</p>
         <p class="home-state-line" id="home-state-line"></p>
 
-        <!-- The living orb — tap to capture -->
-        <div class="hero-orb-wrap" id="hero-orb-wrap" onclick="openCapture()">
+        <!-- The living orb — tap to capture, long-press for voice -->
+        <div class="hero-orb-wrap" id="hero-orb-wrap" ontouchstart="orbTouchStart(event)"
+          ontouchend="orbTouchEnd(event)" ontouchcancel="orbTouchEnd(event)" onmousedown="orbTouchStart(event)"
+          onmouseup="orbTouchEnd(event)" onmouseleave="orbTouchEnd(event)">
           <div class="hero-ring-halo"></div>
           <div class="hero-ring"></div>
           <div class="hero-ring-2"></div>
@@ -126,7 +128,7 @@
           </div>
         </div>
 
-        <p class="hero-capture-hint">tap to capture</p>
+        <p class="hero-capture-hint">tap to capture · hold for voice</p>
 
         <!-- Swipe direction hints -->
         <div class="home-swipe-hints">

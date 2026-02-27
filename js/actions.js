@@ -4,6 +4,31 @@ let editingProjectId = null;
 let npPhase = 'concept';
 let psPhase = null;
 
+// ── ORB LONG-PRESS → VOICE CAPTURE ──────────────────────
+let _orbTimer = null;
+let _orbFired = false;
+
+function orbTouchStart(e) {
+  _orbFired = false;
+  _orbTimer = setTimeout(() => {
+    _orbFired = true;
+    // Haptic feedback on supported devices
+    if (navigator.vibrate) navigator.vibrate(30);
+    // Open capture + start voice
+    openCapture();
+    setTimeout(() => toggleVoiceCapture(), 450);
+  }, 500);
+}
+
+function orbTouchEnd(e) {
+  clearTimeout(_orbTimer);
+  if (!_orbFired) {
+    // Short tap — normal text capture
+    openCapture();
+  }
+  e.preventDefault(); // prevent double-fire on touch devices
+}
+
 // ── VOICE CAPTURE (Web Speech API) ───────────────────────
 let _recognition = null;
 let _voiceActive = false;
