@@ -124,7 +124,7 @@ function renderWork() {
   const linkedProject = isProject ? projects.find(p => p.name && candidate.content.toLowerCase().includes(p.name.toLowerCase())) : null;
   const projectContext = linkedProject
     ? `<div class="task-project-context">
-        <span class="project-phase-pill" style="margin-right:8px">${PHASE_LABELS[linkedProject.phase] || ''}</span>
+        <span class="project-phase-pill" style="margin-right:8px">${(PROJECT_CATS[linkedProject.projectCat || 'open']?.phaseLabels?.[linkedProject.phase] || linkedProject.phase) || ''}</span>
         ${linkedProject.nextAction ? `<span class="task-card-context">${esc(linkedProject.nextAction)}</span>` : ''}
        </div>`
     : '';
@@ -438,9 +438,9 @@ function showScreen(id) {
 function renderAllViews() {
   renderInbox();
   renderProjects();
-  renderWorkScreen();
-  renderArchived();
-  renderTasks();
+  renderWork();
+  renderArchive();
+  if (typeof renderTasks === 'function') renderTasks();
 }
 
 // ── DATA EXPORT ───────────────────────────────────────────
@@ -448,7 +448,7 @@ function exportData() {
   const payload = {
     exported: new Date().toISOString(),
     app: 'Forward', version: '1.0',
-    totalItems: items.length, items
+    totalItems: items.length, items, projects
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);

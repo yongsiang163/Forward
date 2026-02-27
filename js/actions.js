@@ -1,5 +1,6 @@
 // ── CAPTURE ──────────────────────────────────────────────
 let activeCaptureProjectId = null;
+let editingProjectId = null;
 
 function openCapture() {
   const sheet = document.getElementById('capture-sheet');
@@ -145,7 +146,14 @@ async function categoriseItem(item) {
     save();
     if (S.screen === 'inbox') renderInbox();
     updateStats();
-  } catch (e) { }
+  } catch (e) {
+    console.error("AI categorization failed:", e);
+    const idx = items.findIndex(i => i.id === item.id);
+    if (idx !== -1) {
+      items[idx].aiPending = false;
+      save();
+    }
+  }
 }
 
 // Offline → online: process queued items
@@ -386,6 +394,7 @@ function toggleTaskCompletion(itemId) {
     // If it's recurring, keep active but note it was touched
     if (item.recurring) {
       item.status = 'active';
+      item.lastCompletedAt = new Date().toISOString();
       showToast('Task marked done (Recurring)');
     }
   }
