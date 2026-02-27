@@ -26,6 +26,16 @@ self.addEventListener('install', event => {
 });
 
 self.addEventListener('fetch', event => {
+    // Bypass caching for Firebase/Firestore calls
+    if (
+        event.request.url.includes('firestore.googleapis.com') ||
+        event.request.url.includes('securetoken.googleapis.com') ||
+        event.request.url.includes('firebase') ||
+        event.request.url.includes('gstatic.com')
+    ) {
+        return;
+    }
+
     event.respondWith(
         caches.match(event.request)
             .then(response => {
