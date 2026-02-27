@@ -17,7 +17,8 @@ const MOOD_MAP = {
   Okay: { state: 'drifting', label: 'Okay is enough. One step.', maxSteps: 2 },
   Restless: { state: 'drifting', label: 'Restless energy. One channel.', maxSteps: 2 },
   Tired: { state: 'fatigued', label: 'Tired. One very small thing.', maxSteps: 1 },
-  Heavy: { state: 'fatigued', label: 'Running heavy. Just one thing.', maxSteps: 1 }
+  Heavy: { state: 'fatigued', label: 'Running heavy. Just one thing.', maxSteps: 1 },
+  Overwhelmed: { state: 'overwhelmed', label: 'Overwhelmed. Regulate first.', maxSteps: 0 }
 };
 
 // Interior design phase context — sent to AI for domain-aware suggestions
@@ -48,61 +49,88 @@ const S = {
 let items = [];
 let projects = [];
 
-// ── STORAGE ─────────────────────────────────────────────
-function save() {
-  try { localStorage.setItem('forward_items', JSON.stringify(items)); } catch (e) { }
-  if (typeof currentUser !== 'undefined' && currentUser) {
-    items.forEach(item => {
-      db.collection('users').doc(currentUser.uid).collection('items').doc(item.id).set(item, { merge: true }).catch(console.error);
-    });
-  }
+// ── STORAGE (IndexedDB via Dexie.js + localStorage mirror) ──
+// Primary: IndexedDB (robust, large capacity, survives iOS eviction)
+// Mirror: localStorage kept in sync for compatibility
+// Migration: existing localStorage data auto-imported on first run
+
+const forwardDB = new Dexie('ForwardDB');
+forwardDB.version(1).stores({
+  items: 'id, category, status, projectId, createdAt',
+  projects: 'id, status, projectCat, createdAt'
+});
+
+// Request persistent storage to prevent iOS eviction
+if (navigator.storage && navigator.storage.persist) {
+  navigator.storage.persist().then(granted => {
+    if (granted) console.log('Persistent storage granted');
+  });
 }
 
-let itemsUnsubscribe = null;
+// ── SAVE ─────────────────────────────────────────────────
+function save() {
+  // Mirror to localStorage (fast, synchronous reads on next load)
+  try { localStorage.setItem('forward_items', JSON.stringify(items)); } catch (e) { }
+  // Write to IndexedDB in background (durable)
+  forwardDB.items.bulkPut(items).catch(e => console.warn('IndexedDB save failed:', e));
+}
+
+function saveProjects() {
+  try { localStorage.setItem('forward_projects', JSON.stringify(projects)); } catch (e) { }
+  forwardDB.projects.bulkPut(projects).catch(e => console.warn('IndexedDB saveProjects failed:', e));
+}
+
+// ── LOAD ─────────────────────────────────────────────────
+// Synchronous load from localStorage first (instant boot),
+// then async IndexedDB load with merge (durable source of truth)
 function load() {
   try {
     const d = localStorage.getItem('forward_items');
     if (d) items = JSON.parse(d);
   } catch (e) { items = []; }
-
-  if (typeof currentUser !== 'undefined' && currentUser) {
-    if (itemsUnsubscribe) itemsUnsubscribe(); // Prevent duplicates
-    itemsUnsubscribe = db.collection('users').doc(currentUser.uid).collection('items')
-      .onSnapshot((snapshot) => {
-        const fetchedItems = [];
-        snapshot.forEach(doc => fetchedItems.push(doc.data()));
-        // Merge fetched and local (preferring cloud as truth if it exists)
-        items = fetchedItems.length > 0 ? fetchedItems : items;
-        if (typeof renderInbox === 'function') renderInbox();
-      });
-  }
 }
 
-function saveProjects() {
-  try { localStorage.setItem('forward_projects', JSON.stringify(projects)); } catch (e) { }
-  if (typeof currentUser !== 'undefined' && currentUser) {
-    projects.forEach(p => {
-      db.collection('users').doc(currentUser.uid).collection('projects').doc(p.id).set(p, { merge: true }).catch(console.error);
-    });
-  }
-}
-
-let projectsUnsubscribe = null;
 function loadProjects() {
   try {
     const d = localStorage.getItem('forward_projects');
     if (d) projects = JSON.parse(d);
   } catch (e) { projects = []; }
+}
 
-  if (typeof currentUser !== 'undefined' && currentUser) {
-    if (projectsUnsubscribe) projectsUnsubscribe();
-    projectsUnsubscribe = db.collection('users').doc(currentUser.uid).collection('projects')
-      .onSnapshot((snapshot) => {
-        const fetchedProjects = [];
-        snapshot.forEach(doc => fetchedProjects.push(doc.data()));
-        projects = fetchedProjects.length > 0 ? fetchedProjects : projects;
-        if (typeof renderProjects === 'function') renderProjects();
-      });
+// Async IndexedDB load — runs after init, merges with localStorage data
+async function loadFromIndexedDB() {
+  try {
+    const dbItems = await forwardDB.items.toArray();
+    const dbProjects = await forwardDB.projects.toArray();
+
+    if (dbItems.length > 0 || dbProjects.length > 0) {
+      // IndexedDB has data — use it as source of truth
+      if (dbItems.length > 0) {
+        // Merge: prefer IndexedDB, add any localStorage-only items
+        const dbIds = new Set(dbItems.map(i => i.id));
+        const localOnly = items.filter(i => !dbIds.has(i.id));
+        items = [...dbItems, ...localOnly];
+      }
+      if (dbProjects.length > 0) {
+        const dbProjIds = new Set(dbProjects.map(p => p.id));
+        const localProjOnly = projects.filter(p => !dbProjIds.has(p.id));
+        projects = [...dbProjects, ...localProjOnly];
+      }
+      // Re-mirror merged data
+      save();
+      saveProjects();
+    } else if (items.length > 0 || projects.length > 0) {
+      // First run: migrate localStorage → IndexedDB
+      console.log('Migrating localStorage data to IndexedDB...');
+      if (items.length) await forwardDB.items.bulkPut(items);
+      if (projects.length) await forwardDB.projects.bulkPut(projects);
+      console.log('Migration complete');
+    }
+
+    // Re-render with latest data
+    if (typeof renderAllViews === 'function') renderAllViews();
+  } catch (e) {
+    console.warn('IndexedDB load failed, using localStorage:', e);
   }
 }
 

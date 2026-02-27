@@ -101,6 +101,28 @@ function renderWork() {
 
   headline.textContent = moodInfo ? moodInfo.label : 'Ready when you are.';
 
+  // Overwhelmed state — redirect to Rewind, don't surface tasks
+  if (moodInfo && moodInfo.state === 'overwhelmed') {
+    area.innerHTML = `
+      <div class="work-empty" style="text-align:center;">
+        <p class="work-empty-text" style="margin-bottom:16px;">
+          Right now isn't for doing.<br>
+          Go inward first. Come back when you're ready.
+        </p>
+        <a href="https://yongsiang163.github.io/Rewind/" target="_blank" rel="noopener"
+           style="display:inline-block; padding:14px 28px; background:rgba(196,149,106,0.1);
+           border:1px solid rgba(196,149,106,0.25); border-radius:14px; color:var(--warm);
+           text-decoration:none; font-family:var(--ui-font); font-size:14px; letter-spacing:0.5px;">
+          Open Rewind →
+        </a>
+        <p class="work-empty-cta" onclick="S.rewindSession=null; renderWork();"
+           style="margin-top:20px; font-size:12px; color:var(--text-muted);">
+          or continue anyway
+        </p>
+      </div>`;
+    return;
+  }
+
   const candidate = pickWorkItem(moodInfo);
 
   if (!candidate) {

@@ -132,6 +132,9 @@ function init() {
       }, 3200);
     }
   }
+
+  // Async IndexedDB load — merges durable data after instant boot
+  if (typeof loadFromIndexedDB === 'function') loadFromIndexedDB();
 }
 
 init();
