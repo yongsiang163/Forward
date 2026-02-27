@@ -501,6 +501,10 @@ function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   screenEl.classList.add('active');
 
+  // If we navigated to a Forward screen via Bottom Nav, ensuring Rewind is hidden
+  const rewindEl = document.getElementById('rewind-mode-container');
+  if (rewindEl) rewindEl.style.display = 'none';
+
   // Ambient colour shift
   document.body.classList.remove('mode-plan', 'mode-work');
   if (id === 'projects' || id === 'inbox') document.body.classList.add('mode-plan');

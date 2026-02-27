@@ -608,6 +608,26 @@ function closeExistingProjectSheet() {
   document.getElementById('existing-project-sheet').classList.remove('active');
 }
 
+// ── REWIND INTEGRATION ────────────────────────────────────
+function toggleRewindMode() {
+  const container = document.getElementById('rewind-mode-container');
+  if (!container) return;
+
+  const isShown = container.style.display !== 'none';
+  if (isShown) {
+    if (typeof showScreen === 'function') {
+      showScreen(S.screen || 'home');
+    }
+  } else {
+    // Hide all Forward screens
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    // Un-highlight nav buttons except the rewind one
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+
+    container.style.display = 'flex';
+  }
+}
+
 function addToProject(projectId, itemId) {
   const p = projects.find(x => x.id === projectId);
   const item = items.find(i => i.id === itemId);
