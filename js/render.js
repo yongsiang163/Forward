@@ -205,16 +205,24 @@ async function runHelpMeStart(item) {
 }
 
 function renderMvna(container, steps) {
-  container.innerHTML = steps.map((step, i) => {
-    const current = i === S.mvnaStep;
+  let html = '';
+  for (let i = 0; i < steps.length; i++) {
     const done = i < S.mvnaStep;
-    return `
+    const current = i === S.mvnaStep;
+    const future = i > S.mvnaStep;
+    if (future) continue; // withheld — never shown until previous is done
+    html += `
       <div class="mvna-step ${current ? 'current' : ''} ${done ? 'done' : ''}">
-        <div class="mvna-step-num">${done ? '✓' : i + 1}</div>
-        <p class="mvna-step-text">${esc(step)}</p>
+        <div class="mvna-step-num">${done ? '✓' : ''}</div>
+        <p class="mvna-step-text">${esc(steps[i])}</p>
         ${current ? `<button class="mvna-done-btn" onclick="completeStep(${i})">✓</button>` : ''}
       </div>`;
-  }).join('');
+  }
+  // Progress hint — e.g. "step 1 of 3" without revealing what's next
+  if (S.mvnaStep < steps.length) {
+    html += `<p style="font-size:11px; color:var(--text-muted); text-align:center; margin-top:12px; letter-spacing:1px;">step ${S.mvnaStep + 1} of ${steps.length}</p>`;
+  }
+  container.innerHTML = html;
 }
 
 function completeStep(idx) {

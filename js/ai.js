@@ -286,25 +286,59 @@ function appendAIMessage(response, p) {
   msgs.scrollTop = msgs.scrollHeight;
 }
 
+let _aiSteps = [];
+let _aiStepCurrent = 0;
+
 function renderAISteps(steps) {
-  const msgs = document.getElementById('ai-messages');
-  if (!msgs) return;
-  const wrap = document.createElement('div');
-  wrap.className = 'ai-message';
-  wrap.innerHTML = steps.map((s, i) => `
-    <div class="ai-step-item" id="ai-step-${i}">
-      <button class="ai-step-check" id="ai-step-check-${i}" onclick="toggleAIStep(${i})"></button>
-      <span class="ai-step-text" id="ai-step-text-${i}">${esc(s)}</span>
-    </div>`).join('');
-  msgs.appendChild(wrap);
+  _aiSteps = steps;
+  _aiStepCurrent = 0;
+  _renderCurrentAIStep();
 }
 
-function toggleAIStep(i) {
-  const check = document.getElementById(`ai-step-check-${i}`);
-  const text = document.getElementById(`ai-step-text-${i}`);
-  if (check && text) {
-    check.classList.toggle('done');
-    text.classList.toggle('done');
+function _renderCurrentAIStep() {
+  const msgs = document.getElementById('ai-messages');
+  if (!msgs) return;
+  // Remove previous step container if exists
+  const prev = document.getElementById('ai-step-container');
+  if (prev) prev.remove();
+
+  const wrap = document.createElement('div');
+  wrap.className = 'ai-message';
+  wrap.id = 'ai-step-container';
+  let html = '';
+
+  // Show completed steps
+  for (let i = 0; i < _aiStepCurrent; i++) {
+    html += `<div class="ai-step-item"><button class="ai-step-check done"></button><span class="ai-step-text done">${esc(_aiSteps[i])}</span></div>`;
+  }
+  // Show current step with done button
+  if (_aiStepCurrent < _aiSteps.length) {
+    html += `<div class="ai-step-item">
+      <button class="ai-step-check" onclick="toggleAIStep()"></button>
+      <span class="ai-step-text">${esc(_aiSteps[_aiStepCurrent])}</span>
+    </div>`;
+    if (_aiSteps.length > 1) {
+      html += `<p style="font-size:10px; color:var(--text-muted); text-align:center; margin-top:8px; letter-spacing:0.5px;">step ${_aiStepCurrent + 1} of ${_aiSteps.length}</p>`;
+    }
+  }
+  wrap.innerHTML = html;
+  msgs.appendChild(wrap);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function toggleAIStep() {
+  _aiStepCurrent++;
+  if (_aiStepCurrent >= _aiSteps.length) {
+    // All done
+    _renderCurrentAIStep();
+    const msgs = document.getElementById('ai-messages');
+    const doneDiv = document.createElement('div');
+    doneDiv.className = 'ai-message';
+    doneDiv.innerHTML = `<p class="ai-message-text" style="color:var(--warm); font-style:italic;">All steps done. That counts.</p>`;
+    msgs.appendChild(doneDiv);
+    msgs.scrollTop = msgs.scrollHeight;
+  } else {
+    _renderCurrentAIStep();
   }
 }
 

@@ -192,7 +192,21 @@ function openProjectSheet(id) {
   psPhase = p.phase || Object.keys((PROJECT_CATS[p.projectCat] || PROJECT_CATS.open).phaseLabels)[0];
 
   document.getElementById('ps-name').value = p.name || '';
-  document.getElementById('ps-vision').textContent = p.vision || 'No vision captured.';
+  // Vision lock — frozen after 48 hours from creation
+  const visionEl = document.getElementById('ps-vision');
+  const visionLockLabel = document.getElementById('ps-vision-lock');
+  const visionLocked = p.visionLockedAt && Date.now() > new Date(p.visionLockedAt).getTime();
+  if (visionLocked) {
+    visionEl.textContent = p.vision || 'No vision captured.';
+    visionEl.contentEditable = 'false';
+    if (visionLockLabel) visionLockLabel.textContent = 'captured when you believed in this · cannot be edited';
+  } else {
+    visionEl.textContent = p.vision || '';
+    visionEl.contentEditable = 'true';
+    visionEl.style.cursor = 'text';
+    const hoursLeft = p.visionLockedAt ? Math.max(0, Math.ceil((new Date(p.visionLockedAt).getTime() - Date.now()) / 3600000)) : 0;
+    if (visionLockLabel) visionLockLabel.textContent = hoursLeft > 0 ? `editable for ${hoursLeft} more hours` : 'editable — will lock after 48 hours';
+  }
   document.getElementById('ps-next-action').value = p.nextAction || '';
   document.getElementById('ps-notes').value = p.notes || '';
 
@@ -260,6 +274,12 @@ function saveProjectSheet() {
   const newName = document.getElementById('ps-name').value.trim();
   p.name = newName || p.name;
   p.phase = psPhase;
+  // Save vision if still editable (not locked)
+  const visionLocked = p.visionLockedAt && Date.now() > new Date(p.visionLockedAt).getTime();
+  if (!visionLocked) {
+    const visionEl = document.getElementById('ps-vision');
+    if (visionEl) p.vision = visionEl.textContent.trim();
+  }
   p.nextAction = document.getElementById('ps-next-action').value.trim();
   p.notes = document.getElementById('ps-notes').value.trim();
   p.touchedAt = new Date().toISOString();
@@ -532,7 +552,8 @@ function npCreate() {
     nextAction: '', notes: '',
     status: 'active',
     createdAt: new Date().toISOString(),
-    touchedAt: new Date().toISOString()
+    touchedAt: new Date().toISOString(),
+    visionLockedAt: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString()
   };
   projects.unshift(project);
   saveProjects();
