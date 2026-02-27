@@ -528,8 +528,10 @@ function toggleTaskCompletion(itemId) {
 
   if (item.status === 'done') {
     item.status = 'active';
+    item.completedAt = null;
   } else {
     item.status = 'done';
+    item.completedAt = new Date().toISOString();
 
     // If it's recurring, keep active but note it was touched
     if (item.recurring) {

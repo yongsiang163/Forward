@@ -417,30 +417,36 @@ function renderTasks() {
 
   if (!container) return; // fail gracefully if element doesn't exist
 
-  // Find all items belonging to 'task' category that aren't purely archived/deleted
-  const tasks = items.filter(i => i.category === 'task' && i.status !== 'archived' && !i.recurring);
-  const recurringTasks = items.filter(i => i.category === 'task' && i.status !== 'archived' && i.recurring);
+  // Find all confirmed tasks that aren't archived
+  const allTasks = items.filter(i => i.category === 'task' && i.status !== 'archived' && !i.recurring);
+  const activeTasks = allTasks.filter(i => i.status !== 'done');
+  const doneTasks = allTasks.filter(i => i.status === 'done');
 
-  // 1) Standard Tasks
-  if (tasks.length === 0) {
+  // 1) Active Tasks
+  if (activeTasks.length === 0 && doneTasks.length === 0) {
     container.innerHTML = `<p class="inbox-empty-text" style="font-size:16px;">No one-off tasks... yet.</p>`;
   } else {
-    // Sort: active tasks first, then done tasks
-    tasks.sort((a, b) => {
-      if (a.status === 'done' && b.status !== 'done') return 1;
-      if (a.status !== 'done' && b.status === 'done') return -1;
-      return new Date(b.createdAt) - new Date(a.createdAt);
-    });
+    activeTasks.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-    container.innerHTML = tasks.map(t => {
-      const isDone = t.status === 'done';
-      return `
-        <div class="task-list-item ${isDone ? 'status-done' : ''}">
-          <div class="task-ring-toggle ${isDone ? 'completed' : ''}" onclick="toggleTaskCompletion('${t.id}')"></div>
+    let html = activeTasks.map(t => `
+      <div class="task-list-item">
+        <div class="task-ring-toggle" onclick="toggleTaskCompletion('${t.id}')"></div>
+        <div class="task-content">${t.content}</div>
+      </div>
+    `).join('');
+
+    // Done block — shows recently completed tasks (< 24h), auto-dismissed after
+    if (doneTasks.length > 0) {
+      html += `<p style="font-size:11px; color:var(--text-muted); letter-spacing:1px; margin:20px 0 8px; text-transform:uppercase;">Done today · dismissed after 24h</p>`;
+      html += doneTasks.map(t => `
+        <div class="task-list-item status-done">
+          <div class="task-ring-toggle completed" onclick="toggleTaskCompletion('${t.id}')"></div>
           <div class="task-content">${t.content}</div>
         </div>
-      `;
-    }).join('');
+      `).join('');
+    }
+
+    container.innerHTML = html;
   }
 
   // 2) Recurring Tasks

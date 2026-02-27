@@ -164,9 +164,19 @@ function computeStatus(item) {
 
 function runLifecycle() {
   let changed = false;
+  const now = Date.now();
   items.forEach(item => {
     const s = computeStatus(item);
     if (s !== item.status) { item.status = s; changed = true; }
+    // Auto-dismiss completed tasks after 24 hours → archived
+    if (item.status === 'done' && item.completedAt && item.category === 'task') {
+      const doneHrs = (now - new Date(item.completedAt).getTime()) / 3600000;
+      if (doneHrs >= 24) {
+        item.status = 'archived';
+        item.archivedAt = new Date().toISOString();
+        changed = true;
+      }
+    }
   });
   if (changed) save();
 }
