@@ -286,6 +286,10 @@ function confirmCategory(itemId) {
   runLifecycle();
   save();
   renderInbox();
+  if (items[idx].category === 'task') {
+    showToast('Moved to Tasks');
+    if (typeof renderTasks === 'function') renderTasks();
+  }
 }
 
 function archiveItem(itemId) {

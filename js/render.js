@@ -11,7 +11,11 @@ function renderInbox() {
   const list = document.getElementById('inbox-list');
   const title = document.getElementById('inbox-title');
 
-  const active = items.filter(i => i.status !== 'archived' && i.status !== 'done');
+  const active = items.filter(i =>
+    i.status !== 'archived' &&
+    i.status !== 'done' &&
+    !(i.confirmed && (i.category === 'task' || i.aiCategory === 'task'))
+  );
   const filtered = S.filter === 'all'
     ? active
     : active.filter(i => (i.aiCategory || i.category) === S.filter);
