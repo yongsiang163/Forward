@@ -272,11 +272,11 @@
           <div style="display:flex; gap:8px;">
             <input type="password" id="ai-key-input" class="project-input" placeholder="Paste your API key here…"
               style="flex:1; font-size:13px; margin:0;" onfocus="if(this.value.startsWith('••'))this.value=''"
-              onchange="setGeminiKey(this.value)" />
+              oninput="setGeminiKey(this.value)" />
             <button onclick="testGeminiKey()" class="project-save-btn"
-              style="padding:8px 14px; font-size:12px; white-space:nowrap;">Test</button>
+              style="width:auto; padding:8px 14px; font-size:12px; white-space:nowrap;">Test</button>
             <button onclick="clearGeminiKey()" class="project-save-btn"
-              style="padding:8px 14px; font-size:12px; background:rgba(255,107,107,0.08); border-color:rgba(255,107,107,0.25); color:#ff6b6b;">✕</button>
+              style="width:auto; padding:8px 14px; font-size:12px; background:rgba(255,107,107,0.08); border-color:rgba(255,107,107,0.25); color:#ff6b6b;">✕</button>
           </div>
           <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener"
             style="font-size:11px; color:var(--warm); text-decoration:none; letter-spacing:0.5px;">
