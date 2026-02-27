@@ -401,8 +401,10 @@ function showPill(mode) {
 
 // ── NAVIGATION ────────────────────────────────────────────
 function showScreen(id) {
+  const screenEl = document.getElementById('screen-' + id);
+  if (!screenEl) { console.warn('Screen not found:', id); return; }
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById('screen-' + id).classList.add('active');
+  screenEl.classList.add('active');
 
   // Ambient colour shift
   document.body.classList.remove('mode-plan', 'mode-work');
