@@ -493,7 +493,6 @@
     #screen-inbox {
       display: flex;
       flex-direction: column;
-      overflow: hidden;
     }
 
     .inbox-header {
