@@ -150,20 +150,75 @@ function renderWork() {
 }
 
 function pickWorkItem(moodInfo) {
-  const available = items.filter(i =>
+  const now = Date.now();
+  const state = moodInfo ? moodInfo.state : 'drifting';
+
+  // Base filter: exclude archived, done, and sparks
+  let pool = items.filter(i =>
     i.status !== 'archived' &&
     i.status !== 'done' &&
-    i.category !== 'spark' // sparks go to library, not work queue
+    i.category !== 'spark'
   );
-  if (!available.length) return null;
+  if (!pool.length) return null;
 
-  // Heavy/Fatigued: prefer shortest/freshest only
-  if (moodInfo && moodInfo.state === 'fatigued') {
-    const fresh = available.filter(i => i.status === 'fresh');
-    return fresh[0] || available[0];
+  // Heavy/Fatigued: only short items (< 80 chars), prefer tasks over projects
+  if (state === 'fatigued') {
+    const short = pool.filter(i => i.content.length < 80 && i.category === 'task');
+    if (short.length) pool = short;
+    else {
+      const anyShort = pool.filter(i => i.content.length < 80);
+      if (anyShort.length) pool = anyShort;
+    }
   }
-  const fresh = available.filter(i => i.status === 'fresh');
-  return fresh[0] || available[0];
+
+  // Score each candidate
+  const scored = pool.map(item => {
+    let score = 0;
+
+    // 1. Freshness — fresh items get a boost
+    if (item.status === 'fresh') score += 30;
+    else if (item.status === 'alive') score += 15;
+    // cold items get no boost — but are still eligible
+
+    // 2. Recency — newer items surface first (max 20 pts)
+    const ageHrs = (now - new Date(item.createdAt).getTime()) / 3600000;
+    score += Math.max(0, 20 - ageHrs * 0.5); // decays over ~40 hours
+
+    // 3. Recently touched items are deprioritised (avoid repetition)
+    if (item.touchedAt) {
+      const touchHrs = (now - new Date(item.touchedAt).getTime()) / 3600000;
+      if (touchHrs < 2) score -= 15; // recently seen — push down
+    }
+
+    // 4. Project urgency — items linked to quiet projects get a boost
+    if (item.projectId) {
+      const proj = projects.find(p => p.id === item.projectId);
+      if (proj && proj.touchedAt) {
+        const projQuietDays = (now - new Date(proj.touchedAt).getTime()) / 86400000;
+        if (projQuietDays >= 9) score += 25; // "this one has been quiet"
+        else if (projQuietDays >= 5) score += 10;
+      }
+    }
+
+    // 5. Mood-appropriate sizing
+    if (state === 'focused') {
+      // Focused: slight preference for meatier tasks
+      if (item.content.length > 40) score += 5;
+    } else if (state === 'fatigued') {
+      // Fatigued: strong preference for tiny tasks
+      if (item.content.length < 40) score += 15;
+    }
+
+    // 6. Category priorities — tasks > reminders > projects
+    if (item.category === 'task') score += 5;
+    else if (item.category === 'reminder') score += 8; // reminders are time-sensitive
+
+    return { item, score };
+  });
+
+  // Sort by score descending, pick the best
+  scored.sort((a, b) => b.score - a.score);
+  return scored[0].item;
 }
 
 async function runHelpMeStart(item) {
