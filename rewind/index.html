@@ -350,6 +350,7 @@
     input[type=range] {
       width: 100%;
       -webkit-appearance: none;
+      appearance: none;
       height: 2px;
       background: linear-gradient(to right, var(--warm) 0%, var(--warm) 50%, var(--text-muted) 50%);
       border-radius: 2px;
@@ -358,6 +359,7 @@
 
     input[type=range]::-webkit-slider-thumb {
       -webkit-appearance: none;
+      appearance: none;
       width: 20px;
       height: 20px;
       border-radius: 50%;
@@ -1415,7 +1417,8 @@
   </div>
 
   <!-- Bottom nav -->
-  <nav class="bottom-nav" id="bottom-nav" style="display:none;">
+  <!-- Bottom nav -->
+  <nav class="bottom-nav" id="nav-standalone" style="display:none;">
     <button class="nav-btn active" id="nav-home" onclick="navigate('welcome')">
       <span class="nav-icon">🌬</span>
       <span class="nav-label">Rewind</span>
@@ -1425,6 +1428,22 @@
       <span class="nav-label">Check in</span>
     </button>
     <button class="nav-btn" id="nav-history" onclick="navigate('history')">
+      <span class="nav-icon">◎</span>
+      <span class="nav-label">Pattern</span>
+    </button>
+  </nav>
+
+  <nav class="bottom-nav" id="nav-embedded" style="display:none;">
+    <button class="nav-btn" id="nav-checkin-emb" onclick="startCheckin()">
+      <span class="nav-icon">○</span>
+      <span class="nav-label">Check in</span>
+    </button>
+    <button class="nav-btn active" id="nav-forward"
+      onclick="if(window.parent && window.parent.toggleRewindMode) window.parent.toggleRewindMode()">
+      <span class="nav-icon" style="opacity: 1; filter: none; font-size: 20px;">⬡</span>
+      <span class="nav-label">Forward</span>
+    </button>
+    <button class="nav-btn" id="nav-history-emb" onclick="navigate('history')">
       <span class="nav-icon">◎</span>
       <span class="nav-label">Pattern</span>
     </button>
@@ -1547,18 +1566,13 @@
         document.getElementById('welcome-question').style.display = 'none';
       }
 
-      // Show nav after first init
-      if (sessions.length > 0) {
-        document.getElementById('bottom-nav').style.display = 'flex';
-        renderRecentEntries();
-      }
-
-      // Force hide bottom-nav if embedded within Forward
-      if (new URLSearchParams(window.location.search).get('embedded') === 'true') {
-        document.getElementById('bottom-nav').style.display = 'none !important';
-        const s = document.createElement('style');
-        s.innerHTML = '#bottom-nav { display: none !important; }';
-        document.head.appendChild(s);
+      // Adjust bottom-nav if embedded within Forward
+      if (window.parent !== window) {
+        const navEmb = document.getElementById('nav-embedded');
+        if (navEmb) navEmb.style.display = 'flex';
+      } else {
+        const navStd = document.getElementById('nav-standalone');
+        if (navStd) navStd.style.display = 'flex';
       }
     }
 
@@ -1573,9 +1587,18 @@
 
       // Nav state
       document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-      if (id === 'welcome') document.getElementById('nav-home').classList.add('active');
-      if (id === 'history') document.getElementById('nav-history').classList.add('active');
-      if (id === 'checkin') document.getElementById('nav-checkin').classList.add('active');
+      if (id === 'welcome') {
+        if (document.getElementById('nav-home')) document.getElementById('nav-home').classList.add('active');
+        if (document.getElementById('nav-forward')) document.getElementById('nav-forward').classList.add('active');
+      }
+      if (id === 'history') {
+        if (document.getElementById('nav-history')) document.getElementById('nav-history').classList.add('active');
+        if (document.getElementById('nav-history-emb')) document.getElementById('nav-history-emb').classList.add('active');
+      }
+      if (id === 'checkin') {
+        if (document.getElementById('nav-checkin')) document.getElementById('nav-checkin').classList.add('active');
+        if (document.getElementById('nav-checkin-emb')) document.getElementById('nav-checkin-emb').classList.add('active');
+      }
     }
 
     function navigate(screen) {
