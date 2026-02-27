@@ -245,6 +245,32 @@
       </div>
 
       <div class="settings-section">
+        <p class="settings-section-label">AI</p>
+        <div class="settings-row" style="cursor:default; flex-direction:column; align-items:stretch; gap:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div class="settings-row-body">
+              <p class="settings-row-text">Gemini API Key</p>
+              <p class="settings-row-sub">Stored on this device only — never in the code</p>
+            </div>
+            <span class="settings-row-action" id="ai-key-status">○ not set</span>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <input type="password" id="ai-key-input" class="project-input" placeholder="Paste your API key here…"
+              style="flex:1; font-size:13px; margin:0;" onfocus="if(this.value.startsWith('••'))this.value=''"
+              onchange="setGeminiKey(this.value)" />
+            <button onclick="testGeminiKey()" class="project-save-btn"
+              style="padding:8px 14px; font-size:12px; white-space:nowrap;">Test</button>
+            <button onclick="clearGeminiKey()" class="project-save-btn"
+              style="padding:8px 14px; font-size:12px; background:rgba(255,107,107,0.08); border-color:rgba(255,107,107,0.25); color:#ff6b6b;">✕</button>
+          </div>
+          <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener"
+            style="font-size:11px; color:var(--warm); text-decoration:none; letter-spacing:0.5px;">
+            Get a free key from Google AI Studio →
+          </a>
+        </div>
+      </div>
+
+      <div class="settings-section">
         <p class="settings-section-label">Focus protection</p>
         <div class="settings-row">
           <div class="settings-row-body">
