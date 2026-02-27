@@ -1,6 +1,8 @@
 // ── CAPTURE ──────────────────────────────────────────────
 let activeCaptureProjectId = null;
 let editingProjectId = null;
+let npPhase = 'concept';
+let psPhase = null;
 
 function openCapture() {
   const sheet = document.getElementById('capture-sheet');

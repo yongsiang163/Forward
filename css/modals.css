@@ -840,7 +840,8 @@
       opacity: 0.4;
     }
 
-    .project-ai-input-row {
+    .project-ai-input-row,
+    .ai-input-row {
       display: flex;
       gap: 8px;
       margin-top: 14px;
@@ -940,4 +941,4 @@
     .np-cat-btn-desc {
       font-size: 10px;
       color: var(--text-muted);
-    }
+    }

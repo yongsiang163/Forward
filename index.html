@@ -25,7 +25,6 @@
   -->
   <link rel="stylesheet" href="css/main.css">
   <link rel="stylesheet" href="css/layout.css">
-  <link rel="stylesheet" href="css/components.css">
   <link rel="stylesheet" href="css/modals.css">
 </head>
 
@@ -131,11 +130,11 @@
 
       <!-- Stats drawer — hidden, slides up from fixed bottom position -->
       <div class="home-below-fold" id="home-below-fold">
-        <div class="home-stat-card" onclick="showScreen('plan')">
+        <div class="home-stat-card" onclick="showScreen('inbox')">
           <span class="home-stat-num" id="stat-inbox">0</span>
           <span class="home-stat-label">In inbox</span>
         </div>
-        <div class="home-stat-card" onclick="showScreen('plan')">
+        <div class="home-stat-card" onclick="showScreen('inbox')">
           <span class="home-stat-num" id="stat-fresh">0</span>
           <span class="home-stat-label">Fresh today</span>
         </div>
@@ -235,6 +234,13 @@
             <p class="settings-row-sub">Export everything as JSON</p>
           </div>
           <span class="settings-row-action">↓</span>
+        </div>
+        <div class="settings-row" onclick="importData()">
+          <div class="settings-row-body">
+            <p class="settings-row-text">Restore from backup</p>
+            <p class="settings-row-sub">Import a previously exported JSON file</p>
+          </div>
+          <span class="settings-row-action">↑</span>
         </div>
       </div>
 
@@ -375,11 +381,38 @@
           <textarea class="project-input" id="ps-notes" rows="4" placeholder="Anything else worth holding…"></textarea>
         </div>
 
+        <!-- Captured Items linked to this project -->
+        <div class="project-sheet-section" id="ps-captured-section" style="display:none">
+          <p class="project-sheet-eyebrow">Linked Items</p>
+          <div id="ps-captured-list"></div>
+        </div>
+
+        <!-- AI Companion -->
+        <div class="project-sheet-section">
+          <button class="project-save-btn" onclick="toggleProjectAI()"
+            style="background:rgba(196,149,106,0.06); border-color:rgba(196,149,106,0.2); color:var(--warm); margin-bottom:12px;">
+            <span id="project-ai-btn-label">Talk to AI →</span>
+          </button>
+          <div id="project-ai-thread" class="project-ai-thread">
+            <div id="ai-messages" class="ai-messages"></div>
+            <div class="ai-thinking-inline" id="ai-thinking-inline">
+              <div class="ai-thinking-orb" style="width:12px;height:12px;"></div>
+              <span style="font-size:11px; color:var(--text-muted); letter-spacing:1px;">thinking…</span>
+            </div>
+            <div class="ai-input-row">
+              <input type="text" id="project-ai-input" class="project-input" placeholder="Ask the AI…"
+                onkeydown="if(event.key==='Enter')sendProjectAI()" style="flex:1; margin:0;" />
+              <button onclick="sendProjectAI()"
+                style="background:none; border:none; color:var(--warm); font-size:18px; cursor:pointer; padding:8px 12px;">→</button>
+            </div>
+          </div>
+        </div>
+
         <div style="display:flex; gap:10px; margin-top:20px;">
           <button class="project-save-btn" onclick="saveProjectSheet()" style="flex:1;">Save</button>
           <button class="project-save-btn" id="ps-archive-btn" onclick="archiveProject()"
             style="flex:1; background:rgba(0,0,0,0.1); border-color:var(--border-soft); color:var(--text-muted);">Archive</button>
-          <button class="project-save-btn" id="ps-delete-btn" onclick="deleteProject()"
+          <button class="project-save-btn" id="ps-delete-btn" onclick="deleteProjectPrompt()"
             style="flex:1; background:rgba(255,107,107,0.1); border-color:rgba(255,107,107,0.3); color:#ff6b6b;">Delete</button>
         </div>
       </div>

@@ -152,6 +152,7 @@ function renderWork() {
 function pickWorkItem(moodInfo) {
   const available = items.filter(i =>
     i.status !== 'archived' &&
+    i.status !== 'done' &&
     i.category !== 'spark' // sparks go to library, not work queue
   );
   if (!available.length) return null;
@@ -432,6 +433,7 @@ function showScreen(id) {
   if (id === 'projects') renderProjects();
   if (id === 'inbox') renderInbox();
   if (id === 'work') renderWork();
+  if (id === 'tasks') renderTasks();
   if (id === 'home') renderHome();
 }
 
@@ -456,6 +458,39 @@ function exportData() {
   a.click();
   URL.revokeObjectURL(url);
   showToast('Backup downloaded');
+}
+
+function importData() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const payload = JSON.parse(ev.target.result);
+        if (!payload.items || !Array.isArray(payload.items)) {
+          showToast('Invalid backup file');
+          return;
+        }
+        items = payload.items;
+        save();
+        if (payload.projects && Array.isArray(payload.projects)) {
+          projects = payload.projects;
+          saveProjects();
+        }
+        renderAllViews();
+        showToast(`Restored ${items.length} items`);
+      } catch (err) {
+        console.error('Import failed:', err);
+        showToast('Import failed — invalid file');
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
 }
 
 // ── ARCHIVE RECOVERY ─────────────────────────────────────
