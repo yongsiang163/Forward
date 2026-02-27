@@ -611,6 +611,7 @@ function closeExistingProjectSheet() {
 // ── REWIND INTEGRATION ────────────────────────────────────
 function toggleRewindMode() {
   const container = document.getElementById('rewind-mode-container');
+  const forwardNav = document.getElementById('forward-bottom-nav');
   if (!container) return;
 
   const isShown = container.style.display !== 'none';
@@ -618,11 +619,22 @@ function toggleRewindMode() {
     if (typeof showScreen === 'function') {
       showScreen(S.screen || 'home');
     }
+    if (forwardNav) forwardNav.style.display = 'flex';
+    container.style.display = 'none';
   } else {
     // Hide all Forward screens
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     // Un-highlight nav buttons except the rewind one
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+
+    // Hide Forward nav entirely
+    if (forwardNav) forwardNav.style.display = 'none';
+
+    // Reset Rewind iframe to welcome screen when entering
+    const iframe = document.getElementById('rewind-iframe');
+    if (iframe && iframe.contentWindow && iframe.contentWindow.navigate) {
+      iframe.contentWindow.navigate('welcome');
+    }
 
     container.style.display = 'flex';
   }

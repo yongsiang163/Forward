@@ -421,6 +421,7 @@ function renderTasks() {
   const allTasks = items.filter(i => i.category === 'task' && i.status !== 'archived' && !i.recurring);
   const activeTasks = allTasks.filter(i => i.status !== 'done');
   const doneTasks = allTasks.filter(i => i.status === 'done');
+  const recurringTasks = items.filter(i => i.category === 'task' && i.status !== 'archived' && i.recurring);
 
   // 1) Active Tasks
   if (activeTasks.length === 0 && doneTasks.length === 0) {

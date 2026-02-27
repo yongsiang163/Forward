@@ -1687,36 +1687,7 @@
       color: var(--warm);
     }
 
-    /* Centre capture button */
-    .nav-capture-wrap {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
 
-    .nav-capture-btn {
-      width: 46px;
-      height: 46px;
-      border-radius: 50%;
-      background: transparent;
-      border: 1.5px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.2s;
-      color: var(--warm);
-      font-size: 22px;
-      line-height: 1;
-      margin-top: -6px;
-    }
-
-    .nav-capture-btn:active {
-      border-color: var(--warm);
-      background: var(--warm-glow);
-      transform: scale(0.92);
-    }
 
     /* ── TOAST — same as Rewind ── */
     .toast {
