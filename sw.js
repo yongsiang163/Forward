@@ -1,4 +1,4 @@
-const CACHE_NAME = 'forward-cache-v16';
+const CACHE_NAME = 'forward-cache-v17';
 const urlsToCache = [
     './',
     './index.html',
@@ -22,6 +22,7 @@ self.addEventListener('install', event => {
             .then(cache => {
                 return cache.addAll(urlsToCache);
             })
+            .then(() => self.skipWaiting())
     );
 });
 
@@ -79,6 +80,6 @@ self.addEventListener('activate', event => {
                     }
                 })
             );
-        })
+        }).then(() => self.clients.claim())
     );
 });
