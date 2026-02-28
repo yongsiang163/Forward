@@ -271,8 +271,7 @@
           </div>
           <div style="display:flex; gap:8px;">
             <input type="password" id="ai-key-input" class="project-input" placeholder="Paste your API key here…"
-              style="flex:1; font-size:13px; margin:0;" onfocus="if(this.value.startsWith('••'))this.value=''"
-              oninput="setGeminiKey(this.value)" />
+              style="flex:1; font-size:13px; margin:0;" oninput="setGeminiKey(this.value)" />
             <button onclick="testGeminiKey()" class="project-save-btn"
               style="width:auto; padding:8px 14px; font-size:12px; white-space:nowrap;">Test</button>
             <button onclick="clearGeminiKey()" class="project-save-btn"

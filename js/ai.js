@@ -25,7 +25,7 @@ function updateAIKeyStatus() {
   if (key) {
     status.textContent = '✓ connected';
     status.className = 'settings-row-action on';
-    if (input) input.value = '••••••••' + key.slice(-4);
+    if (input && input.value !== key) input.value = key;
   } else {
     status.textContent = '○ not set';
     status.className = 'settings-row-action';
