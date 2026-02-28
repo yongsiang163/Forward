@@ -141,6 +141,8 @@
       resize: none;
       caret-color: var(--warm);
       transition: border-color 0.2s;
+      -webkit-user-select: text;
+      user-select: text;
     }
 
     .project-input:focus {
