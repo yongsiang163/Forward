@@ -1,4 +1,4 @@
-const CACHE_NAME = 'forward-cache-v12';
+const CACHE_NAME = 'forward-cache-v13';
 const urlsToCache = [
     './',
     './index.html',

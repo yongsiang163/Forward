@@ -158,6 +158,7 @@ async function aiCategorise(text) {
     }
   } catch (e) {
     console.warn('Gemini categorisation failed, using fallback:', e.message);
+    if (getGeminiKey()) showToast('API Error: ' + e.message);
   }
 
   // Fallback: pattern matching
@@ -188,6 +189,7 @@ async function helpMeStartAI({ task, projectId, projectPhase, moodState, maxStep
     }
   } catch (e) {
     console.warn('Gemini MVNA failed, using fallback:', e.message);
+    if (getGeminiKey()) showToast('API Error: ' + e.message);
   }
 
   // Fallback: hardcoded phase-aware suggestions
@@ -247,6 +249,7 @@ async function aiReadProject(p) {
     }
   } catch (e) {
     console.warn('Gemini project read failed, using fallback:', e.message);
+    if (getGeminiKey()) showToast('API Error: ' + e.message);
   }
 
   // Fallback
@@ -375,6 +378,7 @@ async function sendProjectAI() {
     }
   } catch (e) {
     console.warn('Gemini companion failed, using fallback:', e.message);
+    if (getGeminiKey()) showToast('API Error: ' + e.message);
   }
 
   // Fallback
