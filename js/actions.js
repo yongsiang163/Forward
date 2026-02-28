@@ -513,6 +513,12 @@ function openItemAction(itemId) {
     syncBtn.style.display = (iaCurrentCat === 'reminder') ? 'block' : 'none';
   }
 
+  const summariseBtn = document.getElementById('ia-summarise-btn');
+  if (summariseBtn) {
+    // Show summarise button if item is unsummarised
+    summariseBtn.style.display = (!item.aiSummary) ? 'block' : 'none';
+  }
+
   document.getElementById('item-action-sheet').classList.add('active');
 }
 
@@ -608,6 +614,43 @@ function iaDone() {
     if (item) { item.status = 'done'; item.touchedAt = new Date().toISOString(); save(); }
   }
   closeItemAction();
+}
+
+async function iaSummarise() {
+  if (!activeItemId) return;
+  const item = items.find(i => i.id === activeItemId);
+  if (!item) return;
+
+  const btn = document.getElementById('ia-summarise-btn');
+  const originalText = btn.textContent;
+  btn.textContent = 'Summarising…';
+  btn.style.opacity = '0.5';
+  btn.style.pointerEvents = 'none';
+
+  try {
+    const result = await aiSummarise(item.content);
+    if (result) {
+      item.rawContent = item.content;
+      item.aiTitle = result.title;
+      item.aiSummary = result.summary;
+      item.content = result.summary;
+      item.aiActions = result.actions.length > 0 ? result.actions : null;
+      save();
+      renderInbox();
+      closeItemAction();
+      showToast('Capture summarised ✨');
+    } else {
+      showToast('Summarisation failed or returned no result');
+    }
+  } catch (e) {
+    console.warn('Manual summarise failed:', e);
+  } finally {
+    if (btn) {
+      btn.textContent = originalText;
+      btn.style.opacity = '1';
+      btn.style.pointerEvents = 'auto';
+    }
+  }
 }
 
 function iaArchive() {
