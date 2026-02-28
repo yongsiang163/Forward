@@ -55,7 +55,7 @@ function clearGeminiKey() {
 }
 
 // ── CORE API CALL ────────────────────────────────────────
-async function callGemini(systemPrompt, userPrompt) {
+async function callGemini(systemPrompt, userPrompt, options = {}) {
   const key = getGeminiKey();
   if (!key) return null;
 
@@ -64,8 +64,8 @@ async function callGemini(systemPrompt, userPrompt) {
     system_instruction: { parts: [{ text: systemPrompt }] },
     contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
     generationConfig: {
-      temperature: 0.7,
-      maxOutputTokens: 400
+      temperature: options.temperature ?? 0.7,
+      maxOutputTokens: options.maxOutputTokens ?? 400
     }
   };
 
@@ -196,11 +196,21 @@ async function aiSummarise(rawText) {
   if (!getGeminiKey()) return null;
 
   try {
-    const result = await callGemini(SYSTEM_PROMPT_SUMMARISE, rawText);
+    // Use higher token limit so JSON doesn't get truncated
+    const result = await callGemini(SYSTEM_PROMPT_SUMMARISE, rawText, { maxOutputTokens: 1024, temperature: 0.5 });
     if (!result) return null;
 
-    // Parse JSON — handle possible markdown fencing
-    const cleaned = result.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+    // Parse JSON — strip any markdown fences Gemini may add despite instructions
+    let cleaned = result
+      .replace(/^```json\s*/i, '')  // leading ```json
+      .replace(/^```\s*/i, '')       // leading ```
+      .replace(/```\s*$/i, '')       // trailing ```
+      .trim();
+
+    // If Gemini wrapped in extra text, try to extract first JSON object
+    const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+    if (jsonMatch) cleaned = jsonMatch[0];
+
     const parsed = JSON.parse(cleaned);
 
     // Validate shape
@@ -211,9 +221,10 @@ async function aiSummarise(rawText) {
         actions: Array.isArray(parsed.actions) ? parsed.actions.filter(a => typeof a === 'string' && a.trim()) : []
       };
     }
+    throw new Error('Unexpected response shape from AI');
   } catch (e) {
     console.warn('Brain dump summarise failed:', e.message);
-    if (getGeminiKey()) showToast('Summarise: ' + e.message);
+    if (getGeminiKey()) showToast('Summarise failed: ' + e.message);
   }
 
   return null;
