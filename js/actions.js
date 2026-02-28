@@ -534,7 +534,7 @@ function iaPromote() {
   const item = items.find(i => i.id === activeItemId);
   if (item) {
     closeItemAction();
-    setTimeout(() => openNewProject(item.content), 200);
+    setTimeout(() => openNewProject(item.content, item.id), 200);
   }
 }
 
@@ -692,6 +692,7 @@ function addToProject(projectId, itemId) {
 
 // ── NEW PROJECT — category selection ─────────────────────
 let npCat = 'idwork';
+let npSourceItemId = null;
 function npSetCat(cat) {
   npCat = cat;
   document.querySelectorAll('.np-cat-btn').forEach(b => b.classList.toggle('active', b.dataset.npcat === cat));
@@ -700,9 +701,10 @@ function npSetCat(cat) {
 
 
 // ── NEW PROJECT FLOW ─────────────────────────────────────
-function openNewProject(prefillText) {
+function openNewProject(prefillText, sourceItemId = null) {
   npCat = 'idwork';
   npPhase = 'concept';
+  npSourceItemId = sourceItemId;
   document.getElementById('np-name').value = '';
   document.getElementById('np-vision').value = prefillText || '';
   document.querySelectorAll('.np-cat-btn').forEach(b => b.classList.toggle('active', b.dataset.npcat === 'idwork'));
@@ -744,6 +746,17 @@ function npCreate() {
   };
   projects.unshift(project);
   saveProjects();
+
+  if (npSourceItemId) {
+    const item = items.find(i => i.id === npSourceItemId);
+    if (item) {
+      item.status = 'archived';
+      item.touchedAt = new Date().toISOString();
+      save();
+      if (S.screen === 'inbox') renderInbox();
+    }
+  }
+
   closeNewProject();
   renderProjects();
   showToast('Project created');
@@ -752,15 +765,14 @@ function npCreate() {
 
 function closeNewProject() {
   document.getElementById('new-project-sheet').classList.remove('active');
+  npSourceItemId = null;
 }
 
 function promoteToProject(itemId) {
   const item = items.find(i => i.id === itemId);
   if (!item) return;
-  item.status = 'archived'; // Remove from inbox view after promotion
-  save();
   closeItemAction();
-  setTimeout(() => openNewProject(item.content), 250);
+  setTimeout(() => openNewProject(item.content, item.id), 250);
 }
 
 
