@@ -170,6 +170,55 @@ async function aiCategorise(text) {
   return { category: cat };
 }
 
+// ── BRAIN DUMP SUMMARISER ────────────────────────────────
+const SYSTEM_PROMPT_SUMMARISE = `You are a thought-cleanup engine for an ADHD productivity app called Forward.
+
+The user has captured a raw thought — often via voice, often messy, rambling, or stream-of-consciousness. Your job is to extract clarity from chaos.
+
+Return ONLY valid JSON with this exact shape:
+{
+  "title": "3-8 word scannable title",
+  "summary": "1-2 sentence cleaned-up version of the core thought",
+  "actions": ["extracted next action 1", "extracted next action 2"]
+}
+
+RULES:
+1. The title must be short, specific, and scannable — like a good email subject line
+2. The summary must preserve the user's INTENT, not their exact words. Remove filler, repetition, and verbal noise
+3. Extract concrete next-actions ONLY if they are clearly implied or stated. If the capture is purely an idea or observation, return an empty actions array []
+4. Never add actions the user didn't imply. Do not invent tasks
+5. Keep the user's voice and meaning — do not make it sound corporate or robotic
+6. Respond with ONLY the JSON object. No markdown, no code fences, no explanation`;
+
+async function aiSummarise(rawText) {
+  // Only summarise longer captures
+  if (!rawText || rawText.length < 80) return null;
+  if (!getGeminiKey()) return null;
+
+  try {
+    const result = await callGemini(SYSTEM_PROMPT_SUMMARISE, rawText);
+    if (!result) return null;
+
+    // Parse JSON — handle possible markdown fencing
+    const cleaned = result.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+    const parsed = JSON.parse(cleaned);
+
+    // Validate shape
+    if (parsed && typeof parsed.title === 'string' && typeof parsed.summary === 'string') {
+      return {
+        title: parsed.title.trim(),
+        summary: parsed.summary.trim(),
+        actions: Array.isArray(parsed.actions) ? parsed.actions.filter(a => typeof a === 'string' && a.trim()) : []
+      };
+    }
+  } catch (e) {
+    console.warn('Brain dump summarise failed:', e.message);
+    if (getGeminiKey()) showToast('Summarise: ' + e.message);
+  }
+
+  return null;
+}
+
 // ── HELP ME START (MVNA) ─────────────────────────────────
 async function helpMeStartAI({ task, projectId, projectPhase, moodState, maxSteps, completedSteps = [] }) {
   // Try Gemini first

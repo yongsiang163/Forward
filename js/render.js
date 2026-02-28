@@ -74,10 +74,37 @@ function renderItemHTML(item, isCold = false) {
     ? `<button class="inbox-item-develop" onclick="promoteToProject('${item.id}')">Develop →</button>`
     : '';
 
+  // Brain dump title
+  const titleHTML = item.aiTitle
+    ? `<p class="inbox-item-title">${esc(item.aiTitle)}</p>`
+    : '';
+
+  // Raw text toggle (only if summarised)
+  const rawToggleHTML = item.rawContent
+    ? `<button class="inbox-item-raw-toggle" onclick="event.stopPropagation(); toggleRawContent('${item.id}')">Show original</button>
+       <div class="inbox-item-raw" id="raw-${item.id}" style="display:none;">
+         <p>${esc(item.rawContent)}</p>
+       </div>`
+    : '';
+
+  // Extracted actions
+  let actionsHTML = '';
+  if (item.aiActions && item.aiActions.length > 0) {
+    actionsHTML = `<div class="inbox-item-actions">${item.aiActions.map((a, i) =>
+      `<div class="inbox-action-item">
+        <span class="inbox-action-bullet">•</span>
+        <span class="inbox-action-text">${esc(a)}</span>
+      </div>`
+    ).join('')}</div>`;
+  }
+
   return `
     <div class="inbox-item cat-${cat}${isCold ? ' status-cold' : ''}" onclick="openItemAction('${item.id}')">
       <div class="inbox-item-bar"></div>
+      ${titleHTML}
       <p class="inbox-item-content">${esc(item.content)}</p>
+      ${actionsHTML}
+      ${rawToggleHTML}
       <div class="inbox-item-footer">
         <span class="inbox-item-time">${offlineDot}${timeAgo(item.createdAt)}</span>
         <span class="cat-tag ${tagClass}" ${tagAction}>${label}</span>
@@ -86,6 +113,16 @@ function renderItemHTML(item, isCold = false) {
         <button class="inbox-item-archive" onclick="archiveItem('${item.id}')" title="Archive">↓</button>
       </div>
     </div>`;
+}
+
+function toggleRawContent(id) {
+  const el = document.getElementById(`raw-${id}`);
+  if (!el) return;
+  if (el.style.display === 'none') {
+    el.style.display = 'block';
+  } else {
+    el.style.display = 'none';
+  }
 }
 
 // ── WORK MODE ─────────────────────────────────────────────

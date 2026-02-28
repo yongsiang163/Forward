@@ -159,7 +159,7 @@ async function saveCapture() {
   let finalCategory = 'uncategorised';
 
   if (!finalProjectId) {
-    // Sort by longest name first to match "Master Bedroom" before "Master" // don't match substrings of shorter names
+    // Sort by longest name first to match "Master Bedroom" before "Master"
     const sortedProjects = [...projects].sort((a, b) => (b.name || '').length - (a.name || '').length);
     for (let p of sortedProjects) {
       if (p.name && rawText.toLowerCase().includes('@' + p.name.toLowerCase())) {
@@ -171,8 +171,12 @@ async function saveCapture() {
 
   if (finalProjectId) finalCategory = 'task';
 
-  // Split text by lines to create independent items
-  const lines = rawText.split(/\r?\n/).filter(l => l.trim().length > 0);
+  // Brain dump detection: if text is long (>80 chars), treat as single item
+  const isBrainDump = rawText.length > 80;
+  const lines = isBrainDump
+    ? [rawText]  // keep as one item
+    : rawText.split(/\r?\n/).filter(l => l.trim().length > 0);
+
   let itemsSaved = 0;
 
   for (let lineText of lines) {
@@ -189,7 +193,12 @@ async function saveCapture() {
       confirmed: finalProjectId ? true : false,
       mvnaSteps: null,
       mvnaCurrentStep: 0,
-      aiPending: !finalProjectId && !navigator.onLine
+      aiPending: !finalProjectId && !navigator.onLine,
+      // Brain dump fields
+      rawContent: null,
+      aiTitle: null,
+      aiSummary: null,
+      aiActions: null
     };
 
     items.unshift(item);
@@ -198,11 +207,16 @@ async function saveCapture() {
     if (!finalProjectId && navigator.onLine) {
       categoriseItem(item);
     }
+
+    // Trigger brain dump summarisation in background for long captures
+    if (isBrainDump && navigator.onLine && typeof aiSummarise === 'function') {
+      summariseItem(item);
+    }
   }
 
   if (itemsSaved > 0) {
     save();
-    showToast(itemsSaved > 1 ? `Captured ${itemsSaved} items ✦` : 'Captured ✦');
+    showToast(isBrainDump ? 'Captured — AI is summarising ✦' : (itemsSaved > 1 ? `Captured ${itemsSaved} items ✦` : 'Captured ✦'));
     updateStats();
     if (S.screen === 'inbox') renderInbox();
   }
@@ -210,6 +224,27 @@ async function saveCapture() {
   // Dismiss
   ta.value = '';
   document.getElementById('capture-sheet').classList.remove('active');
+}
+
+async function summariseItem(item) {
+  try {
+    const result = await aiSummarise(item.content);
+    if (!result) return;
+
+    const idx = items.findIndex(i => i.id === item.id);
+    if (idx === -1) return;
+
+    items[idx].rawContent = items[idx].content;
+    items[idx].aiTitle = result.title;
+    items[idx].aiSummary = result.summary;
+    items[idx].content = result.summary; // display summary as main content
+    items[idx].aiActions = result.actions.length > 0 ? result.actions : null;
+
+    save();
+    if (S.screen === 'inbox') renderInbox();
+  } catch (e) {
+    console.warn('Summarise item failed:', e.message);
+  }
 }
 
 // Capture Project Assignment Methods

@@ -629,6 +629,67 @@
       background: var(--text-muted);
     }
 
+    .inbox-item-title {
+      font-weight: 600;
+      font-size: 15px;
+      color: var(--text);
+      margin-bottom: 6px;
+      line-height: 1.3;
+    }
+
+    .inbox-item-raw-toggle {
+      background: none;
+      border: none;
+      color: var(--teal);
+      font-size: 11px;
+      font-weight: 500;
+      padding: 0;
+      margin: 8px 0 0 0;
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      opacity: 0.8;
+    }
+
+    .inbox-item-raw-toggle:active {
+      opacity: 0.6;
+    }
+
+    .inbox-item-raw {
+      margin-top: 8px;
+      padding: 10px;
+      background: rgba(0, 0, 0, 0.03);
+      border-radius: 8px;
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .inbox-item-actions {
+      margin-top: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .inbox-action-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .inbox-action-bullet {
+      color: var(--teal);
+      font-weight: bold;
+      margin-top: -1px;
+    }
+
+    .inbox-action-text {
+      font-size: 14px;
+      color: var(--text);
+      line-height: 1.4;
+    }
+
     .inbox-item-content {
       font-family: 'Cormorant Garamond', serif;
       font-size: 19px;
