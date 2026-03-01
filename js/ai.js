@@ -192,28 +192,33 @@ RULES:
 
 async function aiSummarise(rawText) {
   // Only summarise longer captures
-  if (!rawText || rawText.length < 80) return null;
-  if (!getGeminiKey()) return null;
+  if (!rawText || rawText.length < 80) {
+    console.warn('[Summarise] Text too short:', rawText?.length, 'chars');
+    return { error: 'Text too short (' + (rawText?.length || 0) + ' chars, need 80+)' };
+  }
+  if (!getGeminiKey()) {
+    console.warn('[Summarise] No API key');
+    return { error: 'No API key — add one in Settings' };
+  }
 
   try {
-    // Use higher token limit so JSON doesn't get truncated
+    console.log('[Summarise] Calling API with', rawText.length, 'chars...');
     const result = await callGemini(SYSTEM_PROMPT_SUMMARISE, rawText, { maxOutputTokens: 1024, temperature: 0.5 });
-    if (!result) return null;
+    console.log('[Summarise] Raw result:', result);
+    if (!result) return { error: 'API returned empty response' };
 
-    // Parse JSON — strip any markdown fences Gemini may add despite instructions
+    // Parse JSON — strip any markdown fences Gemini may add
     let cleaned = result
-      .replace(/^```json\s*/i, '')  // leading ```json
-      .replace(/^```\s*/i, '')       // leading ```
-      .replace(/```\s*$/i, '')       // trailing ```
+      .replace(/^```json\s*/i, '')
+      .replace(/^```\s*/i, '')
+      .replace(/```\s*$/i, '')
       .trim();
 
-    // If Gemini wrapped in extra text, try to extract first JSON object
     const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
     if (jsonMatch) cleaned = jsonMatch[0];
 
     const parsed = JSON.parse(cleaned);
 
-    // Validate shape
     if (parsed && typeof parsed.title === 'string' && typeof parsed.summary === 'string') {
       return {
         title: parsed.title.trim(),
@@ -221,13 +226,11 @@ async function aiSummarise(rawText) {
         actions: Array.isArray(parsed.actions) ? parsed.actions.filter(a => typeof a === 'string' && a.trim()) : []
       };
     }
-    throw new Error('Unexpected response shape from AI');
+    return { error: 'AI response missing title/summary fields' };
   } catch (e) {
-    console.warn('Brain dump summarise failed:', e.message);
-    if (getGeminiKey()) showToast('Summarise failed: ' + e.message);
+    console.error('[Summarise] Error:', e);
+    return { error: e.message };
   }
-
-  return null;
 }
 
 // ── HELP ME START (MVNA) ─────────────────────────────────

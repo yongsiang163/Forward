@@ -229,7 +229,10 @@ async function saveCapture() {
 async function summariseItem(item) {
   try {
     const result = await aiSummarise(item.content);
-    if (!result) return;
+    if (!result || result.error || !result.title) {
+      if (result?.error) console.warn('[Summarise auto]', result.error);
+      return;
+    }
 
     const idx = items.findIndex(i => i.id === item.id);
     if (idx === -1) return;
@@ -237,8 +240,8 @@ async function summariseItem(item) {
     items[idx].rawContent = items[idx].content;
     items[idx].aiTitle = result.title;
     items[idx].aiSummary = result.summary;
-    items[idx].content = result.summary; // display summary as main content
-    items[idx].aiActions = result.actions.length > 0 ? result.actions : null;
+    items[idx].content = result.summary;
+    items[idx].aiActions = result.actions && result.actions.length > 0 ? result.actions : null;
 
     save();
     if (S.screen === 'inbox') renderInbox();
@@ -629,21 +632,29 @@ async function iaSummarise() {
 
   try {
     const result = await aiSummarise(item.content);
-    if (result) {
+
+    // Check for error object
+    if (result && result.error) {
+      showToast(result.error);
+      return;
+    }
+
+    if (result && result.title) {
       item.rawContent = item.content;
       item.aiTitle = result.title;
       item.aiSummary = result.summary;
       item.content = result.summary;
-      item.aiActions = result.actions.length > 0 ? result.actions : null;
+      item.aiActions = result.actions && result.actions.length > 0 ? result.actions : null;
       save();
       renderInbox();
       closeItemAction();
       showToast('Capture summarised ✨');
     } else {
-      showToast('Summarisation failed or returned no result');
+      showToast('No result from AI — check console for details');
     }
   } catch (e) {
     console.warn('Manual summarise failed:', e);
+    showToast('Error: ' + e.message);
   } finally {
     if (btn) {
       btn.textContent = originalText;
