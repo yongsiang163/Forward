@@ -54,8 +54,25 @@ function clearGeminiKey() {
   showToast('API key removed');
 }
 
-// ── CORE API CALL ────────────────────────────────────────
+// ── CORE API CALL (with queue + retry for rate limits) ───
+let _geminiQueue = Promise.resolve();
+
 async function callGemini(systemPrompt, userPrompt, options = {}) {
+  // Queue requests sequentially to avoid 429s on free tier
+  const result = new Promise((resolve, reject) => {
+    _geminiQueue = _geminiQueue.then(async () => {
+      try {
+        const r = await _callGeminiDirect(systemPrompt, userPrompt, options);
+        resolve(r);
+      } catch (e) {
+        reject(e);
+      }
+    });
+  });
+  return result;
+}
+
+async function _callGeminiDirect(systemPrompt, userPrompt, options = {}, attempt = 0) {
   const key = getGeminiKey();
   if (!key) return null;
 
@@ -74,6 +91,14 @@ async function callGemini(systemPrompt, userPrompt, options = {}) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
   });
+
+  // Auto-retry on rate limit (429) with exponential backoff
+  if (res.status === 429 && attempt < 3) {
+    const waitSec = Math.pow(2, attempt + 2); // 4s, 8s, 16s
+    console.warn(`[Gemini] Rate limited, retrying in ${waitSec}s (attempt ${attempt + 1}/3)`);
+    await new Promise(r => setTimeout(r, waitSec * 1000));
+    return _callGeminiDirect(systemPrompt, userPrompt, options, attempt + 1);
+  }
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
