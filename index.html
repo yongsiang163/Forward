@@ -116,6 +116,15 @@
         <p class="home-wordmark">Forward</p>
         <p class="home-state-line" id="home-state-line"></p>
 
+        <!-- Momentum warmth meter -->
+        <div class="momentum-wrap" id="momentum-wrap">
+          <div class="momentum-bar" id="momentum-bar"></div>
+          <p class="momentum-label" id="momentum-label"></p>
+          <div class="momentum-dots" id="momentum-dots"></div>
+          <button class="weekly-review-nudge" id="weekly-review-nudge" style="display:none;"
+            onclick="openWeeklyReview()">Review your week →</button>
+        </div>
+
         <!-- The living orb — tap to capture, long-press for voice -->
         <div class="hero-orb-wrap" id="hero-orb-wrap" ontouchstart="orbTouchStart(event)"
           ontouchend="orbTouchEnd(event)" ontouchcancel="orbTouchEnd(event)" onmousedown="orbTouchStart(event)"
@@ -190,6 +199,12 @@
         <button class="filter-chip" data-filter="uncategorised"
           onclick="setFilter(this,'uncategorised')">Unsorted</button>
       </div>
+      <!-- Search & Tags -->
+      <div class="inbox-search-wrap" style="padding:10px 24px 0;">
+        <input type="search" class="inbox-search" id="inbox-search" placeholder="Search captures…"
+          oninput="onSearchInput(this.value)" autocomplete="off">
+      </div>
+      <div class="inbox-tags" id="inbox-tags"></div>
       <div class="inbox-list" id="inbox-list"></div>
       <!-- Archive section -->
       <button class="archive-toggle" id="archive-toggle" onclick="toggleArchive()">
@@ -256,6 +271,24 @@
             <p class="settings-row-sub">Import a previously exported JSON file</p>
           </div>
           <span class="settings-row-action">↑</span>
+        </div>
+        <div class="settings-row" onclick="openWeeklyReview()">
+          <div class="settings-row-body">
+            <p class="settings-row-text">Weekly Review</p>
+            <p class="settings-row-sub">Reflect on what moved and what's next</p>
+          </div>
+          <span class="settings-row-action">→</span>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <p class="settings-section-label">Smart Notifications</p>
+        <div class="settings-row" onclick="toggleNotifications()">
+          <div class="settings-row-body">
+            <p class="settings-row-text">Gentle Reminders</p>
+            <p class="settings-row-sub">Stale projects and Sunday reviews</p>
+          </div>
+          <span class="settings-row-action" id="setting-notify-status">○ off</span>
         </div>
       </div>
 
@@ -546,13 +579,26 @@
       <button class="item-action-main-btn" id="ia-sync-btn" onclick="iaSyncToReminders()"
         style="display:none; background:rgba(0,122,255,0.08); border-color:rgba(0,122,255,0.25); color:#0a84ff; margin-bottom:12px;">Sync
         to Apple Reminders ↑</button>
-      <button class="item-action-main-btn" id="ia-summarise-btn" onclick="iaSummarise()"
-        style="display:none; background:rgba(155,142,196,0.1); border-color:rgba(155,142,196,0.25); color:var(--purple); margin-bottom:12px;">Summarise
-        with AI ✨</button>
-      <button class="item-action-main-btn" onclick="iaDone()"
-        style="margin-bottom:12px; border-color:rgba(196,149,106,0.5); color:var(--text);">Mark as Done ✓</button>
-      <button class="item-action-main-btn promote" onclick="iaPromote()">Develop into project →</button>
-      <button class="item-action-main-btn archive" onclick="iaArchive()">Archive</button>
+      <div class="item-action-quick-row">
+        <button class="item-action-quick-btn" id="ia-summarise-btn" onclick="iaSummarise()"
+          style="display:none; color:var(--purple); background:rgba(155,142,196,0.06); border-color:rgba(155,142,196,0.2);">
+          <span class="ia-icon">✨</span>
+          <span class="ia-label">AI</span>
+        </button>
+        <button class="item-action-quick-btn" onclick="iaDone()"
+          style="color:var(--text); border-color:rgba(196,149,106,0.3);">
+          <span class="ia-icon">✓</span>
+          <span class="ia-label">Done</span>
+        </button>
+        <button class="item-action-quick-btn promote" onclick="iaPromote()">
+          <span class="ia-icon">→</span>
+          <span class="ia-label">Project</span>
+        </button>
+        <button class="item-action-quick-btn archive" onclick="iaArchive()">
+          <span class="ia-icon">↓</span>
+          <span class="ia-label">Archive</span>
+        </button>
+      </div>
       <button class="item-action-main-btn cancel" onclick="closeItemAction()">Cancel</button>
     </div>
     <div style="flex:1" onclick="closeItemAction()"></div>
@@ -738,6 +784,18 @@
       <button class="item-action-main-btn cancel" onclick="closeItemAction()">Cancel</button>
     </div>
     <div style="flex:1" onclick="closeItemAction()"></div>
+  </div>
+
+  <!-- WEEKLY REVIEW MODAL -->
+  <div class="weekly-review-sheet" id="weekly-review-sheet" style="display:none;">
+    <div class="weekly-review-backdrop" onclick="closeWeeklyReview()"></div>
+    <div class="weekly-review-modal">
+      <div class="capture-handle"></div>
+      <h3 class="weekly-review-title">Your Week</h3>
+      <div class="weekly-review-panels" id="weekly-review-panels"></div>
+      <div class="weekly-review-ai" id="weekly-review-ai"></div>
+      <button class="item-action-main-btn cancel" onclick="closeWeeklyReview()" style="margin-top:16px;">Close</button>
+    </div>
   </div>
 
   <script>

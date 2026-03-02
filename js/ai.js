@@ -496,3 +496,27 @@ function showAIThinking(show) {
   const el = document.getElementById('ai-thinking-inline');
   if (el) el.classList.toggle('visible', show);
 }
+
+// ── WEEKLY REVIEW AI INSIGHT ──────────────────────────────
+async function aiWeeklyInsight(completed, staleProjects, freshItems) {
+  if (!getGeminiKey()) return null;
+
+  const context = `Completed this week: ${completed.length > 0 ? completed.map(i => i.content).join('; ') : 'Nothing'}.
+Stale projects (7+ days untouched): ${staleProjects.length > 0 ? staleProjects.map(p => p.name).join(', ') : 'None'}.
+Fresh items awaiting attention: ${freshItems.length > 0 ? freshItems.map(i => i.content).join('; ') : 'None'}.`;
+
+  const prompt = `You are a gentle weekly reflection assistant for an ADHD productivity app.
+Given the user's week summary below, write 2 sentences:
+1. One observation about their pattern (positive, never judgmental)
+2. One gentle suggestion for next week
+
+Keep it warm, short, grounded. Never use corporate language. Never shame inactivity.
+Respond with ONLY the 2 sentences, nothing else.`;
+
+  try {
+    return await callGemini(prompt, context, { maxOutputTokens: 200, temperature: 0.7 });
+  } catch (e) {
+    console.warn('Weekly insight failed:', e.message);
+    return null;
+  }
+}

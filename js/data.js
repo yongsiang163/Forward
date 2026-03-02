@@ -168,8 +168,19 @@ function runLifecycle() {
   items.forEach(item => {
     const s = computeStatus(item);
     if (s !== item.status) { item.status = s; changed = true; }
-    // Auto-dismiss completed tasks after 24 hours → archived
-    if (item.status === 'done' && item.completedAt && item.category === 'task') {
+
+    // Recurring tasks: reset when period elapses
+    if (item.status === 'done' && item.recurring && item.lastCompletedAt) {
+      const elapsed = now - new Date(item.lastCompletedAt).getTime();
+      const periods = { daily: 86400000, weekly: 604800000, monthly: 2592000000 };
+      if (elapsed >= (periods[item.recurring] || 86400000)) {
+        item.status = 'active';
+        item.completedAt = null;
+        changed = true;
+      }
+    }
+    // Non-recurring done tasks: auto-archive after 24 hours
+    else if (item.status === 'done' && !item.recurring && item.completedAt && item.category === 'task') {
       const doneHrs = (now - new Date(item.completedAt).getTime()) / 3600000;
       if (doneHrs >= 24) {
         item.status = 'archived';
@@ -179,6 +190,31 @@ function runLifecycle() {
     }
   });
   if (changed) save();
+}
+
+// ── MOMENTUM / ACTIVITY TRACKER ──────────────────────────
+function getActivityDays() {
+  const days = new Set();
+  const now = Date.now();
+  const sevenDaysAgo = now - 7 * 86400000;
+
+  // Check items — captures, touches, completions
+  items.forEach(item => {
+    [item.createdAt, item.touchedAt, item.completedAt, item.lastCompletedAt].forEach(d => {
+      if (d && new Date(d).getTime() >= sevenDaysAgo) {
+        days.add(new Date(d).toISOString().slice(0, 10));
+      }
+    });
+  });
+
+  // Check projects — touches
+  projects.forEach(p => {
+    if (p.touchedAt && new Date(p.touchedAt).getTime() >= sevenDaysAgo) {
+      days.add(new Date(p.touchedAt).toISOString().slice(0, 10));
+    }
+  });
+
+  return days;
 }
 
 // PROJECT CATEGORIES + PHASES
@@ -223,6 +259,15 @@ function renderProjects() {
   const cards = filtered.map(p => {
     const catInfo = PROJECT_CATS[p.projectCat] || PROJECT_CATS.open;
     const phaseLabel = catInfo.phaseLabels[p.phase] || p.phase || '';
+    const phases = catInfo.phases || [];
+    const currentIdx = phases.indexOf(p.phase);
+
+    // Phase progress dots
+    const progressHtml = phases.length > 0 ? `
+      <div class="phase-progress">
+        ${phases.map((ph, i) => `<div class="phase-seg ${i <= currentIdx ? 'filled' : ''}" title="${catInfo.phaseLabels[ph] || ph}"></div>`).join('')}
+      </div>` : '';
+
     return `
     <div class="project-card" onclick="openProjectSheet('${p.id}')">
       <span class="cat-badge ${catInfo.badgeClass}">${catInfo.label}</span>
@@ -232,6 +277,7 @@ function renderProjects() {
         <span class="project-phase-pill">${phaseLabel}</span>
         ${p.nextAction ? `<span class="project-next-preview">${esc(p.nextAction)}</span>` : '<span style="font-size:11px;color:var(--text-muted);opacity:0.5">No next action</span>'}
       </div>
+      ${progressHtml}
     </div>`;
   }).join('');
   container.innerHTML = cards + addBtn;

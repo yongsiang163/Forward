@@ -133,8 +133,122 @@ function init() {
     }
   }
 
-  // Async IndexedDB load — merges durable data after instant boot
+  // Async IndexedDB load
   if (typeof loadFromIndexedDB === 'function') loadFromIndexedDB();
+
+  // Smart Notifications init
+  if (localStorage.getItem('forward_notifications') === 'true') {
+    updateNotificationToggleUI(true);
+    scheduleSmartNotifications();
+  } else {
+    updateNotificationToggleUI(false);
+  }
+}
+
+// ── SMART NOTIFICATIONS ──────────────────────────────────
+let _notifyInterval;
+
+async function toggleNotifications() {
+  const isEnabled = localStorage.getItem('forward_notifications') === 'true';
+
+  if (isEnabled) {
+    localStorage.removeItem('forward_notifications');
+    updateNotificationToggleUI(false);
+    clearInterval(_notifyInterval);
+    showToast('Notifications disabled');
+    return;
+  }
+
+  if (!('Notification' in window)) {
+    showToast('Notifications not supported on this device');
+    return;
+  }
+
+  const permission = await Notification.requestPermission();
+  if (permission === 'granted') {
+    localStorage.setItem('forward_notifications', 'true');
+    updateNotificationToggleUI(true);
+    scheduleSmartNotifications();
+
+    // Test notification
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.ready.then(reg => {
+        reg.showNotification('Forward', {
+          body: 'Gentle reminders are now active.',
+          icon: './icon-192.png',
+          badge: './icon-192.png'
+        });
+      });
+    }
+  } else {
+    showToast('Permission denied');
+  }
+}
+
+function updateNotificationToggleUI(enabled) {
+  const statusEl = document.getElementById('setting-notify-status');
+  if (statusEl) {
+    statusEl.textContent = enabled ? '● on' : '○ off';
+    statusEl.style.color = enabled ? 'var(--teal)' : 'var(--text-muted)';
+  }
+}
+
+function scheduleSmartNotifications() {
+  clearInterval(_notifyInterval);
+  // Check every hour
+  _notifyInterval = setInterval(checkNotificationTriggers, 60 * 60 * 1000);
+  // Also check immediately on boot (with a slight delay)
+  setTimeout(checkNotificationTriggers, 5000);
+}
+
+function checkNotificationTriggers() {
+  if (localStorage.getItem('forward_notifications') !== 'true') return;
+
+  const now = new Date();
+
+  // 1. Sunday Review Nudge (Sundays between 9am and 8pm)
+  if (now.getDay() === 0 && now.getHours() >= 9 && now.getHours() <= 20) {
+    const lastReviewNudge = localStorage.getItem('forward_last_review_nudge');
+    const todayStr = now.toISOString().slice(0, 10);
+
+    if (lastReviewNudge !== todayStr) {
+      sendLocalNotification('Your Week', 'Your weekly review is ready. Tap to reflect on what moved.');
+      localStorage.setItem('forward_last_review_nudge', todayStr);
+      return; // Only one notification per check cluster
+    }
+  }
+
+  // 2. Stale Project Nudge (If haven't nudged today)
+  const lastStaleNudge = localStorage.getItem('forward_last_stale_nudge');
+  const todayStr = now.toISOString().slice(0, 10);
+
+  if (lastStaleNudge !== todayStr) {
+    const staleProjects = projects.filter(p => {
+      if (p.status === 'archived') return false;
+      const touched = p.touchedAt ? new Date(p.touchedAt).getTime() : new Date(p.createdAt).getTime();
+      return (Date.now() - touched) > 7 * 86400000;
+    });
+
+    if (staleProjects.length > 0) {
+      const p = staleProjects[0]; // Just nudge about one
+      sendLocalNotification('Stale Project', `"${p.name}" hasn't been touched in a week. Drop it or pick a tiny next step?`);
+      localStorage.setItem('forward_last_stale_nudge', todayStr);
+    }
+  }
+}
+
+function sendLocalNotification(title, body) {
+  if ('serviceWorker' in navigator && Notification.permission === 'granted') {
+    navigator.serviceWorker.ready.then(reg => {
+      reg.showNotification(title, {
+        body: body,
+        icon: './icon-192.png',
+        badge: './icon-192.png',
+        vibrate: [100, 50, 100],
+        tag: 'forward-nudge' // Replaces old nudges
+      });
+    });
+  }
 }
 
 init();

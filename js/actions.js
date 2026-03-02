@@ -576,12 +576,10 @@ function toggleTaskCompletion(itemId) {
   } else {
     item.status = 'done';
     item.completedAt = new Date().toISOString();
+    item.lastCompletedAt = new Date().toISOString();
 
-    // If it's recurring, keep active but note it was touched
     if (item.recurring) {
-      item.status = 'active';
-      item.lastCompletedAt = new Date().toISOString();
-      showToast('Task marked done (Recurring)');
+      showToast('Done · resets ' + (item.recurring === 'daily' ? 'tomorrow' : item.recurring === 'weekly' ? 'next week' : 'next month'));
     }
   }
   item.touchedAt = new Date().toISOString();

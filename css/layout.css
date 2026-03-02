@@ -179,6 +179,90 @@
       background: radial-gradient(circle, rgba(196, 149, 106, 0.18), transparent 70%);
     }
 
+    /* Momentum warmth meter */
+    .momentum-wrap {
+      width: 80%;
+      max-width: 240px;
+      margin: 16px auto 12px;
+      text-align: center;
+    }
+
+    .momentum-bar {
+      height: 3px;
+      border-radius: 3px;
+      transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1), background 0.6s ease;
+      margin-bottom: 6px;
+    }
+
+    .momentum-bar.warm {
+      background: linear-gradient(90deg, rgba(196, 149, 106, 0.6), rgba(196, 149, 106, 0.9));
+      box-shadow: 0 0 12px rgba(196, 149, 106, 0.3);
+    }
+
+    .momentum-bar.amber {
+      background: linear-gradient(90deg, rgba(196, 149, 106, 0.3), rgba(196, 149, 106, 0.55));
+      box-shadow: 0 0 6px rgba(196, 149, 106, 0.15);
+    }
+
+    .momentum-bar.soft {
+      background: rgba(196, 149, 106, 0.12);
+    }
+
+    .momentum-label {
+      font-size: 10px;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin: 4px 0 8px;
+      min-height: 14px;
+      transition: color 0.4s ease;
+    }
+
+    .momentum-label.warm {
+      color: var(--warm);
+    }
+
+    .momentum-label.amber {
+      color: rgba(196, 149, 106, 0.7);
+    }
+
+    .momentum-dots {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .momentum-dot {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .momentum-dot::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.08);
+      transition: background 0.4s ease, box-shadow 0.4s ease;
+    }
+
+    .momentum-dot.active::before {
+      background: var(--warm);
+      box-shadow: 0 0 6px rgba(196, 149, 106, 0.3);
+    }
+
+    .momentum-dot.today::before {
+      border: 1px solid rgba(196, 149, 106, 0.4);
+    }
+
+    .momentum-day-label {
+      font-size: 8px;
+      color: var(--text-muted);
+      opacity: 0.5;
+      letter-spacing: 0;
+    }
+
     /* Capture hint text below orb */
     .hero-capture-hint {
       font-size: 10px;
@@ -548,6 +632,57 @@
     }
 
     .filter-chip.active {
+      border-color: var(--teal);
+      color: var(--teal);
+      background: var(--teal-glow);
+    }
+
+    /* Search bar */
+    .inbox-search {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border-soft);
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-family: var(--ui-font);
+      font-size: 13px;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    .inbox-search:focus {
+      border-color: var(--teal);
+    }
+
+    .inbox-search::placeholder {
+      color: var(--text-muted);
+      opacity: 0.6;
+    }
+
+    /* Tag chips */
+    .inbox-tags {
+      display: flex;
+      gap: 6px;
+      padding: 8px 24px 0;
+      flex-wrap: wrap;
+    }
+
+    .tag-chip {
+      background: rgba(0, 128, 128, 0.06);
+      border: 1px solid rgba(0, 128, 128, 0.15);
+      border-radius: 14px;
+      padding: 4px 12px;
+      font-size: 11px;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: var(--ui-font);
+    }
+
+    .tag-chip.active {
       border-color: var(--teal);
       color: var(--teal);
       background: var(--teal-glow);
@@ -1088,6 +1223,57 @@
       border-color: var(--warm);
       color: var(--warm);
       background: var(--warm-glow);
+    }
+
+    /* Quick Wins */
+    .quick-wins-card {
+      margin-top: 20px;
+      padding: 16px;
+      background: rgba(196, 149, 106, 0.04);
+      border: 1px solid rgba(196, 149, 106, 0.12);
+      border-radius: 16px;
+    }
+
+    .quick-wins-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    .quick-win-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 0;
+      cursor: pointer;
+      border-top: 1px solid rgba(255, 255, 255, 0.03);
+    }
+
+    .quick-win-item:first-of-type {
+      border-top: none;
+    }
+
+    .quick-win-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--warm);
+      opacity: 0.6;
+      flex-shrink: 0;
+    }
+
+    .quick-win-text {
+      font-family: var(--ui-font);
+      font-size: 14px;
+      color: var(--text);
+      line-height: 1.4;
+    }
+
+    .quick-win-item:active {
+      background: rgba(196, 149, 106, 0.08);
+      border-radius: 8px;
     }
 
     /* MVNA steps */

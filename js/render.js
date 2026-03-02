@@ -1,4 +1,8 @@
 // ── INBOX RENDER ─────────────────────────────────────────
+let _searchQuery = '';
+let _searchDebounce = null;
+let _activeTag = null;
+
 function setFilter(btn, filter) {
   document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
   btn.classList.add('active');
@@ -6,22 +10,74 @@ function setFilter(btn, filter) {
   renderInbox();
 }
 
+function onSearchInput(val) {
+  clearTimeout(_searchDebounce);
+  _searchDebounce = setTimeout(() => {
+    _searchQuery = val.toLowerCase().trim();
+    renderInbox();
+  }, 200);
+}
+
+function setTagFilter(tag) {
+  _activeTag = _activeTag === tag ? null : tag;
+  renderInbox();
+}
+
+function renderTagChips() {
+  const tagsEl = document.getElementById('inbox-tags');
+  if (!tagsEl) return;
+
+  // Collect all unique #tags from active items
+  const tagSet = new Set();
+  items.forEach(item => {
+    if (item.status === 'archived') return;
+    const matches = (item.content || '').match(/#[a-zA-Z0-9_]+/g);
+    if (matches) matches.forEach(t => tagSet.add(t.toLowerCase()));
+  });
+
+  if (tagSet.size === 0) {
+    tagsEl.innerHTML = '';
+    return;
+  }
+
+  const tags = [...tagSet].sort();
+  tagsEl.innerHTML = tags.map(t =>
+    `<button class="tag-chip ${_activeTag === t ? 'active' : ''}" onclick="setTagFilter('${t}')">${t}</button>`
+  ).join('');
+}
+
 function renderInbox() {
   runLifecycle();
   const list = document.getElementById('inbox-list');
   const title = document.getElementById('inbox-title');
 
-  const active = items.filter(i =>
+  let active = items.filter(i =>
     i.status !== 'archived' &&
     i.status !== 'done' &&
     !(i.confirmed && (i.category === 'task' || i.aiCategory === 'task'))
   );
+
+  // Category filter
   const filtered = S.filter === 'all'
     ? active
     : active.filter(i => (i.aiCategory || i.category) === S.filter);
 
-  const fresh = filtered.filter(i => i.status === 'fresh' || i.status === 'alive');
-  const cold = filtered.filter(i => i.status === 'cold');
+  // Search filter
+  let searched = filtered;
+  if (_searchQuery) {
+    searched = filtered.filter(i => {
+      const haystack = [i.content, i.aiTitle, i.aiSummary, i.rawContent].filter(Boolean).join(' ').toLowerCase();
+      return haystack.includes(_searchQuery);
+    });
+  }
+
+  // Tag filter
+  if (_activeTag) {
+    searched = searched.filter(i => (i.content || '').toLowerCase().includes(_activeTag));
+  }
+
+  const fresh = searched.filter(i => i.status === 'fresh' || i.status === 'alive');
+  const cold = searched.filter(i => i.status === 'cold');
 
   // Dynamic title
   const freshCount = items.filter(i => i.status === 'fresh').length;
@@ -29,18 +85,21 @@ function renderInbox() {
     ? `${freshCount} fresh item${freshCount !== 1 ? 's' : ''}`
     : 'Everything';
 
-  if (filtered.length === 0) {
+  // Render tags
+  renderTagChips();
+
+  if (searched.length === 0) {
     list.innerHTML = `
       <div class="inbox-empty">
         <div class="inbox-empty-orb"></div>
-        <p class="inbox-empty-text">Nothing here yet.<br>Capture something.</p>
+        <p class="inbox-empty-text">${_searchQuery || _activeTag ? 'No matches.' : 'Nothing here yet.<br>Capture something.'}</p>
       </div>`;
     return;
   }
 
   let html = fresh.map(i => renderItemHTML(i)).join('');
 
-  // Cold items — collapsed block, not dimmed text
+  // Cold items — collapsed block
   if (cold.length > 0) {
     html += `
       <div class="cold-block ${S.coldExpanded ? 'open' : ''}" onclick="toggleCold()">
@@ -210,6 +269,28 @@ function renderWork() {
   helpBtn.textContent = 'Help me start →';
   helpBtn.onclick = () => runHelpMeStart(candidate);
   area.appendChild(helpBtn);
+
+  // Quick Wins — for low-energy moods, show 3 shortest tasks as gentle alternatives
+  if (moodInfo && (moodInfo.state === 'fatigued' || session?.mood === 'Restless')) {
+    const quickWins = items
+      .filter(i => i.category === 'task' && i.status !== 'archived' && i.status !== 'done' && i.id !== candidate.id)
+      .sort((a, b) => a.content.length - b.content.length)
+      .slice(0, 3);
+
+    if (quickWins.length > 0) {
+      const qwHtml = `
+        <div class="quick-wins-card">
+          <p class="quick-wins-label">Or try a quick win</p>
+          ${quickWins.map(t => `
+            <div class="quick-win-item" onclick="S.currentWorkItem=items.find(i=>i.id==='${t.id}');enterFocus();">
+              <span class="quick-win-dot"></span>
+              <span class="quick-win-text">${esc(t.content)}</span>
+            </div>
+          `).join('')}
+        </div>`;
+      area.insertAdjacentHTML('beforeend', qwHtml);
+    }
+  }
 }
 
 function pickWorkItem(moodInfo) {
@@ -412,7 +493,6 @@ function exitFocus() {
 // ── HOME SCREEN ───────────────────────────────────────────
 function renderHome() {
   const line = document.getElementById('home-state-line');
-  // rewind card is now inline in hero state line — no separate slot
   const session = S.rewindSession;
 
   const ICONS = { Heavy: '🌧', Tired: '🌫', Restless: '⚡', Okay: '🌤', Calm: '🌊', Alive: '✨' };
@@ -420,17 +500,70 @@ function renderHome() {
   if (!session) {
     line.className = 'home-state-line no-session';
     line.innerHTML = `Open <strong style="color:var(--warm)">Rewind</strong> to check in for a better experience.`;
-    // no slot to update
   } else {
     const moodInfo = MOOD_MAP[session.mood] || MOOD_MAP.Okay;
     const icon = ICONS[session.mood] || '';
     line.className = 'home-state-line';
     line.innerHTML = `${icon} <em>${session.mood}</em> &middot; ${moodInfo.label}`;
-    // mood shown inline in state line
     S.attentionState = moodInfo.state;
   }
 
+  renderMomentum();
   updateStats();
+}
+
+function renderMomentum() {
+  const wrap = document.getElementById('momentum-wrap');
+  const bar = document.getElementById('momentum-bar');
+  const label = document.getElementById('momentum-label');
+  const dotsEl = document.getElementById('momentum-dots');
+  if (!wrap || !bar || !label || !dotsEl) return;
+
+  const activityDays = getActivityDays();
+  const count = activityDays.size;
+
+  // 7-day dot row — filled for active days, empty for rest
+  const today = new Date();
+  const dayLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+  let dotsHtml = '';
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const iso = d.toISOString().slice(0, 10);
+    const active = activityDays.has(iso);
+    const isToday = i === 0;
+    dotsHtml += `<div class="momentum-dot ${active ? 'active' : ''} ${isToday ? 'today' : ''}">
+      <span class="momentum-day-label">${dayLabels[d.getDay()]}</span>
+    </div>`;
+  }
+  dotsEl.innerHTML = dotsHtml;
+
+  // Glow bar fill + label
+  const pct = Math.round((count / 7) * 100);
+  bar.style.width = pct + '%';
+
+  if (count >= 5) {
+    bar.className = 'momentum-bar warm';
+    label.textContent = "You've been showing up";
+    label.className = 'momentum-label warm';
+  } else if (count >= 2) {
+    bar.className = 'momentum-bar amber';
+    label.textContent = 'Momentum building';
+    label.className = 'momentum-label amber';
+  } else if (count === 1) {
+    bar.className = 'momentum-bar soft';
+    label.textContent = '';
+    label.className = 'momentum-label';
+  } else {
+    bar.className = 'momentum-bar soft';
+    // Check if user has any items at all (returning user vs new user)
+    if (items.length > 0) {
+      label.textContent = 'Welcome back. Pick up wherever feels right.';
+    } else {
+      label.textContent = '';
+    }
+    label.className = 'momentum-label';
+  }
 }
 
 function updateStats() {
@@ -452,31 +585,81 @@ function renderTasks() {
   const recurringContainer = document.getElementById('recurring-list-container');
   const recurringHeader = document.getElementById('tasks-recurring-header');
 
-  if (!container) return; // fail gracefully if element doesn't exist
+  if (!container) return;
 
-  // Find all confirmed tasks that aren't archived
-  const allTasks = items.filter(i => i.category === 'task' && i.status !== 'archived' && !i.recurring);
-  const activeTasks = allTasks.filter(i => i.status !== 'done');
-  const doneTasks = allTasks.filter(i => i.status === 'done');
-  const recurringTasks = items.filter(i => i.category === 'task' && i.status !== 'archived' && i.recurring);
+  // Separate tasks into categories
+  const allTasks = items.filter(i => i.category === 'task' && i.status !== 'archived');
 
-  // 1) Active Tasks
-  if (activeTasks.length === 0 && doneTasks.length === 0) {
+  // Recurring tasks — due (active) and done today
+  const recurringDue = allTasks.filter(i => i.recurring && i.status !== 'done');
+  const recurringDone = allTasks.filter(i => i.recurring && i.status === 'done');
+
+  // One-off tasks
+  const oneOffActive = allTasks.filter(i => !i.recurring && i.status !== 'done');
+  const oneOffDone = allTasks.filter(i => !i.recurring && i.status === 'done');
+
+  // 1) Recurring — Due Today section
+  if (recurringDue.length > 0 || recurringDone.length > 0) {
+    if (recurringHeader) recurringHeader.style.display = 'block';
+
+    if (recurringContainer) {
+      let rhtml = '';
+
+      // Due now
+      if (recurringDue.length > 0) {
+        rhtml += recurringDue.map(t => {
+          const rLabel = t.recurring === 'daily' ? 'D' : t.recurring === 'weekly' ? 'W' : 'M';
+          return `
+          <div class="task-list-item">
+            <div class="task-ring-toggle" onclick="toggleTaskCompletion('${t.id}')"></div>
+            <div class="task-content">${t.content}</div>
+            <div class="task-item-actions">
+               <button class="recurring-btn active" title="Recurrence: ${t.recurring}">${rLabel}</button>
+            </div>
+          </div>`;
+        }).join('');
+      }
+
+      // Done today (recurring)
+      if (recurringDone.length > 0) {
+        const resetLabel = { daily: 'resets tomorrow', weekly: 'resets next week', monthly: 'resets next month' };
+        rhtml += recurringDone.map(t => {
+          const rLabel = t.recurring === 'daily' ? 'D' : t.recurring === 'weekly' ? 'W' : 'M';
+          return `
+          <div class="task-list-item status-done">
+            <div class="task-ring-toggle completed" onclick="toggleTaskCompletion('${t.id}')"></div>
+            <div class="task-content">${t.content}</div>
+            <div class="task-item-actions">
+               <span style="font-size:9px; color:var(--text-muted); letter-spacing:0.5px;">${resetLabel[t.recurring] || 'resets'}</span>
+               <button class="recurring-btn active" title="Recurrence: ${t.recurring}">${rLabel}</button>
+            </div>
+          </div>`;
+        }).join('');
+      }
+
+      recurringContainer.innerHTML = rhtml;
+    }
+  } else {
+    if (recurringHeader) recurringHeader.style.display = 'none';
+    if (recurringContainer) recurringContainer.innerHTML = '';
+  }
+
+  // 2) One-off Tasks
+  if (oneOffActive.length === 0 && oneOffDone.length === 0) {
     container.innerHTML = `<p class="inbox-empty-text" style="font-size:16px;">No one-off tasks... yet.</p>`;
   } else {
-    activeTasks.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    oneOffActive.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-    let html = activeTasks.map(t => `
+    let html = oneOffActive.map(t => `
       <div class="task-list-item">
         <div class="task-ring-toggle" onclick="toggleTaskCompletion('${t.id}')"></div>
         <div class="task-content">${t.content}</div>
       </div>
     `).join('');
 
-    // Done block — shows recently completed tasks (< 24h), auto-dismissed after
-    if (doneTasks.length > 0) {
+    if (oneOffDone.length > 0) {
       html += `<p style="font-size:11px; color:var(--text-muted); letter-spacing:1px; margin:20px 0 8px; text-transform:uppercase;">Done today · dismissed after 24h</p>`;
-      html += doneTasks.map(t => `
+      html += oneOffDone.map(t => `
         <div class="task-list-item status-done">
           <div class="task-ring-toggle completed" onclick="toggleTaskCompletion('${t.id}')"></div>
           <div class="task-content">${t.content}</div>
@@ -485,35 +668,6 @@ function renderTasks() {
     }
 
     container.innerHTML = html;
-  }
-
-  // 2) Recurring Tasks
-  if (recurringTasks.length === 0) {
-    if (recurringHeader) recurringHeader.style.display = 'none';
-    if (recurringContainer) recurringContainer.innerHTML = '';
-  } else {
-    if (recurringHeader) recurringHeader.style.display = 'block';
-    recurringTasks.sort((a, b) => {
-      if (a.status === 'done' && b.status !== 'done') return 1;
-      if (a.status !== 'done' && b.status === 'done') return -1;
-      return new Date(b.createdAt) - new Date(a.createdAt);
-    });
-
-    if (recurringContainer) {
-      recurringContainer.innerHTML = recurringTasks.map(t => {
-        const isDone = t.status === 'done';
-        const rLabel = t.recurring === 'daily' ? 'D' : t.recurring === 'weekly' ? 'W' : t.recurring === 'monthly' ? 'M' : '↻';
-        return `
-          <div class="task-list-item ${isDone ? 'status-done' : ''}">
-            <div class="task-ring-toggle ${isDone ? 'completed' : ''}" onclick="toggleTaskCompletion('${t.id}')"></div>
-            <div class="task-content">${t.content}</div>
-            <div class="task-item-actions">
-               <button class="recurring-btn active" title="Recurrence: ${t.recurring}">${rLabel}</button>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
   }
 }
 
@@ -691,3 +845,87 @@ function restoreItem(id) {
   }
 }
 
+// ── WEEKLY REVIEW ────────────────────────────────────────
+function openWeeklyReview() {
+  const sheet = document.getElementById('weekly-review-sheet');
+  if (!sheet) return;
+  renderWeeklyReviewPanels();
+  sheet.style.display = 'flex';
+}
+
+function closeWeeklyReview() {
+  const sheet = document.getElementById('weekly-review-sheet');
+  if (sheet) sheet.style.display = 'none';
+}
+
+function renderWeeklyReviewPanels() {
+  const panels = document.getElementById('weekly-review-panels');
+  const aiArea = document.getElementById('weekly-review-ai');
+  if (!panels) return;
+
+  const now = Date.now();
+  const weekAgo = now - 7 * 86400000;
+
+  // What moved — completed items this week
+  const completed = items.filter(i =>
+    (i.status === 'done' || i.status === 'archived') &&
+    i.completedAt && new Date(i.completedAt).getTime() >= weekAgo
+  );
+
+  // What's stale — projects not touched in 7+ days
+  const staleProjects = projects.filter(p => {
+    if (p.status === 'archived') return false;
+    const touched = p.touchedAt ? new Date(p.touchedAt).getTime() : new Date(p.createdAt).getTime();
+    return (now - touched) > 7 * 86400000;
+  });
+
+  // What's next — fresh items that need attention
+  const freshItems = items.filter(i => i.status === 'fresh' || i.status === 'alive')
+    .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+    .slice(0, 5);
+
+  let html = '';
+
+  // Panel 1: What Moved
+  html += `<div class="wr-panel">
+    <p class="wr-panel-label">What moved</p>
+    ${completed.length > 0
+      ? completed.map(i => `<p class="wr-item done">✓ ${esc(i.content)}</p>`).join('')
+      : '<p class="wr-item muted">Nothing completed this week. That\'s okay.</p>'}
+  </div>`;
+
+  // Panel 2: What's Stale
+  html += `<div class="wr-panel">
+    <p class="wr-panel-label">What's stale</p>
+    ${staleProjects.length > 0
+      ? staleProjects.map(p => {
+        const days = Math.floor((now - new Date(p.touchedAt || p.createdAt).getTime()) / 86400000);
+        return `<p class="wr-item stale">${esc(p.name)} <span class="wr-days">${days}d</span></p>`;
+      }).join('')
+      : '<p class="wr-item muted">Everything\'s been touched recently.</p>'}
+  </div>`;
+
+  // Panel 3: What's Next
+  html += `<div class="wr-panel">
+    <p class="wr-panel-label">What's next</p>
+    ${freshItems.length > 0
+      ? freshItems.map(i => `<p class="wr-item">${esc(i.content)}</p>`).join('')
+      : '<p class="wr-item muted">Inbox is clear. Nice.</p>'}
+  </div>`;
+
+  panels.innerHTML = html;
+
+  // Optional AI insight
+  if (aiArea && getGeminiKey && getGeminiKey()) {
+    aiArea.innerHTML = '<p style="font-size:11px;color:var(--text-muted);text-align:center;">Generating insight…</p>';
+    aiWeeklyInsight(completed, staleProjects, freshItems).then(insight => {
+      if (insight) {
+        aiArea.innerHTML = `<div class="wr-ai-insight"><p class="wr-panel-label">AI Insight</p><p class="wr-ai-text">${esc(insight)}</p></div>`;
+      } else {
+        aiArea.innerHTML = '';
+      }
+    }).catch(() => { aiArea.innerHTML = ''; });
+  } else {
+    if (aiArea) aiArea.innerHTML = '';
+  }
+}
