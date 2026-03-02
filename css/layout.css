@@ -49,8 +49,8 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      padding: 0 28px 28px;
+      justify-content: flex-start;
+      padding: 12vh 28px 6vh;
       position: relative;
       text-align: center;
       touch-action: pan-y;
@@ -61,16 +61,29 @@
     /* Wordmark — Forward, above the orb */
     .home-wordmark {
       font-family: 'Cormorant Garamond', serif;
-      font-size: 13px;
-      font-weight: 300;
-      font-style: italic;
-      letter-spacing: 6px;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      margin-bottom: 36px;
-      opacity: 0;
+      font-weight: 500;
+      font-style: normal;
+      font-size: clamp(28px, 5vw, 44px);
+      text-transform: lowercase;
+      letter-spacing: 4px;
+      color: #8a837c;
+      opacity: 0.7;
+      margin-bottom: 12px;
+      transition: letter-spacing 0.8s ease, color 0.8s ease, opacity 0.8s ease, filter 0.8s ease, text-shadow 0.8s ease;
       animation: fadeUp 0.8s ease 0.3s forwards;
-      /* Sits naturally below safe-area, no fixed top needed */
+    }
+
+    /* Wordmark States */
+    .home-wordmark.state-alive {
+      color: #e8ddd4;
+      letter-spacing: 7px;
+      opacity: 1;
+      text-shadow: 0 0 20px rgba(196, 149, 106, 0.4);
+    }
+
+    .home-wordmark.state-hidden {
+      opacity: 0;
+      filter: blur(2px);
     }
 
     /* State line — mood context, below wordmark */
@@ -79,7 +92,8 @@
       color: var(--text-muted);
       letter-spacing: 0.4px;
       line-height: 1.7;
-      margin-bottom: 44px;
+      margin-bottom: auto;
+      /* Pushes the rest of the content down */
       min-height: 20px;
       opacity: 0;
       animation: fadeUp 0.8s ease 0.5s forwards;
@@ -92,6 +106,95 @@
       font-size: 16px;
     }
 
+    /* Momentum warmth meter */
+    .momentum-wrap {
+      width: 80%;
+      max-width: 240px;
+      margin: 16px auto 7vh;
+      text-align: center;
+    }
+
+    .momentum-bar {
+      height: 3px;
+      border-radius: 3px;
+      transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1), background 0.6s ease;
+      margin-bottom: 6px;
+    }
+
+    .momentum-bar.warm {
+      background: linear-gradient(90deg, rgba(196, 149, 106, 0.6), rgba(196, 149, 106, 0.9));
+      box-shadow: 0 0 12px rgba(196, 149, 106, 0.3);
+    }
+
+    .momentum-bar.amber {
+      background: linear-gradient(90deg, rgba(196, 149, 106, 0.3), rgba(196, 149, 106, 0.55));
+      box-shadow: 0 0 6px rgba(196, 149, 106, 0.15);
+    }
+
+    .momentum-bar.soft {
+      background: rgba(196, 149, 106, 0.12);
+    }
+
+    .momentum-label {
+      font-size: 10px;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin: 4px 0 8px;
+      min-height: 14px;
+      transition: color 0.4s ease;
+    }
+
+    .momentum-label.warm {
+      color: var(--warm);
+    }
+
+    .momentum-label.amber {
+      color: rgba(196, 149, 106, 0.7);
+    }
+
+    .momentum-dots {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .momentum-dot {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .momentum-dot::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.08);
+      transition: background 0.4s ease, box-shadow 0.4s ease;
+    }
+
+    .momentum-dot.active::before {
+      background: var(--warm);
+      box-shadow: 0 0 6px rgba(196, 149, 106, 0.3);
+    }
+
+    .momentum-dot.today::before {
+      border: 1px solid rgba(196, 149, 106, 0.4);
+    }
+
+    .momentum-day-label {
+      font-size: 8px;
+      font-weight: 500;
+      color: var(--text-muted);
+      opacity: 0.5;
+    }
+
+    .momentum-dot.today .momentum-day-label {
+      color: var(--warm);
+      opacity: 1;
+    }
+
     /* ── HERO ORB — ring + inner fill + pulse ── */
     .hero-orb-wrap {
       position: relative;
@@ -101,7 +204,7 @@
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      margin-bottom: 20px;
+      margin-bottom: 7vh;
       opacity: 0;
       animation: fadeUp 0.8s ease 0.65s forwards;
     }
@@ -177,14 +280,6 @@
 
     .hero-orb-wrap:active .hero-ring-halo {
       background: radial-gradient(circle, rgba(196, 149, 106, 0.18), transparent 70%);
-    }
-
-    /* Momentum warmth meter */
-    .momentum-wrap {
-      width: 80%;
-      max-width: 240px;
-      margin: 16px auto 12px;
-      text-align: center;
     }
 
     .momentum-bar {

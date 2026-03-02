@@ -494,18 +494,31 @@ function exitFocus() {
 function renderHome() {
   const line = document.getElementById('home-state-line');
   const session = S.rewindSession;
+  const wordmark = document.querySelector('.home-wordmark');
 
   const ICONS = { Heavy: '🌧', Tired: '🌫', Restless: '⚡', Okay: '🌤', Calm: '🌊', Alive: '✨' };
 
   if (!session) {
     line.className = 'home-state-line no-session';
     line.innerHTML = `Open <strong style="color:var(--warm)">Rewind</strong> to check in for a better experience.`;
+    if (wordmark) wordmark.className = 'home-wordmark';
   } else {
     const moodInfo = MOOD_MAP[session.mood] || MOOD_MAP.Okay;
     const icon = ICONS[session.mood] || '';
     line.className = 'home-state-line';
     line.innerHTML = `${icon} <em>${session.mood}</em> &middot; ${moodInfo.label}`;
     S.attentionState = moodInfo.state;
+
+    // Toggle wordmark typography states
+    if (wordmark) {
+      if (session.mood === 'Alive') {
+        wordmark.className = 'home-wordmark state-alive';
+      } else if (session.mood === 'Heavy' || session.mood === 'Tired') {
+        wordmark.className = 'home-wordmark state-hidden';
+      } else {
+        wordmark.className = 'home-wordmark';
+      }
+    }
   }
 
   renderMomentum();
