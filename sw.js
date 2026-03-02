@@ -1,7 +1,22 @@
-const CACHE_NAME = 'forward-cache-v21';
+const CACHE_NAME = 'forward-cache-v22';
 
-// ... (keep existing urlsToCache and install/fetch loops)
-
+const urlsToCache = [
+    './',
+    './index.html',
+    './manifest.json',
+    './icon-192.png',
+    './icon-512.png',
+    './js/firebase-config.js',
+    './js/data.js',
+    './js/ai.js',
+    './js/actions.js',
+    './js/render.js',
+    './js/app.js',
+    './css/main.css',
+    './css/layout.css',
+    './css/components.css',
+    './css/modals.css'
+];
 self.addEventListener('install', event => {
     event.waitUntil(
         caches.open(CACHE_NAME)
@@ -11,31 +26,59 @@ self.addEventListener('install', event => {
 });
 
 self.addEventListener('fetch', event => {
-    // Bypass caching for Firebase/Firestore calls
+    // Bypass caching for external/API calls
     if (
         event.request.url.includes('firestore.googleapis.com') ||
         event.request.url.includes('securetoken.googleapis.com') ||
         event.request.url.includes('firebase') ||
-        event.request.url.includes('gstatic.com')
+        event.request.url.includes('gstatic.com') ||
+        event.request.url.includes('googleapis.com')
     ) {
         return;
     }
 
-    event.respondWith(
-        caches.match(event.request)
-            .then(response => {
-                if (response) return response;
-                return fetch(event.request).then(response => {
-                    if (!response || response.status !== 200 || response.type !== 'basic') {
-                        return response;
-                    }
-                    var responseToCache = response.clone();
-                    caches.open(CACHE_NAME).then(cache => {
-                        cache.put(event.request, responseToCache);
-                    });
+    const url = new URL(event.request.url);
+
+    // Network First strategy for HTML to ensure latest app wrapper
+    if (event.request.mode === 'navigate' || url.pathname.endsWith('.html') || url.pathname === '/') {
+        event.respondWith(
+            fetch(event.request)
+                .then(response => {
+                    const responseClone = response.clone();
+                    caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseClone));
                     return response;
-                });
+                })
+                .catch(() => caches.match(event.request))
+        );
+        return;
+    }
+
+    // Stale-While-Revalidate for CSS and JS
+    if (url.pathname.endsWith('.css') || url.pathname.endsWith('.js')) {
+        event.respondWith(
+            caches.match(event.request).then(cachedResponse => {
+                const fetchPromise = fetch(event.request).then(networkResponse => {
+                    if (networkResponse && networkResponse.status === 200) {
+                        caches.open(CACHE_NAME).then(cache => cache.put(event.request, networkResponse.clone()));
+                    }
+                    return networkResponse;
+                }).catch(() => { }); // Ignore network errors in SWR
+
+                return cachedResponse || fetchPromise;
             })
+        );
+        return;
+    }
+
+    // Cache First for Images & Static Assets
+    event.respondWith(
+        caches.match(event.request).then(response => {
+            return response || fetch(event.request).then(networkResponse => {
+                const responseClone = networkResponse.clone();
+                caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseClone));
+                return networkResponse;
+            });
+        })
     );
 });
 
