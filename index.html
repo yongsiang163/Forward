@@ -232,7 +232,7 @@
         <p class="inbox-eyebrow">Captured</p>
         <h2 class="inbox-screen-title" id="inbox-title">Everything</h2>
       </div>
-      <div class="filter-row" id="filter-row" style="padding: 16px 24px 0">
+      <div class="filter-row" id="filter-row">
         <button class="filter-chip active" data-filter="all" onclick="setFilter(this,'all')">All</button>
         <button class="filter-chip" data-filter="task" onclick="setFilter(this,'task')">Tasks</button>
         <button class="filter-chip" data-filter="spark" onclick="setFilter(this,'spark')">Sparks</button>
@@ -241,7 +241,7 @@
           onclick="setFilter(this,'uncategorised')">Unsorted</button>
       </div>
       <!-- Search & Tags -->
-      <div class="inbox-search-wrap" style="padding:10px 24px 0;">
+      <div class="inbox-search-wrap">
         <input type="search" class="inbox-search" id="inbox-search" placeholder="Search captures…"
           oninput="onSearchInput(this.value)" autocomplete="off">
       </div>

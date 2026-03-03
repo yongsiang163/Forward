@@ -866,8 +866,14 @@
       gap: 8px;
       padding: 20px 28px 0;
       overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
+      overflow-y: visible;
       scrollbar-width: none;
+      /* iOS Safari: prevent flex parent from collapsing this row to zero height */
+      flex-shrink: 0;
+      min-height: 44px;
+      /* Force GPU compositing layer — fixes disappearing chips on iOS WebKit */
+      -webkit-transform: translateZ(0);
+      transform: translateZ(0);
     }
 
     .filter-row::-webkit-scrollbar {
