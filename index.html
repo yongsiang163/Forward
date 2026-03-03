@@ -474,7 +474,7 @@
         <div class="project-sheet-section">
           <p class="project-sheet-eyebrow">The Vision</p>
           <div class="project-vision-text" id="ps-vision"></div>
-          <p class="project-vision-locked">captured when you believed in this · cannot be edited</p>
+          <p class="project-vision-locked" id="ps-vision-lock">captured when you believed in this · cannot be edited</p>
         </div>
 
         <!-- Phase -->
@@ -501,6 +501,12 @@
         <div class="project-sheet-section">
           <p class="project-sheet-eyebrow">Notes</p>
           <textarea class="project-input" id="ps-notes" rows="4" placeholder="Anything else worth holding…"></textarea>
+        </div>
+
+        <!-- Linked Captures — populated by renderProjectItems() -->
+        <div class="project-sheet-section" id="ps-captured-section" style="display:none;">
+          <p class="project-sheet-eyebrow">Linked Captures</p>
+          <div id="ps-captured-list"></div>
         </div>
 
         <div style="display:flex; gap:10px; margin-top:20px;">

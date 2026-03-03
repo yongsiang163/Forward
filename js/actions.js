@@ -378,10 +378,13 @@ function openProjectSheet(id) {
   // Render Linked Captured Items
   renderProjectItems(p.name);
 
-  // Reset AI thread
-  document.getElementById('project-ai-thread').classList.remove('open');
-  document.getElementById('ai-messages').innerHTML = '';
-  document.getElementById('project-ai-btn-label').textContent = 'Talk to AI →';
+  // Reset AI thread (elements may not exist yet — guard against null crash)
+  const _aiThread = document.getElementById('project-ai-thread');
+  if (_aiThread) _aiThread.classList.remove('open');
+  const _aiMessages = document.getElementById('ai-messages');
+  if (_aiMessages) _aiMessages.innerHTML = '';
+  const _aiLabel = document.getElementById('project-ai-btn-label');
+  if (_aiLabel) _aiLabel.textContent = 'Talk to AI →';
 
   document.getElementById('project-sheet').classList.add('active');
 
