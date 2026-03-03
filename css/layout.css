@@ -14,7 +14,7 @@
     .screen {
       position: fixed;
       top: 0;
-      bottom: 68px;
+      bottom: calc(68px + env(safe-area-inset-bottom));
       left: 0;
       right: 0;
       display: flex;
@@ -577,7 +577,7 @@
     /* Stats drawer — fixed to bottom, hidden below viewport, revealed on swipe-up */
     .home-below-fold {
       position: fixed;
-      bottom: 68px;
+      bottom: calc(68px + env(safe-area-inset-bottom));
       /* sits just above bottom nav */
       left: 0;
       right: 0;
@@ -608,7 +608,7 @@
     /* Pull handle — fixed above bottom nav, only on home */
     .stats-handle {
       position: fixed;
-      bottom: calc(68px + 10px);
+      bottom: calc(68px + 10px + env(safe-area-inset-bottom));
       left: 50%;
       transform: translateX(-50%);
       width: 32px;
@@ -2136,7 +2136,7 @@
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       border-top: 1px solid var(--border-soft);
-      padding: 10px 0 max(10px, env(safe-area-inset-bottom));
+      padding: 10px 0 max(16px, env(safe-area-inset-bottom));
     }
 
     .nav-btn {
