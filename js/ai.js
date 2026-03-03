@@ -3,6 +3,7 @@
 // When no key is set, pattern-matching fallback is used.
 
 const GEMINI_MODEL = 'gemini-2.0-flash';
+const GEMINI_API_VERSION = 'v1';   // v1beta is restricted for new API keys; use stable v1
 
 function getGeminiKey() {
   return localStorage.getItem('gemini_api_key') || null;
@@ -44,7 +45,7 @@ async function testGeminiKey() {
       showToast('Key test failed — check the key');
     }
   } catch (e) {
-    showToast('Key test failed — ' + (e.message || 'check the key'));
+    showToast(e.message || 'Key test failed — check the key');
   }
 }
 
@@ -76,7 +77,7 @@ async function _callGeminiDirect(systemPrompt, userPrompt, options = {}, attempt
   const key = getGeminiKey();
   if (!key) return null;
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${key}`;
+  const url = `https://generativelanguage.googleapis.com/v1/models/${GEMINI_MODEL}:generateContent?key=${key}`;
   const body = {
     system_instruction: { parts: [{ text: systemPrompt }] },
     contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
@@ -102,7 +103,15 @@ async function _callGeminiDirect(systemPrompt, userPrompt, options = {}, attempt
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err?.error?.message || `API error ${res.status}`);
+    const msg = err?.error?.message || `API error ${res.status}`;
+    // Surface key-restriction errors clearly so the user knows to get a fresh key
+    if (res.status === 400 && /no longer available|new user|update your code/i.test(msg)) {
+      throw new Error('API key not supported — generate a new key at aistudio.google.com/apikey and update it in Settings.');
+    }
+    if (res.status === 403) {
+      throw new Error('API key invalid or quota exceeded — check your key in Settings.');
+    }
+    throw new Error(msg);
   }
 
   const data = await res.json();
