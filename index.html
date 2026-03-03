@@ -27,9 +27,19 @@
   <link rel="stylesheet" href="css/main.css">
   <link rel="stylesheet" href="css/layout.css">
   <link rel="stylesheet" href="css/modals.css">
+  <link rel="stylesheet" href="css/launch.css">
 </head>
 
 <body>
+
+  <!-- APP LAUNCH ANIMATION OVERLAY -->
+  <div id="launch-screen">
+    <canvas id="launch-scene"></canvas>
+    <canvas id="launch-grain"></canvas>
+    <div class="launch-vignette"></div>
+    <div class="launch-wordmark" id="launch-wordmark">forward</div>
+    <div class="launch-tagline" id="launch-tagline">move through the world</div>
+  </div>
 
   <!-- Ambient + grain — exact Rewind pattern -->
   <div class="ambient">
@@ -116,6 +126,51 @@
         <p class="home-wordmark">Forward</p>
         <p class="home-state-line" id="home-state-line"></p>
 
+        <!-- Solar stage: orb floats above horizon at mood-driven height -->
+        <div class="hero-solar-stage">
+          <div class="hero-bg-glow"></div>
+
+          <!-- The living orb — tap to capture, long-press for voice -->
+          <div class="hero-orb-wrap" id="hero-orb-wrap" ontouchstart="orbTouchStart(event)"
+            ontouchend="orbTouchEnd(event)" ontouchcancel="orbTouchEnd(event)" onmousedown="orbTouchStart(event)"
+            onmouseup="orbTouchEnd(event)" onmouseleave="orbTouchEnd(event)">
+            <div class="hero-ring-halo"></div>
+            <div class="hero-ring"></div>
+            <div class="hero-ring-2"></div>
+            <div class="hero-orb-inner" id="hero-orb-inner">
+              <span class="hero-plus">+</span>
+            </div>
+          </div>
+
+          <!-- Horizon wave — shape and height change per mood state -->
+          <svg class="hero-horizon" viewBox="0 0 375 60" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="hg" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="rgba(196,149,106,0)"/>
+                <stop offset="25%" stop-color="rgba(196,149,106,0.5)"/>
+                <stop offset="50%" stop-color="rgba(218,172,118,0.82)"/>
+                <stop offset="75%" stop-color="rgba(196,149,106,0.5)"/>
+                <stop offset="100%" stop-color="rgba(196,149,106,0)"/>
+              </linearGradient>
+              <filter id="hglow" x="-25%" y="-200%" width="150%" height="500%">
+                <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="blur"/>
+                <feMerge>
+                  <feMergeNode in="blur"/>
+                  <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+              </filter>
+            </defs>
+            <path id="horizon-fill" class="horizon-fill"
+              d="M0,36 C70,36 110,26 187,22 C264,26 302,36 375,36 L375,60 L0,60 Z"
+              fill="none"/>
+            <path id="horizon-path" class="horizon-path"
+              d="M0,36 C70,36 110,26 187,22 C264,26 302,36 375,36"
+              fill="none" stroke="url(#hg)" stroke-width="1.5" filter="url(#hglow)"/>
+          </svg>
+        </div>
+
+        <p class="hero-capture-hint">tap to capture · hold for voice</p>
+
         <!-- Momentum warmth meter -->
         <div class="momentum-wrap" id="momentum-wrap">
           <div class="momentum-bar" id="momentum-bar"></div>
@@ -124,20 +179,6 @@
           <button class="weekly-review-nudge" id="weekly-review-nudge" style="display:none;"
             onclick="openWeeklyReview()">Review your week →</button>
         </div>
-
-        <!-- The living orb — tap to capture, long-press for voice -->
-        <div class="hero-orb-wrap" id="hero-orb-wrap" ontouchstart="orbTouchStart(event)"
-          ontouchend="orbTouchEnd(event)" ontouchcancel="orbTouchEnd(event)" onmousedown="orbTouchStart(event)"
-          onmouseup="orbTouchEnd(event)" onmouseleave="orbTouchEnd(event)">
-          <div class="hero-ring-halo"></div>
-          <div class="hero-ring"></div>
-          <div class="hero-ring-2"></div>
-          <div class="hero-orb-inner" id="hero-orb-inner">
-            <span class="hero-plus">+</span>
-          </div>
-        </div>
-
-        <p class="hero-capture-hint">tap to capture · hold for voice</p>
 
         <!-- Swipe direction hints -->
         <div class="home-swipe-hints">
@@ -416,6 +457,7 @@
   <script src="js/actions.js"></script>
   <script src="js/render.js"></script>
   <script src="js/app.js"></script>
+  <script src="js/launch.js"></script>
   <!-- PROJECT DETAIL SHEET -->
   <div class="project-sheet" id="project-sheet">
     <div class="project-sheet-modal">

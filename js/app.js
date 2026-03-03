@@ -89,17 +89,78 @@ function updateOrbPulse() {
   if (!inner) return;
   // Scale glow with freshness — more fresh items = warmer, stronger orb
   if (freshCount >= 5) {
-    inner.style.background = 'radial-gradient(circle at 40% 38%, rgba(196,149,106,0.52), rgba(196,149,106,0.1) 70%)';
-    inner.style.boxShadow = '0 0 44px rgba(196,149,106,0.22), inset 0 1px 1px rgba(255,255,255,0.08)';
+    inner.style.background = 'radial-gradient(circle at 40% 36%, rgba(240,185,115,0.96) 0%, rgba(215,162,92,0.82) 22%, rgba(175,118,52,0.52) 48%, rgba(120,75,20,0.18) 70%, transparent 86%)';
+    inner.style.boxShadow = '0 0 70px rgba(196,149,106,0.52), 0 0 130px rgba(196,149,106,0.24), inset 0 2px 4px rgba(255,220,150,0.26)';
   } else if (freshCount >= 2) {
-    inner.style.background = 'radial-gradient(circle at 40% 38%, rgba(196,149,106,0.38), rgba(196,149,106,0.08) 70%)';
-    inner.style.boxShadow = '0 0 32px rgba(196,149,106,0.16), inset 0 1px 1px rgba(255,255,255,0.07)';
+    inner.style.background = 'radial-gradient(circle at 40% 36%, rgba(240,185,115,0.78) 0%, rgba(210,158,90,0.62) 22%, rgba(165,110,42,0.36) 50%, rgba(115,70,18,0.12) 72%, transparent 88%)';
+    inner.style.boxShadow = '0 0 52px rgba(196,149,106,0.36), 0 0 95px rgba(196,149,106,0.15), inset 0 2px 3px rgba(255,210,130,0.18)';
   } else {
     inner.style.background = '';
     inner.style.boxShadow = '';
   }
 }
 
+
+// ── HORIZON WAVE ANIMATION — mirrors launch screen motion ──────────────
+(function () {
+  const W = 375, SEGS = 52;
+
+  // Bell-curve base: y=36 at edges, y=22 at centre (same as the static SVG path)
+  function baseY(x) {
+    return 36 - 14 * Math.pow(Math.sin(Math.PI * x / W), 2);
+  }
+
+  // Sinusoidal wave overlay — three harmonics like the launch horizon
+  function waveY(x, t, amp) {
+    return baseY(x)
+      + Math.sin(x * 0.016 + t * 0.00028) * amp
+      + Math.sin(x * 0.027 - t * 0.00046) * amp * 0.45
+      + Math.sin(x * 0.050 + t * 0.00019) * amp * 0.22;
+  }
+
+  // Build an SVG polyline path string
+  function buildPath(t, amp) {
+    let d = '';
+    for (let i = 0; i <= SEGS; i++) {
+      const x = (i / SEGS) * W;
+      const y = waveY(x, t, amp);
+      d += i === 0 ? `M${x.toFixed(1)},${y.toFixed(2)}` : ` L${x.toFixed(1)},${y.toFixed(2)}`;
+    }
+    return d;
+  }
+
+  // Amplitude driven by current mood (read live each frame)
+  function getAmp() {
+    const orb = document.getElementById('hero-orb-wrap');
+    switch (orb && orb.dataset.mood) {
+      case 'focused':     return 4.5;
+      case 'fatigued':    return 1.0;
+      case 'overwhelmed': return 0.5;
+      default:            return 2.8;   // drifting / none
+    }
+  }
+
+  let _raf = null;
+  window.startHorizonWave = function () {
+    const hPath = document.getElementById('horizon-path');
+    const hFill = document.getElementById('horizon-fill');
+    if (!hPath) return;
+    if (_raf) cancelAnimationFrame(_raf);
+    const t0 = performance.now();
+    let prev = 0;
+    function frame(now) {
+      const dt = Math.min(now - (prev || now), 50); // clamp after tab switch
+      void dt; prev = now;
+      const t = now - t0;
+      const amp = getAmp();
+      const linePath = buildPath(t, amp);
+      hPath.setAttribute('d', linePath);
+      if (hFill) hFill.setAttribute('d', linePath + ` L${W},60 L0,60 Z`);
+      _raf = requestAnimationFrame(frame);
+    }
+    _raf = requestAnimationFrame(frame);
+  };
+})();
 
 // ══════════════════════════════════════════════════════════
 // ── INIT ──────────────────────────────────────────────────
@@ -113,6 +174,9 @@ function init() {
 
   // Ambient orbs
   setTimeout(() => document.querySelectorAll('.ambient-orb').forEach(o => o.classList.add('visible')), 450);
+
+  // Horizon living wave — starts immediately, invisible until CSS fade-in at 0.9s
+  startHorizonWave();
 
   renderHome();
   if (typeof updateAIKeyStatus === 'function') updateAIKeyStatus();

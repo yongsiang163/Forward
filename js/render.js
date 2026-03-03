@@ -521,6 +521,17 @@ function renderHome() {
     }
   }
 
+
+  // Propagate mood state to all visual components
+  const moodState = session ? ((MOOD_MAP[session.mood] || MOOD_MAP.Okay).state || 'drifting') : 'none';
+  const _orbWrap  = document.getElementById('hero-orb-wrap');
+  const _bgGlow   = document.querySelector('.hero-bg-glow');
+  const _wordmark = document.querySelector('.home-wordmark');
+  const _horizon  = document.querySelector('.hero-horizon');
+  if (_orbWrap)  _orbWrap.dataset.mood  = moodState;
+  if (_bgGlow)   _bgGlow.dataset.mood   = moodState;
+  if (_wordmark) _wordmark.dataset.mood = moodState;
+  if (_horizon)  _horizon.dataset.mood  = moodState;
   renderMomentum();
   updateStats();
 }
