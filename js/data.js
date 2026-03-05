@@ -106,20 +106,56 @@ let itemsUnsubscribe = null;
 let projectsUnsubscribe = null;
 
 function load() {
+  let localItems = [];
   try {
     const d = localStorage.getItem('forward_items');
-    if (d) items = JSON.parse(d);
-  } catch (e) { items = []; }
+    if (d) localItems = JSON.parse(d);
+  } catch (e) { localItems = []; }
+
+  // Set initial state to local while waiting for cloud
+  if (localItems.length > 0 && items.length === 0) {
+    items = localItems;
+  }
+
   // Attach Firestore real-time listener (only when signed in)
   if (typeof currentUser !== 'undefined' && currentUser && typeof db !== 'undefined') {
     if (itemsUnsubscribe) itemsUnsubscribe();
     itemsUnsubscribe = db.collection('users').doc(currentUser.uid).collection('items')
       .onSnapshot(snapshot => {
-        const cloud = [];
-        snapshot.forEach(doc => cloud.push(doc.data()));
-        if (cloud.length > 0) {
-          items = cloud;
+        const cloudItems = [];
+        snapshot.forEach(doc => cloudItems.push(doc.data()));
+
+        // Merge Strategy: Combine local and cloud, keeping the newest
+        const mergedMap = new Map();
+
+        // 1. Add all local items to map
+        items.forEach(i => mergedMap.set(i.id, i));
+
+        // 2. Overwrite with cloud if cloud is newer
+        cloudItems.forEach(ci => {
+          const local = mergedMap.get(ci.id);
+          if (!local) {
+            mergedMap.set(ci.id, ci); // Cloud has it, we don't
+          } else {
+            // Both have it, compare timestamps
+            const cloudTime = new Date(ci.touchedAt || ci.createdAt || 0).getTime();
+            const localTime = new Date(local.touchedAt || local.createdAt || 0).getTime();
+            if (cloudTime >= localTime) {
+              mergedMap.set(ci.id, ci);
+            }
+          }
+        });
+
+        const mergedArray = Array.from(mergedMap.values());
+
+        // If the resulting merge is different from what we had, or cloud gave us stuff
+        if (mergedArray.length > 0) {
+          items = mergedArray;
           try { localStorage.setItem('forward_items', JSON.stringify(items)); } catch (e) { }
+
+          // Re-save to cloud to ensure any local-only items are pushed up
+          save();
+
           if (typeof renderInbox === 'function') renderInbox();
         }
       }, err => console.warn('Firestore items listener error:', err));
@@ -127,20 +163,56 @@ function load() {
 }
 
 function loadProjects() {
+  let localProjects = [];
   try {
     const d = localStorage.getItem('forward_projects');
-    if (d) projects = JSON.parse(d);
-  } catch (e) { projects = []; }
+    if (d) localProjects = JSON.parse(d);
+  } catch (e) { localProjects = []; }
+
+  // Set initial state to local while waiting for cloud
+  if (localProjects.length > 0 && projects.length === 0) {
+    projects = localProjects;
+  }
+
   // Attach Firestore real-time listener
   if (typeof currentUser !== 'undefined' && currentUser && typeof db !== 'undefined') {
     if (projectsUnsubscribe) projectsUnsubscribe();
     projectsUnsubscribe = db.collection('users').doc(currentUser.uid).collection('projects')
       .onSnapshot(snapshot => {
-        const cloud = [];
-        snapshot.forEach(doc => cloud.push(doc.data()));
-        if (cloud.length > 0) {
-          projects = cloud;
+        const cloudProjects = [];
+        snapshot.forEach(doc => cloudProjects.push(doc.data()));
+
+        // Merge Strategy: Combine local and cloud, keeping the newest
+        const mergedMap = new Map();
+
+        // 1. Add all local projects to map
+        projects.forEach(p => mergedMap.set(p.id, p));
+
+        // 2. Overwrite with cloud if cloud is newer
+        cloudProjects.forEach(cp => {
+          const local = mergedMap.get(cp.id);
+          if (!local) {
+            mergedMap.set(cp.id, cp); // Cloud has it, we don't
+          } else {
+            // Both have it, compare timestamps
+            const cloudTime = new Date(cp.updatedAt || cp.createdAt || 0).getTime();
+            const localTime = new Date(local.updatedAt || local.createdAt || 0).getTime();
+            if (cloudTime >= localTime) {
+              mergedMap.set(cp.id, cp);
+            }
+          }
+        });
+
+        const mergedArray = Array.from(mergedMap.values());
+
+        // If the resulting merge is different from what we had, or cloud gave us stuff
+        if (mergedArray.length > 0) {
+          projects = mergedArray;
           try { localStorage.setItem('forward_projects', JSON.stringify(projects)); } catch (e) { }
+
+          // Re-save to cloud to ensure any local-only items are pushed up
+          saveProjects();
+
           if (typeof renderProjects === 'function') renderProjects();
         }
       }, err => console.warn('Firestore projects listener error:', err));
