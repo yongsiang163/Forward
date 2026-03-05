@@ -476,7 +476,13 @@ function checkFocusTime() {
 }
 
 function completeFocus() {
-  if (S.currentWorkItem) { archiveItem(S.currentWorkItem.id); S.currentWorkItem = null; }
+  if (S.currentWorkItem) {
+    // Mark done (with completedAt) instead of directly archiving.
+    // This ensures the item appears in the Done log and weekly "What moved" panel.
+    // The lifecycle engine will auto-archive it after 24 hours.
+    toggleTaskCompletion(S.currentWorkItem.id);
+    S.currentWorkItem = null;
+  }
   exitFocus();
   showToast('Done. That counts.');
   setTimeout(() => renderWork(), 400);
@@ -524,14 +530,14 @@ function renderHome() {
 
   // Propagate mood state to all visual components
   const moodState = session ? ((MOOD_MAP[session.mood] || MOOD_MAP.Okay).state || 'drifting') : 'none';
-  const _orbWrap  = document.getElementById('hero-orb-wrap');
-  const _bgGlow   = document.querySelector('.hero-bg-glow');
+  const _orbWrap = document.getElementById('hero-orb-wrap');
+  const _bgGlow = document.querySelector('.hero-bg-glow');
   const _wordmark = document.querySelector('.home-wordmark');
-  const _horizon  = document.querySelector('.hero-horizon');
-  if (_orbWrap)  _orbWrap.dataset.mood  = moodState;
-  if (_bgGlow)   _bgGlow.dataset.mood   = moodState;
+  const _horizon = document.querySelector('.hero-horizon');
+  if (_orbWrap) _orbWrap.dataset.mood = moodState;
+  if (_bgGlow) _bgGlow.dataset.mood = moodState;
   if (_wordmark) _wordmark.dataset.mood = moodState;
-  if (_horizon)  _horizon.dataset.mood  = moodState;
+  if (_horizon) _horizon.dataset.mood = moodState;
   renderMomentum();
   updateStats();
 }

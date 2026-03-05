@@ -15,14 +15,12 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=DM+Sans:wght@300;400&display=swap"
     rel="stylesheet">
-  <!-- Firebase SDKs 
+  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-auth-compat.js"></script>
-  -->
-  <!-- Firebase Config 
+  <!-- Firebase Config -->
   <script src="js/firebase-config.js"></script>
-  -->
   <script src="https://unpkg.com/dexie@3.2.7/dist/dexie.min.js"></script>
   <link rel="stylesheet" href="css/main.css">
   <link rel="stylesheet" href="css/layout.css">
@@ -146,26 +144,24 @@
           <svg class="hero-horizon" viewBox="0 0 375 60" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <linearGradient id="hg" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stop-color="rgba(196,149,106,0)"/>
-                <stop offset="25%" stop-color="rgba(196,149,106,0.5)"/>
-                <stop offset="50%" stop-color="rgba(218,172,118,0.82)"/>
-                <stop offset="75%" stop-color="rgba(196,149,106,0.5)"/>
-                <stop offset="100%" stop-color="rgba(196,149,106,0)"/>
+                <stop offset="0%" stop-color="rgba(196,149,106,0)" />
+                <stop offset="25%" stop-color="rgba(196,149,106,0.5)" />
+                <stop offset="50%" stop-color="rgba(218,172,118,0.82)" />
+                <stop offset="75%" stop-color="rgba(196,149,106,0.5)" />
+                <stop offset="100%" stop-color="rgba(196,149,106,0)" />
               </linearGradient>
               <filter id="hglow" x="-25%" y="-200%" width="150%" height="500%">
-                <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="blur"/>
+                <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="blur" />
                 <feMerge>
-                  <feMergeNode in="blur"/>
-                  <feMergeNode in="SourceGraphic"/>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
                 </feMerge>
               </filter>
             </defs>
             <path id="horizon-fill" class="horizon-fill"
-              d="M0,36 C70,36 110,26 187,22 C264,26 302,36 375,36 L375,60 L0,60 Z"
-              fill="none"/>
-            <path id="horizon-path" class="horizon-path"
-              d="M0,36 C70,36 110,26 187,22 C264,26 302,36 375,36"
-              fill="none" stroke="url(#hg)" stroke-width="1.5" filter="url(#hglow)"/>
+              d="M0,36 C70,36 110,26 187,22 C264,26 302,36 375,36 L375,60 L0,60 Z" fill="none" />
+            <path id="horizon-path" class="horizon-path" d="M0,36 C70,36 110,26 187,22 C264,26 302,36 375,36"
+              fill="none" stroke="url(#hg)" stroke-width="1.5" filter="url(#hglow)" />
           </svg>
         </div>
 
@@ -299,6 +295,13 @@
 
       <div class="settings-section">
         <p class="settings-section-label">Data</p>
+        <div class="settings-row" id="sync-account-btn" onclick="toggleAuthModal()">
+          <div class="settings-row-body">
+            <p class="settings-row-text" id="sync-account-title">Link Email Account</p>
+            <p class="settings-row-sub" id="sync-account-sub">Sync across devices</p>
+          </div>
+          <span class="settings-row-action" id="sync-account-status">→</span>
+        </div>
         <div class="settings-row" onclick="exportData()">
           <div class="settings-row-body">
             <p class="settings-row-text">Back up your Forward data</p>
@@ -444,7 +447,11 @@
         <input type="password" id="auth-password" class="project-input" placeholder="Password"
           style="margin-bottom: 16px;" />
 
-        <button id="auth-submit-btn" class="item-action-main-btn" onclick="linkEmailAccount()">Link Account</button>
+        <button id="auth-submit-btn" class="item-action-main-btn" onclick="linkEmailAccount()">Link Email
+          Account</button>
+        <button id="auth-google-btn" class="item-action-main-btn" onclick="signInWithGoogle()"
+          style="margin-top:8px; background: rgba(255,255,255,0.1); color: var(--text); border-color: rgba(255,255,255,0.2);">Sign
+          in with Google</button>
         <button id="auth-signout-btn" class="item-action-main-btn promote" onclick="signOutAccount()"
           style="display:none; margin-top:12px;">Sign Out</button>
         <p id="auth-error-msg" style="color: #ff6b6b; margin-top: 16px; font-size: 14px; display: none;"></p>

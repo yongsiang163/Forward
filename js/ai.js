@@ -59,16 +59,26 @@ function clearGeminiKey() {
 let _geminiQueue = Promise.resolve();
 
 async function callGemini(systemPrompt, userPrompt, options = {}) {
-  // Queue requests sequentially to avoid 429s on free tier
+  // Queue requests sequentially to avoid 429s on free tier.
+  // IMPORTANT: the .catch(() => {}) on _geminiQueue is intentional — without it,
+  // a single rejected call poisons the entire promise chain and all future AI calls
+  // silently become no-ops until the page is reloaded.
   const result = new Promise((resolve, reject) => {
-    _geminiQueue = _geminiQueue.then(async () => {
-      try {
-        const r = await _callGeminiDirect(systemPrompt, userPrompt, options);
-        resolve(r);
-      } catch (e) {
-        reject(e);
-      }
-    });
+    _geminiQueue = _geminiQueue
+      .then(async () => {
+        try {
+          const r = await _callGeminiDirect(systemPrompt, userPrompt, options);
+          resolve(r);
+        } catch (e) {
+          reject(e);
+          // Re-throw so the chain tail knows this slot finished (even badly)
+          throw e;
+        }
+      })
+      .catch(() => {
+        // Absorb the error on the CHAIN itself so the next queued .then() still runs.
+        // The individual promise (result) above has already been rejected correctly.
+      });
   });
   return result;
 }
@@ -279,14 +289,19 @@ async function helpMeStartAI({ task, projectId, projectPhase, moodState, maxStep
     if (result) {
       // Parse JSON response — handle possible markdown fencing
       const cleaned = result.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
-      const steps = JSON.parse(cleaned);
-      if (Array.isArray(steps) && steps.length > 0) {
-        return steps.slice(0, maxSteps);
+      try {
+        const steps = JSON.parse(cleaned);
+        if (Array.isArray(steps) && steps.length > 0) {
+          return steps.slice(0, maxSteps);
+        }
+        console.warn('[MVNA] API returned valid JSON but not an array:', cleaned);
+      } catch (parseErr) {
+        console.warn('[MVNA] Could not parse JSON from API response. Raw result:', result, '\nError:', parseErr.message);
       }
     }
   } catch (e) {
-    console.warn('Gemini MVNA failed, using fallback:', e.message);
-    if (getGeminiKey()) showToast('API Error: ' + e.message);
+    console.warn('[MVNA] Gemini call failed, using fallback:', e.message);
+    if (getGeminiKey()) showToast('AI Error: ' + e.message);
   }
 
   // Fallback: hardcoded phase-aware suggestions
@@ -523,9 +538,14 @@ Keep it warm, short, grounded. Never use corporate language. Never shame inactiv
 Respond with ONLY the 2 sentences, nothing else.`;
 
   try {
-    return await callGemini(prompt, context, { maxOutputTokens: 200, temperature: 0.7 });
+    const insight = await callGemini(prompt, context, { maxOutputTokens: 200, temperature: 0.7 });
+    return insight || null;
   } catch (e) {
-    console.warn('Weekly insight failed:', e.message);
+    console.warn('[WeeklyInsight] API call failed:', e.message);
+    // Surface key/quota errors to the user; swallow network-level noise
+    if (e.message && (e.message.includes('invalid') || e.message.includes('quota') || e.message.includes('key'))) {
+      showToast('AI: ' + e.message);
+    }
     return null;
   }
 }

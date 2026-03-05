@@ -1,11 +1,11 @@
 // Replace this config with your actual Firebase Project config
 const firebaseConfig = {
-    apiKey: "AIzaSyMockKeyForLocalTestingPleaseReplace",
-    authDomain: "forward-app.firebaseapp.com",
-    projectId: "forward-app",
-    storageBucket: "forward-app.appspot.com",
-    messagingSenderId: "1234567890",
-    appId: "1:123456:web:abcdef"
+    apiKey: "AIzaSyC8IBtj5I3dYf-A4Um1BTbiLWh5P5yiIAo",
+    authDomain: "forward-163fr.firebaseapp.com",
+    projectId: "forward-163fr",
+    storageBucket: "forward-163fr.firebasestorage.app",
+    messagingSenderId: "18284479062",
+    appId: "1:18284479062:web:a47aa3342d71b5ee3eb1f7"
 };
 
 // Initialize Firebase
@@ -64,11 +64,13 @@ function toggleAuthModal() {
         // Adjust UI based on state
         if (currentUser && !currentUser.isAnonymous) {
             document.getElementById('auth-submit-btn').style.display = 'none';
+            document.getElementById('auth-google-btn').style.display = 'none';
             document.getElementById('auth-signout-btn').style.display = 'block';
             document.getElementById('auth-email').style.display = 'none';
             document.getElementById('auth-password').style.display = 'none';
         } else {
             document.getElementById('auth-submit-btn').style.display = 'block';
+            document.getElementById('auth-google-btn').style.display = 'block';
             document.getElementById('auth-signout-btn').style.display = 'none';
             document.getElementById('auth-email').style.display = 'block';
             document.getElementById('auth-password').style.display = 'block';
@@ -108,12 +110,35 @@ function linkEmailAccount() {
     }
 }
 
+function signInWithGoogle() {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    const errMsg = document.getElementById('auth-error-msg');
+
+    if (currentUser && currentUser.isAnonymous) {
+        currentUser.linkWithPopup(provider).then((result) => {
+            console.log("Anonymous account successfully linked to Google", result.user);
+            document.getElementById('auth-modal').classList.remove('active');
+        }).catch((error) => {
+            if (error.code === 'auth/credential-already-in-use') {
+                // If they already have a Google account, log them into it
+                auth.signInWithCredential(error.credential).then(() => {
+                    document.getElementById('auth-modal').classList.remove('active');
+                });
+            } else {
+                errMsg.style.display = 'block';
+                errMsg.textContent = error.message;
+            }
+        });
+    }
+}
+
 function signOutAccount() {
     auth.signOut().then(() => {
         document.getElementById('auth-modal').classList.remove('active');
         // Wipe local array state when signing out of linked account to prevent mixing
         items = [];
         projects = [];
-        if (typeof renderInbox === 'function') renderInbox();
+        // Re-render all views to clear stale data from the UI
+        if (typeof renderAllViews === 'function') renderAllViews();
     });
 }

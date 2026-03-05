@@ -397,11 +397,11 @@ function renderProjectItems(projectName) {
   const list = document.getElementById('ps-captured-list');
   if (!section || !list) return;
 
-  // We find items linked to this project by checking if it contains @ProjectName
+  // Find items linked by projectId (via explicit project assignment in capture) OR by @mention
   const linkedItems = items.filter(i =>
     i.status !== 'archived' &&
     i.status !== 'done' &&
-    i.content.includes('@' + projectName)
+    (i.projectId === editingProjectId || (projectName && i.content.includes('@' + projectName)))
   );
 
   if (linkedItems.length === 0) {
@@ -480,23 +480,65 @@ function deleteProjectPrompt() {
 }
 
 // ── AUTO-SUGGEST NEXT ACTION ─────────────────────────────
+// Static fallback suggestions (used when no API key or API fails)
+const _NEXT_ACTION_FALLBACKS = {
+  idwork: { concept: 'Pull three reference images that capture the feeling', development: 'Review the last drawing set and mark one decision', procurement: 'Follow up on the longest outstanding quote', site: 'Check the punch list and call the first contractor', delivery: 'Send the client the final documentation checklist' },
+  life: { seed: 'Write one sentence about why this matters', shaping: 'Name the first real action that would move this', inmotion: 'Check in on where this sits today', integrating: 'Notice what has already shifted' },
+  business: { idea: 'Write the problem you\'re solving in one sentence', validating: 'Talk to one person who has this problem', building: 'Identify the one thing blocking progress', operating: 'Review last week\'s numbers' },
+  learning: { curious: 'Find one resource and save it', exploring: 'Spend 20 minutes with the material', practising: 'Do one exercise without notes', embedding: 'Teach this to someone or write it out' }
+};
+
 async function autoSuggestNextAction(p) {
   const nextInput = document.getElementById('ps-next-action');
   if (!nextInput || nextInput.value.trim()) return;
-  nextInput.placeholder = 'AI is thinking…';
-  // Simulate for now — swap for Claude API
-  await new Promise(r => setTimeout(r, 1400));
+
   const catInfo = PROJECT_CATS[p.projectCat] || PROJECT_CATS.open;
-  const phase = catInfo.phaseLabels[p.phase] || p.phase;
-  const suggestions = {
-    idwork: { concept: 'Pull three reference images that capture the feeling', development: 'Review the last drawing set and mark one decision', procurement: 'Follow up on the longest outstanding quote', site: 'Check the punch list and call the first contractor', delivery: 'Send the client the final documentation checklist' },
-    life: { seed: 'Write one sentence about why this matters', shaping: 'Name the first real action that would move this', inmotion: 'Check in on where this sits today', integrating: 'Notice what has already shifted' },
-    business: { idea: 'Write the problem you\'re solving in one sentence', validating: 'Talk to one person who has this problem', building: 'Identify the one thing blocking progress', operating: 'Review last week\'s numbers' },
-    learning: { curious: 'Find one resource and save it', exploring: 'Spend 20 minutes with the material', practising: 'Do one exercise without notes', embedding: 'Teach this to someone or write it out' }
-  };
-  const catSuggestions = suggestions[p.projectCat];
-  const suggestion = (catSuggestions && catSuggestions[p.phase]) ? catSuggestions[p.phase] : 'Identify the one smallest next step';
-  nextInput.placeholder = suggestion;
+  const phase = catInfo.phaseLabels[p.phase] || p.phase || 'start';
+
+  // Helper to apply the static fallback
+  function applyFallback() {
+    const catSuggestions = _NEXT_ACTION_FALLBACKS[p.projectCat];
+    const suggestion = (catSuggestions && catSuggestions[p.phase]) ? catSuggestions[p.phase] : 'Identify the one smallest next step';
+    if (nextInput) nextInput.placeholder = suggestion;
+  }
+
+  // Try real Gemini API first if a key is available
+  if (typeof callGemini === 'function' && typeof getGeminiKey === 'function' && getGeminiKey()) {
+    nextInput.placeholder = 'AI is thinking…';
+
+    const systemPrompt = `You are a focused next-action advisor for a personal productivity app used by someone with ADHD.
+Given a project's context, suggest ONE concrete, physical next action.
+RULES:
+- Return ONLY the action as a single sentence. No explanation, no numbering, no prefix.
+- It must be something they can DO in the next 15 minutes.
+- Never use words like "deliverable", "milestone", or "action item".
+- Tailor it specifically to the project name, category, and phase.`;
+
+    const userPrompt = `Project: "${p.name}"
+Category: ${catInfo.label || p.projectCat}
+Phase: ${phase}
+${p.vision ? `Vision: "${p.vision.substring(0, 150)}"` : ''}
+${p.notes ? `Notes: "${p.notes.substring(0, 150)}"` : ''}
+
+Suggest one next action for this project.`;
+
+    try {
+      console.log('[AutoSuggest] Calling Gemini for next action on:', p.name);
+      const result = await callGemini(systemPrompt, userPrompt, { maxOutputTokens: 80, temperature: 0.6 });
+      // Guard: make sure the input still exists and is still empty (user may have typed)
+      const currentInput = document.getElementById('ps-next-action');
+      if (currentInput && !currentInput.value.trim() && result) {
+        console.log('[AutoSuggest] Got suggestion:', result);
+        currentInput.placeholder = result.trim();
+        return;
+      }
+    } catch (e) {
+      console.warn('[AutoSuggest] Gemini call failed, using fallback:', e.message);
+    }
+  }
+
+  // Fallback: static phase-aware suggestion
+  applyFallback();
 }
 
 // ── ITEM ACTION SHEET ────────────────────────────────────
@@ -558,9 +600,9 @@ function changeCategoryStateAndDismiss(itemId, cat) {
   item.touchedAt = new Date().toISOString();
 
   // If we assigned it to task or active project, we can dismiss it from Inbox status 
-  // It effectively remains in 'alive', or 'task' list
+  // It effectively remains in 'alive' state on the tasks list
   if (cat === 'task') {
-    item.status = 'active'; // Move it out of fresh inbox explicitly
+    item.status = 'alive'; // 'active' is not a valid lifecycle status — use 'alive'
     showToast('Sent to Tasks');
   }
 
@@ -615,7 +657,13 @@ function iaToggleRecurring() {
 function iaDone() {
   if (activeItemId) {
     const item = items.find(i => i.id === activeItemId);
-    if (item) { item.status = 'done'; item.touchedAt = new Date().toISOString(); save(); }
+    if (item) {
+      item.status = 'done';
+      item.completedAt = new Date().toISOString();
+      item.lastCompletedAt = new Date().toISOString();
+      item.touchedAt = new Date().toISOString();
+      save();
+    }
   }
   closeItemAction();
 }
@@ -678,16 +726,21 @@ function closeItemAction() {
 
 // ── ADD TO EXISTING PROJECT ──────────────────────────────────
 function openAddToExistingProject() {
+  // Capture activeItemId BEFORE closeItemAction() clears it to null
+  const savedItemId = activeItemId;
   closeItemAction();
   const epSheet = document.getElementById('existing-project-sheet');
   const list = document.getElementById('ep-list');
-  const activeProjects = projects.filter(p => p.status === 'active');
+  // Filter by non-archived — using 'active' was wrong because new projects
+  // may not have an explicit status field (undefined !== 'active'), causing
+  // the sheet to always appear empty for older data.
+  const activeProjects = projects.filter(p => p.status !== 'archived');
   if (activeProjects.length === 0) {
     showToast('No active projects');
     return;
   }
   list.innerHTML = activeProjects.map(p => `
-      <button class="ep-list-btn" onclick="addToProject('${p.id}', '${activeItemId}')">
+      <button class="ep-list-btn" onclick="addToProject('${p.id}', '${savedItemId}')">
         <strong>${p.name}</strong>
       </button>
    `).join('');

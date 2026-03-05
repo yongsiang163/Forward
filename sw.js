@@ -15,7 +15,8 @@ const urlsToCache = [
     './css/main.css',
     './css/layout.css',
     './css/components.css',
-    './css/modals.css'
+    './css/modals.css',
+    './css/launch.css'
 ];
 self.addEventListener('install', event => {
     event.waitUntil(

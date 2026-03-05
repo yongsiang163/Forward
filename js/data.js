@@ -71,23 +71,59 @@ if (navigator.storage && navigator.storage.persist) {
 function save() {
   // Mirror to localStorage (fast, synchronous reads on next load)
   try { localStorage.setItem('forward_items', JSON.stringify(items)); } catch (e) { }
-  // Write to IndexedDB in background (durable)
+  // Write to IndexedDB in background (durable local storage)
   forwardDB.items.bulkPut(items).catch(e => console.warn('IndexedDB save failed:', e));
+  // Write to Firestore cloud if user is signed in
+  if (typeof currentUser !== 'undefined' && currentUser) {
+    const batch = db.batch();
+    items.forEach(item => {
+      const ref = db.collection('users').doc(currentUser.uid).collection('items').doc(item.id);
+      batch.set(ref, item, { merge: true });
+    });
+    batch.commit().catch(e => console.warn('Firestore save failed:', e));
+  }
 }
 
 function saveProjects() {
   try { localStorage.setItem('forward_projects', JSON.stringify(projects)); } catch (e) { }
   forwardDB.projects.bulkPut(projects).catch(e => console.warn('IndexedDB saveProjects failed:', e));
+  // Write to Firestore cloud if user is signed in
+  if (typeof currentUser !== 'undefined' && currentUser) {
+    const batch = db.batch();
+    projects.forEach(p => {
+      const ref = db.collection('users').doc(currentUser.uid).collection('projects').doc(p.id);
+      batch.set(ref, p, { merge: true });
+    });
+    batch.commit().catch(e => console.warn('Firestore saveProjects failed:', e));
+  }
 }
 
 // ── LOAD ─────────────────────────────────────────────────
 // Synchronous load from localStorage first (instant boot),
 // then async IndexedDB load with merge (durable source of truth)
+// Firestore onSnapshot listener keeps data live while user is signed in
+let itemsUnsubscribe = null;
+let projectsUnsubscribe = null;
+
 function load() {
   try {
     const d = localStorage.getItem('forward_items');
     if (d) items = JSON.parse(d);
   } catch (e) { items = []; }
+  // Attach Firestore real-time listener (only when signed in)
+  if (typeof currentUser !== 'undefined' && currentUser && typeof db !== 'undefined') {
+    if (itemsUnsubscribe) itemsUnsubscribe();
+    itemsUnsubscribe = db.collection('users').doc(currentUser.uid).collection('items')
+      .onSnapshot(snapshot => {
+        const cloud = [];
+        snapshot.forEach(doc => cloud.push(doc.data()));
+        if (cloud.length > 0) {
+          items = cloud;
+          try { localStorage.setItem('forward_items', JSON.stringify(items)); } catch (e) { }
+          if (typeof renderInbox === 'function') renderInbox();
+        }
+      }, err => console.warn('Firestore items listener error:', err));
+  }
 }
 
 function loadProjects() {
@@ -95,6 +131,20 @@ function loadProjects() {
     const d = localStorage.getItem('forward_projects');
     if (d) projects = JSON.parse(d);
   } catch (e) { projects = []; }
+  // Attach Firestore real-time listener
+  if (typeof currentUser !== 'undefined' && currentUser && typeof db !== 'undefined') {
+    if (projectsUnsubscribe) projectsUnsubscribe();
+    projectsUnsubscribe = db.collection('users').doc(currentUser.uid).collection('projects')
+      .onSnapshot(snapshot => {
+        const cloud = [];
+        snapshot.forEach(doc => cloud.push(doc.data()));
+        if (cloud.length > 0) {
+          projects = cloud;
+          try { localStorage.setItem('forward_projects', JSON.stringify(projects)); } catch (e) { }
+          if (typeof renderProjects === 'function') renderProjects();
+        }
+      }, err => console.warn('Firestore projects listener error:', err));
+  }
 }
 
 // Async IndexedDB load — runs after init, merges with localStorage data
@@ -174,7 +224,7 @@ function runLifecycle() {
       const elapsed = now - new Date(item.lastCompletedAt).getTime();
       const periods = { daily: 86400000, weekly: 604800000, monthly: 2592000000 };
       if (elapsed >= (periods[item.recurring] || 86400000)) {
-        item.status = 'active';
+        item.status = 'fresh'; // 'active' is not a valid lifecycle status — use 'fresh' to re-surface it
         item.completedAt = null;
         changed = true;
       }
