@@ -89,10 +89,13 @@ function renderInbox() {
   renderTagChips();
 
   if (searched.length === 0) {
+    const defaultText = items.length === 0 
+      ? "nothing captured yet — what's on your mind?" 
+      : "a clean slate. something will surface.";
     list.innerHTML = `
       <div class="inbox-empty">
         <div class="inbox-empty-orb"></div>
-        <p class="inbox-empty-text">${_searchQuery || _activeTag ? 'No matches.' : 'Nothing here yet.<br>Capture something.'}</p>
+        <p class="inbox-empty-text">${_searchQuery || _activeTag ? 'No matches.' : defaultText}</p>
       </div>`;
     return;
   }
@@ -133,6 +136,28 @@ function renderItemHTML(item, isCold = false) {
     ? `<button class="inbox-item-develop" onclick="promoteToProject('${item.id}')">Develop →</button>`
     : '';
 
+  // Rewind spark echo badge — read rewind_sparks, check for substring match
+  var sparkEchoHTML = '';
+  if (cat === 'spark') {
+    try {
+      var rawSparks = localStorage.getItem('rewind_sparks');
+      var rewindSparks = rawSparks ? JSON.parse(rawSparks) : [];
+      var itemSnippet = (item.content || '').toLowerCase().substring(0, 30);
+      var hasEcho = false;
+      for (var sri = 0; sri < rewindSparks.length; sri++) {
+        var rsp = rewindSparks[sri];
+        var sparkText = (rsp && rsp.text) ? rsp.text.toLowerCase() : '';
+        if (itemSnippet && sparkText && (itemSnippet.indexOf(sparkText.substring(0, 30)) !== -1 || sparkText.indexOf(itemSnippet) !== -1)) {
+          hasEcho = true;
+          break;
+        }
+      }
+      if (hasEcho) {
+        sparkEchoHTML = '<span class="spark-echo-badge">\u21AF Rewind</span>';
+      }
+    } catch (e) { /* safe — graceful no-op */ }
+  }
+
   // Brain dump title
   const titleHTML = item.aiTitle
     ? `<p class="inbox-item-title">${esc(item.aiTitle)}</p>`
@@ -168,6 +193,7 @@ function renderItemHTML(item, isCold = false) {
         <span class="inbox-item-time">${offlineDot}${timeAgo(item.createdAt)}</span>
         <span class="cat-tag ${tagClass}" ${tagAction}>${label}</span>
         ${pendingHint}
+        ${sparkEchoHTML}
         ${developBtn}
         <button class="inbox-item-archive" onclick="archiveItem('${item.id}')" title="Archive">↓</button>
       </div>
@@ -187,8 +213,6 @@ function toggleRawContent(id) {
 // ── WORK MODE ─────────────────────────────────────────────
 function renderWork() {
   runLifecycle();
-  const eyebrow = document.getElementById('work-eyebrow');
-  const headline = document.getElementById('work-headline');
   const area = document.getElementById('work-area');
   const thinking = document.getElementById('ai-thinking');
 
@@ -199,8 +223,16 @@ function renderWork() {
   S.maxSteps = moodInfo ? moodInfo.maxSteps : 3;
   S.attentionState = moodInfo ? moodInfo.state : null;
 
-  headline.textContent = moodInfo ? moodInfo.label : 'Ready when you are.';
-
+  // Determine if returning after >4 hours (Return State Intercept)
+  const lastSessionStr = localStorage.getItem('forward_last_session');
+  let isReturning = false;
+  if (lastSessionStr) {
+    const ageHrs = (Date.now() - parseInt(lastSessionStr, 10)) / 3600000;
+    if (ageHrs > 4 && !S.hasClearedReturnIntercept) {
+      isReturning = true;
+    }
+  }
+  
   // Overwhelmed state — redirect to Rewind, don't surface tasks
   if (moodInfo && moodInfo.state === 'overwhelmed') {
     area.innerHTML = `
@@ -209,26 +241,41 @@ function renderWork() {
           Right now isn't for doing.<br>
           Go inward first. Come back when you're ready.
         </p>
-        <a href="https://yongsiang163.github.io/Rewind/" target="_blank" rel="noopener"
+        <a class="home-rewind-link" onclick="toggleRewindMode()"
            style="display:inline-block; padding:14px 28px; background:rgba(196,149,106,0.1);
            border:1px solid rgba(196,149,106,0.25); border-radius:14px; color:var(--warm);
            text-decoration:none; font-family:var(--ui-font); font-size:14px; letter-spacing:0.5px;">
-          Open Rewind →
+          check in with yourself →
         </a>
-        <p class="work-empty-cta" onclick="S.rewindSession=null; renderWork();"
-           style="margin-top:20px; font-size:12px; color:var(--text-muted);">
-          or continue anyway
-        </p>
       </div>`;
     return;
   }
 
   const candidate = pickWorkItem(moodInfo);
 
+  if (isReturning && candidate) {
+    area.innerHTML = `
+      <div class="work-empty" style="text-align:center;">
+        <p class="work-empty-text" style="color:var(--text);font-size:18px;margin-bottom:24px;">you're here.</p>
+        <div class="inbox-item cat-${candidate.category || candidate.aiCategory || 'task'}" style="margin-bottom:24px;">
+          <div class="inbox-item-bar"></div>
+          <p class="inbox-item-content">${esc(candidate.content)}</p>
+        </div>
+        <p class="work-empty-text" style="margin-bottom:16px;">
+          pick up where you left off,<br>or start fresh.
+        </p>
+        <div style="display:flex;gap:12px;justify-content:center;margin-top:24px;">
+          <button onclick="S.hasClearedReturnIntercept=true; S.currentWorkItem=null; renderWork();" style="flex:1;padding:14px;border:none;border-radius:12px;background:var(--surface2);color:var(--text);font-family:var(--ui-font);cursor:pointer;">Refresh it</button>
+          <button onclick="S.hasClearedReturnIntercept=true; renderWork();" style="flex:1;padding:14px;border:none;border-radius:12px;background:var(--teal);color:var(--bg);font-family:var(--ui-font);font-weight:600;cursor:pointer;">Continue</button>
+        </div>
+      </div>`;
+    return;
+  }
+
   if (!candidate) {
     area.innerHTML = `
       <div class="work-empty">
-        <p class="work-empty-text">Your inbox is clear.<br>Nothing to surface right now.</p>
+        <p class="work-empty-text">nothing queued. you could add one thing, or just be.</p>
         <p class="work-empty-cta" onclick="openCapture()">+ Capture something new</p>
       </div>`;
     return;
@@ -241,9 +288,12 @@ function renderWork() {
   const cat = candidate.aiCategory || candidate.category;
   const label = CAT_LABELS[cat] || '';
 
-  // If it's a project, show phase + next action as the work card
+  // If it's a project-type item, show phase + next action as the work card
+  // Look up by projectId first (reliable), then fall back to name-match for legacy items
   const isProject = cat === 'project';
-  const linkedProject = isProject ? projects.find(p => p.name && candidate.content.toLowerCase().includes(p.name.toLowerCase())) : null;
+  const linkedProject = candidate.projectId
+    ? projects.find(p => p.id === candidate.projectId)
+    : (isProject ? projects.find(p => p.name && candidate.content.toLowerCase().includes(p.name.toLowerCase())) : null);
   const projectContext = linkedProject
     ? `<div class="task-project-context">
         <span class="project-phase-pill" style="margin-right:8px">${(PROJECT_CATS[linkedProject.projectCat || 'open']?.phaseLabels?.[linkedProject.phase] || linkedProject.phase) || ''}</span>
@@ -263,11 +313,36 @@ function renderWork() {
     </div>
     <div class="mvna-wrap" id="mvna-wrap"></div>`;
 
-  // Help Me Start button
+  // AI Companion onboarding card — shown once when no key is configured
+  const hasKey = typeof getGeminiKey === 'function' && getGeminiKey();
+  const companionSeen = localStorage.getItem('forward_companion_seen');
+  if (!hasKey && !companionSeen) {
+    const onboardCard = document.createElement('div');
+    onboardCard.className = 'companion-onboard-card';
+    onboardCard.innerHTML =
+      '<p class="companion-onboard-title">your AI companion</p>' +
+      '<p class="companion-onboard-body">Forward\'s AI reads your mood and project context before it speaks. ' +
+      'It won\'t interrupt \u2014 it waits until you ask.</p>' +
+      '<div class="companion-onboard-actions">' +
+      '<button class="companion-onboard-setup" onclick="showScreen(\'settings\'); localStorage.setItem(\'forward_companion_seen\', \'setup_prompted\');">set up in Settings →</button>' +
+      '<button class="companion-onboard-later" onclick="localStorage.setItem(\'forward_companion_seen\', \'dismissed\'); renderWork();">maybe later</button>' +
+      '</div>';
+    area.appendChild(onboardCard);
+  }
+
+  // Help Me Start button — key-guarded with soft onboarding fallback
   const helpBtn = document.createElement('button');
   helpBtn.className = 'help-btn';
-  helpBtn.textContent = 'Help me start →';
-  helpBtn.onclick = () => runHelpMeStart(candidate);
+  helpBtn.textContent = 'help me start →';
+  helpBtn.onclick = function() {
+    var key = typeof getGeminiKey === 'function' ? getGeminiKey() : null;
+    if (!key) {
+      localStorage.removeItem('forward_companion_seen');
+      renderWork();
+      return;
+    }
+    runHelpMeStart(candidate);
+  };
   area.appendChild(helpBtn);
 
   // Quick Wins — for low-energy moods, show 3 shortest tasks as gentle alternatives
@@ -370,7 +445,16 @@ async function runHelpMeStart(item) {
   const thinking = document.getElementById('ai-thinking');
   const wrap = document.getElementById('mvna-wrap');
 
+  if (typeof getGeminiKey === 'function' && !getGeminiKey()) {
+    showToast('Add your Gemini API Key in Settings to use AI.');
+    showScreen('settings');
+    return;
+  }
+
   if (helpBtn) helpBtn.style.display = 'none';
+  
+  // Single pulsing dot for working state, remove the word "thinking..."
+  thinking.innerHTML = '<div class="ai-thinking-orb" style="margin: 0;"></div>';
   thinking.classList.add('visible');
 
   try {
@@ -452,6 +536,8 @@ function enterFocus() {
 
   document.getElementById('focus-task-text').textContent = item.content;
   document.getElementById('focus-overlay').classList.add('active');
+  const captureBtn = document.getElementById('global-capture-btn');
+  if (captureBtn) captureBtn.style.display = 'none';
 
   S.focusActive = true;
   S.focusStart = Date.now();
@@ -492,6 +578,9 @@ function exitFocus() {
   document.getElementById('focus-overlay').classList.remove('active');
   document.getElementById('focus-time-ring').className = 'focus-time-ring';
   document.getElementById('focus-gentle-msg').classList.remove('visible');
+  const captureBtn = document.getElementById('global-capture-btn');
+  if (captureBtn) captureBtn.style.display = 'flex';
+  
   S.focusActive = false;
   clearInterval(S.focusTimer);
 }
@@ -540,6 +629,8 @@ function renderHome() {
   if (_horizon) _horizon.dataset.mood = moodState;
   renderMomentum();
   updateStats();
+  // Also render work tasks inside home view 
+  renderWork();
 }
 
 function renderMomentum() {
@@ -600,8 +691,10 @@ function updateStats() {
   runLifecycle();
   const active = items.filter(i => i.status !== 'archived');
   const fresh = items.filter(i => i.status === 'fresh');
-  document.getElementById('stat-inbox').textContent = active.length;
-  document.getElementById('stat-fresh').textContent = fresh.length;
+  const statInbox = document.getElementById('stat-inbox');
+  const statFresh = document.getElementById('stat-fresh');
+  if (statInbox) statInbox.textContent = active.length;
+  if (statFresh) statFresh.textContent = fresh.length;
   updateOrbPulse();
 }
 
@@ -741,10 +834,13 @@ function showScreen(id) {
   // Orientation pill — only on plan/work entry
   if (id === 'projects' || id === 'inbox' || id === 'work') showPill(id);
 
-  // Bottom nav active state
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  const navMap = { home: 'nav-home', projects: 'nav-projects', inbox: 'nav-inbox', settings: 'nav-settings' };
-  if (navMap[id]) { const nb = document.getElementById(navMap[id]); if (nb) nb.classList.add('active'); }
+  // Bottom/Sub-nav active state
+  document.querySelectorAll('.plan-sub-btn').forEach(b => b.classList.remove('active'));
+  const subNavMap = { inbox: 'subnav-inbox', projects: 'subnav-projects', tasks: 'subnav-tasks' };
+  if (subNavMap[id]) { 
+    const nb = document.getElementById(subNavMap[id]); 
+    if (nb) nb.classList.add('active'); 
+  }
 
   S.screen = id;
 

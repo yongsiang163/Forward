@@ -2110,95 +2110,142 @@
     }
 
     /* ── BOTTOM NAV — same structure as Rewind ── */
-    /* Ghost Settings Button (Top Right) */
-    .ghost-settings-btn {
+    /* ── TOP NAV & PLAN NAV ── */
+    .top-mode-bar {
       position: fixed;
-      top: max(20px, env(safe-area-inset-top));
-      right: 20px;
-      z-index: 100;
-      background: transparent;
-      border: none;
-      color: var(--text);
-      font-size: 24px;
-      opacity: 0.5;
-      cursor: pointer;
-      mix-blend-mode: overlay;
-      transition: opacity 0.3s ease, transform 0.2s;
-    }
-
-    .ghost-settings-btn:active {
-      opacity: 0.8;
-      transform: scale(0.95);
-    }
-
-    .bottom-nav {
-      position: fixed;
-      bottom: 0;
+      top: 0;
       left: 0;
       right: 0;
-      z-index: 30;
+      z-index: 40;
       display: flex;
-      background: rgba(14, 11, 9, 0.92);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border-top: 1px solid var(--border-soft);
-      padding: 10px 0 max(16px, env(safe-area-inset-bottom));
-    }
-
-    .nav-btn {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
       align-items: center;
-      gap: 4px;
-      background: none;
+      justify-content: center;
+      padding: max(16px, env(safe-area-inset-top)) 20px 10px;
+      pointer-events: none; /* Let clicks pass through except on children */
+    }
+
+    .mode-switch-wrap {
+      display: flex;
+      background: var(--surface2);
+      border: 1px solid var(--border-soft);
+      border-radius: 40px;
+      padding: 4px;
+      pointer-events: auto;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .mode-btn {
+      background: transparent;
       border: none;
-      cursor: pointer;
-      padding: 4px 0;
-    }
-
-    .nav-icon {
-      font-size: 19px;
-      line-height: 1;
-      filter: grayscale(1) opacity(0.35);
-      transition: filter 0.3s;
-    }
-
-    .nav-label {
-      font-size: 9px;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
       color: var(--text-muted);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 6px 16px;
+      border-radius: 30px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .mode-btn.active {
+      background: var(--surface);
+      color: var(--text);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+
+    .top-settings-btn {
+      position: absolute;
+      right: 20px;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 8px;
+      cursor: pointer;
+      pointer-events: auto;
+      opacity: 0.6;
+      transition: opacity 0.2s;
+    }
+
+    .top-settings-btn:active {
+      opacity: 1;
+    }
+
+    .plan-sub-nav {
+      position: fixed;
+      top: calc(max(16px, env(safe-area-inset-top)) + 50px);
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      z-index: 35;
+      pointer-events: auto;
+    }
+
+    .plan-sub-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      cursor: pointer;
       transition: color 0.3s;
+      padding: 4px;
     }
 
-    .nav-btn.active .nav-icon {
-      filter: none;
-    }
-
-    .nav-btn.active-plan .nav-icon {
-      filter: none;
+    .plan-sub-btn.active {
       color: var(--teal);
     }
 
-    .nav-btn.active-plan .nav-label {
-      color: var(--teal);
+    /* ── GLOBAL CAPTURE ── */
+    .global-capture-btn {
+      position: fixed;
+      bottom: max(32px, env(safe-area-inset-bottom));
+      left: 50%;
+      transform: translateX(-50%);
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: var(--surface2);
+      border: 1px solid var(--border-soft);
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
 
-    .nav-btn.active-work .nav-icon {
-      filter: none;
+    .global-capture-btn:active {
+      transform: translateX(-50%) scale(0.9);
+      background: var(--surface);
+    }
+
+    .global-capture-plus {
+      font-size: 28px;
+      font-weight: 300;
+      color: var(--warm);
+      line-height: 1;
+      margin-top: -2px;
+    }
+
+    .home-rewind-link {
+      margin-top: 16px;
+      font-size: 11px;
+      letter-spacing: 1.5px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: color 0.3s ease;
+    }
+
+    .home-rewind-link:active {
       color: var(--warm);
     }
-
-    .nav-btn.active-work .nav-label {
-      color: var(--warm);
-    }
-
-    .nav-btn.active .nav-label {
-      color: var(--warm);
-    }
-
-
 
     /* ── TOAST — same as Rewind ── */
     .toast {
@@ -2523,3 +2570,133 @@
       border-color: var(--teal-soft);
       color: var(--teal);
     }
+
+  /* ── SESSION 3: AI COMPANION ONBOARDING CARD ──────────── */
+  .companion-onboard-card {
+    background: rgba(30, 25, 20, 0.7);
+    border: 1px solid rgba(196, 149, 106, 0.22);
+    border-left: 3px solid rgba(196, 149, 106, 0.55);
+    border-radius: 14px;
+    padding: 20px 20px 16px;
+    margin: 20px 0;
+  }
+  .companion-onboard-title {
+    font-family: var(--display-font);
+    font-size: 18px;
+    font-weight: 500;
+    letter-spacing: 3px;
+    color: var(--warm);
+    margin: 0 0 10px;
+  }
+  .companion-onboard-body {
+    font-family: var(--ui-font);
+    font-size: 14px;
+    font-weight: 300;
+    color: var(--text-muted);
+    line-height: 1.6;
+    margin: 0 0 18px;
+  }
+  .companion-onboard-actions {
+    display: flex;
+    gap: 10px;
+  }
+  .companion-onboard-setup {
+    flex: 1;
+    padding: 12px 16px;
+    background: rgba(196, 149, 106, 0.1);
+    border: 1px solid rgba(196, 149, 106, 0.3);
+    border-radius: 10px;
+    color: var(--warm);
+    font-family: var(--ui-font);
+    font-size: 13px;
+    font-weight: 400;
+    cursor: pointer;
+    letter-spacing: 0.3px;
+  }
+  .companion-onboard-later {
+    padding: 12px 16px;
+    background: transparent;
+    border: 1px solid rgba(138, 131, 124, 0.2);
+    border-radius: 10px;
+    color: var(--text-muted);
+    font-family: var(--ui-font);
+    font-size: 13px;
+    font-weight: 300;
+    cursor: pointer;
+  }
+
+  /* ── SESSION 3: SPARK ECHO BADGE ──────────────────────── */
+  .spark-echo-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--ui-font);
+    font-size: 10px;
+    font-weight: 400;
+    letter-spacing: 0.8px;
+    color: var(--teal);
+    background: rgba(126, 184, 164, 0.1);
+    border: 1px solid rgba(126, 184, 164, 0.25);
+    border-radius: 6px;
+    padding: 2px 7px;
+    vertical-align: middle;
+  }
+
+  /* ── SESSION 3: REWIND ECHO BRIDGE CARD ───────────────── */
+  .rewind-echo-card {
+    background: rgba(22, 32, 28, 0.65);
+    border: 1px solid rgba(126, 184, 164, 0.2);
+    border-left: 3px solid rgba(126, 184, 164, 0.5);
+    border-radius: 12px;
+    padding: 16px 18px 14px;
+    margin: 0 0 16px;
+  }
+  .rewind-echo-label {
+    font-family: var(--ui-font);
+    font-size: 10px;
+    font-weight: 400;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--teal);
+    margin: 0 0 8px;
+    opacity: 0.8;
+  }
+  .rewind-echo-text {
+    font-family: var(--display-font);
+    font-size: 15px;
+    font-weight: 500;
+    font-style: italic;
+    color: var(--text);
+    line-height: 1.5;
+    margin: 0 0 12px;
+  }
+  .rewind-echo-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .rewind-echo-date {
+    font-family: var(--ui-font);
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 300;
+  }
+  .rewind-echo-link {
+    font-family: var(--ui-font);
+    font-size: 12px;
+    color: var(--teal);
+    cursor: pointer;
+    letter-spacing: 0.3px;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(126, 184, 164, 0.3);
+    padding-bottom: 1px;
+  }
+
+  /* ── SESSION 3: VISION FIELD CSS PLACEHOLDER ──────────── */
+  .project-vision-text:empty:before {
+    content: "what did you believe when you started this?";
+    color: var(--text-muted);
+    font-style: italic;
+    pointer-events: none;
+    opacity: 0.6;
+  }

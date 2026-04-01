@@ -126,7 +126,7 @@ function openCapture() {
   document.getElementById('capture-project-btn').style.borderColor = '';
   onCaptureType();
   stopVoiceCapture();
-  setTimeout(() => ta.focus(), 380);
+  setTimeout(() => ta.focus(), 50); // Instant auto-focus
 }
 
 function onCaptureType() {
@@ -389,7 +389,27 @@ function openProjectSheet(id) {
   document.getElementById('project-sheet').classList.add('active');
 
   // Auto-suggest next action if empty
-  if (!p.nextAction) setTimeout(() => autoSuggestNextAction(p), 800);
+  if (!p.nextAction) setTimeout(function() { autoSuggestNextAction(p); }, 800);
+
+  // AI companion daily project read — fires once per day if vision exists and key is set
+  var todayStr = new Date().toDateString();
+  var hasVision = p.vision && p.vision.trim().length > 0;
+  var keySet = typeof getGeminiKey === 'function' && getGeminiKey();
+  var notReadToday = p.lastAIReadDate !== todayStr;
+  if (hasVision && keySet && notReadToday) {
+    var pIdx = projects.findIndex(function(px) { return px.id === id; });
+    if (pIdx !== -1) {
+      projects[pIdx].lastAIReadDate = todayStr;
+      save();
+    }
+    setTimeout(function() {
+      var aiThread = document.getElementById('project-ai-thread');
+      if (aiThread && !aiThread.classList.contains('open')) {
+        toggleProjectAI();
+        setTimeout(function() { aiReadProject(p); }, 400);
+      }
+    }, 600);
+  }
 }
 
 function renderProjectItems(projectName) {
@@ -568,6 +588,40 @@ function openItemAction(itemId) {
   }
 
   document.getElementById('item-action-sheet').classList.add('active');
+
+  // Sparks — Rewind echo bridge card
+  var iaItemCat = item.aiCategory || item.category;
+  var echoContainer = document.getElementById('ia-rewind-echo');
+  if (echoContainer) echoContainer.innerHTML = '';
+  if (iaItemCat === 'spark' && echoContainer) {
+    try {
+      var rawSp = localStorage.getItem('rewind_sparks');
+      var rSparks = rawSp ? JSON.parse(rawSp) : [];
+      var iSnippet = (item.content || '').toLowerCase().substring(0, 30);
+      var matchedSpark = null;
+      for (var rsi = 0; rsi < rSparks.length; rsi++) {
+        var rs = rSparks[rsi];
+        var rsText = (rs && rs.text) ? rs.text.toLowerCase() : '';
+        if (iSnippet && rsText && (iSnippet.indexOf(rsText.substring(0, 30)) !== -1 || rsText.indexOf(iSnippet) !== -1)) {
+          matchedSpark = rs;
+          break;
+        }
+      }
+      if (matchedSpark) {
+        var echoDate = matchedSpark.date ? timeAgo(matchedSpark.date) : '';
+        var echoText = (matchedSpark.text || '').substring(0, 80) + ((matchedSpark.text || '').length > 80 ? '\u2026' : '');
+        echoContainer.innerHTML =
+          '<div class="rewind-echo-card">' +
+          '<p class="rewind-echo-label">this echoed in Rewind</p>' +
+          '<p class="rewind-echo-text">\u201c' + esc(echoText) + '\u201d</p>' +
+          '<div class="rewind-echo-footer">' +
+          '<span class="rewind-echo-date">' + echoDate + '</span>' +
+          '<a class="rewind-echo-link" onclick="toggleRewindMode()">\u2197 open Rewind</a>' +
+          '</div>' +
+          '</div>';
+      }
+    } catch (e) { /* graceful no-op */ }
+  }
 }
 
 function iaSetCat(cat) {
@@ -616,7 +670,8 @@ function toggleTaskCompletion(itemId) {
   if (!item) return;
 
   if (item.status === 'done') {
-    item.status = 'active';
+    // Un-check: revert to 'alive' (not 'active' which is not a valid lifecycle status)
+    item.status = 'alive';
     item.completedAt = null;
   } else {
     item.status = 'done';
@@ -787,9 +842,15 @@ function addToProject(projectId, itemId) {
   const p = projects.find(x => x.id === projectId);
   const item = items.find(i => i.id === itemId);
   if (p && item) {
+    // Assign the item to the project — keeps it visible in inbox/tasks and in the project sheet
+    item.projectId = projectId;
+    item.category = 'task';
+    item.confirmed = true;
+    item.aiCategory = 'task';
+    item.touchedAt = new Date().toISOString();
+    // Also append content to project notes for reference
     p.notes = (p.notes ? p.notes + "\n\n" : "") + item.content;
     p.touchedAt = new Date().toISOString();
-    item.status = 'archived';
     save();
     saveProjects();
     renderAllViews();
