@@ -863,16 +863,25 @@ function animateIntoRewind(callback) {
   var homeScreen = document.getElementById('screen-home');
 
   if (orbWrap) {
+    // The orb has animation: fadeUp forwards which locks opacity:1 in the animation
+    // layer — inline styles lose that battle. Cancel the animation first, then
+    // snapshot opacity:1 as an explicit inline starting value before transitioning.
+    orbWrap.style.animation  = 'none';
+    orbWrap.style.opacity    = '1';
+    void orbWrap.offsetHeight; // flush so browser registers opacity:1 as start
+
     orbWrap.style.transition = 'opacity 0.8s ease, transform 0.8s ease';
+    void orbWrap.offsetHeight; // flush again before applying new values
     orbWrap.style.opacity    = '0';
     orbWrap.style.transform  = 'translateY(60px)';
   }
+
   if (homeScreen) {
-    homeScreen.style.transition = 'opacity 0.7s ease';
-    homeScreen.style.opacity    = '0';
+    // .screen already has transition: opacity 0.5s in CSS
+    homeScreen.style.opacity = '0';
   }
 
-  setTimeout(function() { callback(); }, 820);
+  setTimeout(function() { callback(); }, 870);
 }
 
 function resetFromRewind() {
@@ -880,13 +889,14 @@ function resetFromRewind() {
   var homeScreen = document.getElementById('screen-home');
 
   if (orbWrap) {
+    // Restore to CSS-driven state (animation:'' lets CSS rule take over)
+    orbWrap.style.animation  = '';
     orbWrap.style.transition = '';
     orbWrap.style.opacity    = '';
     orbWrap.style.transform  = '';
   }
   if (homeScreen) {
-    homeScreen.style.transition = '';
-    homeScreen.style.opacity    = '';
+    homeScreen.style.opacity = '';
   }
 }
 
