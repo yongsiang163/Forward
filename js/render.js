@@ -46,6 +46,98 @@ function renderTagChips() {
   ).join('');
 }
 
+function attachInboxSwipe(list) {
+  var fresh = list.cloneNode(true);
+  list.parentNode.replaceChild(fresh, list);
+
+  var _startX = 0;
+  var _target = null;
+  var _bgEl   = null;
+
+  fresh.addEventListener('touchstart', function(e) {
+    var item = e.target.closest('.inbox-item');
+    if (!item) return;
+    var id = item.dataset.id;
+    var it = id && items.find(function(i) { return i.id === id; });
+    if (it && (it.status === 'archived' || it.status === 'done')) return;
+
+    _startX = e.touches[0].clientX;
+    _target = item;
+
+    _bgEl = item.querySelector('.inbox-item-swipe-bg');
+    if (!_bgEl) {
+      _bgEl = document.createElement('div');
+      _bgEl.className = 'inbox-item-swipe-bg';
+      item.insertBefore(_bgEl, item.firstChild);
+    }
+  }, { passive: true });
+
+  fresh.addEventListener('touchmove', function(e) {
+    if (!_target) return;
+    var dx = e.touches[0].clientX - _startX;
+    _target.style.transform = 'translateX(' + dx + 'px)';
+
+    if (_bgEl) {
+      if (dx > 20) {
+        _bgEl.className = 'inbox-item-swipe-bg right';
+        _bgEl.style.opacity = Math.min(dx / 100, 0.8).toString();
+      } else if (dx < -20) {
+        _bgEl.className = 'inbox-item-swipe-bg left';
+        _bgEl.style.opacity = Math.min(-dx / 100, 0.8).toString();
+      } else {
+        _bgEl.style.opacity = '0';
+      }
+    }
+  }, { passive: true });
+
+  fresh.addEventListener('touchend', function(e) {
+    if (!_target) return;
+    var dx = e.changedTouches[0].clientX - _startX;
+    var item = _target;
+    var id   = item.dataset.id;
+    var it   = id && items.find(function(i) { return i.id === id; });
+
+    _target = null;
+    _bgEl   = null;
+
+    if (!it) {
+      item.style.transform = '';
+      return;
+    }
+
+    if (dx > 80) {
+      item.classList.add('swipe-dismiss-right');
+      setTimeout(function() {
+        it.status     = 'archived';
+        it.archivedAt = new Date().toISOString();
+        save();
+        if (navigator.vibrate) navigator.vibrate(30);
+        renderInbox();
+        showToast('archived — tap to undo');
+      }, 260);
+    } else if (dx < -80) {
+      item.classList.add('swipe-dismiss-left');
+      setTimeout(function() {
+        it.category  = 'task';
+        it.confirmed = true;
+        it.touchedAt = new Date().toISOString();
+        save();
+        if (navigator.vibrate) navigator.vibrate(30);
+        renderInbox();
+        showToast('moved to tasks');
+      }, 260);
+    } else {
+      item.style.transition = 'transform 0.22s ease';
+      item.style.transform  = 'translateX(0)';
+      setTimeout(function() { item.style.transition = ''; }, 240);
+      var bg = item.querySelector('.inbox-item-swipe-bg');
+      if (bg) bg.style.opacity = '0';
+    }
+  }, { passive: true });
+
+  return fresh;
+}
+
 function renderInbox() {
   runLifecycle();
   const list = document.getElementById('inbox-list');
@@ -115,6 +207,7 @@ function renderInbox() {
   }
 
   list.innerHTML = html;
+  attachInboxSwipe(list);
 }
 
 function toggleCold() {
@@ -183,7 +276,7 @@ function renderItemHTML(item, isCold = false) {
   }
 
   return `
-    <div class="inbox-item cat-${cat}${isCold ? ' status-cold' : ''}" onclick="openItemAction('${item.id}')">
+    <div class="inbox-item cat-${cat}${isCold ? ' status-cold' : ''}" data-id="${item.id}" onclick="openItemAction('${item.id}')">
       <div class="inbox-item-bar"></div>
       ${titleHTML}
       <p class="inbox-item-content">${esc(item.content)}</p>
@@ -316,7 +409,7 @@ function renderWork() {
   // AI Companion onboarding card — shown once when no key is configured
   const hasKey = typeof getGeminiKey === 'function' && getGeminiKey();
   const companionSeen = localStorage.getItem('forward_companion_seen');
-  if (!hasKey && !companionSeen) {
+  if (!hasKey && (!companionSeen || companionSeen === 'setup_prompted')) {
     const onboardCard = document.createElement('div');
     onboardCard.className = 'companion-onboard-card';
     onboardCard.innerHTML =
@@ -514,7 +607,7 @@ function completeStep(idx) {
   if (wrap) renderMvna(wrap, S.mvnaSteps);
   if (S.mvnaStep >= S.mvnaSteps.length) {
     showToast('All steps done. That counts.');
-    setTimeout(() => { touchItem(S.currentWorkItem.id); renderWork(); }, 1200);
+    setTimeout(() => { if (S.currentWorkItem) { touchItem(S.currentWorkItem.id); } renderWork(); }, 1200);
   }
 }
 

@@ -2733,3 +2733,33 @@
   border-color: rgba(196, 149, 106, 0.35);
   color: #c4956a;
 }
+
+/* ── Inbox Swipe Triage ──────────────────────────────────── */
+.inbox-item {
+  position: relative;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+.inbox-item.swipe-dismiss-right {
+  transform: translateX(110%) !important;
+  opacity: 0;
+  transition: transform 0.25s ease, opacity 0.2s ease;
+}
+.inbox-item.swipe-dismiss-left {
+  transform: translateX(-110%) !important;
+  opacity: 0;
+  transition: transform 0.25s ease, opacity 0.2s ease;
+}
+.inbox-item-swipe-bg {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.1s ease;
+}
+.inbox-item-swipe-bg.right {
+  background: rgba(196, 149, 106, 0.18);
+}
+.inbox-item-swipe-bg.left {
+  background: rgba(126, 184, 164, 0.18);
+}
