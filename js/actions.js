@@ -860,7 +860,7 @@ function closeExistingProjectSheet() {
 // ── REWIND INTEGRATION ────────────────────────────────────
 function animateIntoRewind(callback) {
   var orbWrap    = document.getElementById('hero-orb-wrap');
-  var homeScreen = document.getElementById('home-screen');
+  var homeScreen = document.getElementById('screen-home');
 
   if (orbWrap) {
     orbWrap.style.transition = 'opacity 0.8s ease, transform 0.8s ease';
@@ -877,7 +877,7 @@ function animateIntoRewind(callback) {
 
 function resetFromRewind() {
   var orbWrap    = document.getElementById('hero-orb-wrap');
-  var homeScreen = document.getElementById('home-screen');
+  var homeScreen = document.getElementById('screen-home');
 
   if (orbWrap) {
     orbWrap.style.transition = '';
