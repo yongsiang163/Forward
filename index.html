@@ -630,6 +630,21 @@
         Project</button>
 
       <div class="item-action-divider"></div>
+      <button class="item-action-main-btn ia-edit-trigger" onclick="enterItemEditMode()"
+        style="border-color:rgba(196,149,106,0.2); color:rgba(232,221,212,0.5); margin-bottom:12px;">edit capture</button>
+
+      <!-- Edit panel — hidden until enterItemEditMode() is called -->
+      <div id="ia-edit-panel" style="display:none; margin-bottom:12px;">
+        <textarea id="ia-edit-content" class="ia-edit-textarea"
+          placeholder="what did you capture?"></textarea>
+        <div class="ia-edit-actions">
+          <button class="item-action-main-btn ia-edit-save" onclick="saveItemEdit()">save</button>
+          <button class="item-action-main-btn ia-edit-cancel" onclick="cancelItemEdit()"
+            style="background:transparent; border-color:transparent; color:rgba(232,221,212,0.4);">cancel</button>
+        </div>
+      </div>
+
+      <div class="item-action-divider"></div>
       <button class="item-action-main-btn archive" onclick="iaArchive()">Archive</button>
       <button class="item-action-main-btn cancel" onclick="closeItemAction()">Cancel</button>
     </div>
