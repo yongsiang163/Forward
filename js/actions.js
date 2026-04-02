@@ -769,6 +769,56 @@ async function iaSummarise() {
   }
 }
 
+function enterItemEditMode() {
+  if (!activeItemId) return;
+  var item = items.find(function(i) { return i.id === activeItemId; });
+  if (!item) return;
+
+  var editPanel   = document.getElementById('ia-edit-panel');
+  var editContent = document.getElementById('ia-edit-content');
+  var editTrigger = document.querySelector('.ia-edit-trigger');
+  if (!editPanel || !editContent) return;
+
+  editContent.value = (item.rawContent && item.rawContent.trim())
+    ? item.rawContent
+    : (item.content || '');
+
+  editPanel.style.display  = 'block';
+  if (editTrigger) editTrigger.style.display = 'none';
+  editContent.focus();
+}
+
+function saveItemEdit() {
+  if (!activeItemId) return;
+  var idx = items.findIndex(function(i) { return i.id === activeItemId; });
+  if (idx === -1) return;
+
+  var editContent = document.getElementById('ia-edit-content');
+  if (!editContent) return;
+  var newText = editContent.value.trim();
+  if (!newText) { showToast('nothing to save'); return; }
+
+  items[idx].content    = newText;
+  items[idx].rawContent = '';
+  items[idx].aiTitle    = '';
+  items[idx].aiSummary  = '';
+  items[idx].aiActions  = [];
+  items[idx].aiPending  = false;
+  items[idx].confirmed  = false;
+  items[idx].touchedAt  = new Date().toISOString();
+
+  save();
+  closeItemAction();
+  showToast('updated');
+}
+
+function cancelItemEdit() {
+  var editPanel   = document.getElementById('ia-edit-panel');
+  var editTrigger = document.querySelector('.ia-edit-trigger');
+  if (editPanel) editPanel.style.display = 'none';
+  if (editTrigger) editTrigger.style.display = 'block';
+}
+
 function iaArchive() {
   if (activeItemId) archiveItem(activeItemId);
   closeItemAction();
