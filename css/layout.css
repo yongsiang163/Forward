@@ -2763,3 +2763,20 @@
 .inbox-item-swipe-bg.left {
   background: rgba(126, 184, 164, 0.18);
 }
+
+/* ── AI Daily Brief ──────────────────────────────────────── */
+.daily-brief-card {
+  margin: 0 0 18px 0;
+  padding: 0 4px;
+  text-align: center;
+}
+.daily-brief-text {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.05rem;
+  font-weight: 400;
+  font-style: italic;
+  color: rgba(232, 221, 212, 0.5);
+  letter-spacing: 0.025em;
+  line-height: 1.5;
+  margin: 0;
+}

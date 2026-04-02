@@ -304,6 +304,52 @@ function toggleRawContent(id) {
 }
 
 // ── WORK MODE ─────────────────────────────────────────────
+function renderDailyBrief(area, session) {
+  var today = new Date().toDateString();
+  if (localStorage.getItem('forward_daily_brief_date') === today) return;
+
+  var key = typeof getGeminiKey === 'function' && getGeminiKey();
+  if (!key) return;
+
+  var mood = session && session.mood ? session.mood : null;
+  if (mood === 'Heavy' || mood === 'Overwhelmed') return;
+
+  var aliveItems = items.filter(function(i) {
+    return i.status === 'fresh' || i.status === 'alive';
+  });
+  if (aliveItems.length === 0) return;
+
+  localStorage.setItem('forward_daily_brief_date', today);
+
+  var briefCard = document.createElement('div');
+  briefCard.className = 'daily-brief-card';
+  var briefText = document.createElement('p');
+  briefText.className = 'daily-brief-text';
+  briefText.textContent = '\u2026';
+  briefCard.appendChild(briefText);
+  area.insertBefore(briefCard, area.firstChild);
+
+  var moodLine  = mood ? ('mood: ' + mood.toLowerCase()) : 'no check-in today';
+  var topItems  = aliveItems.slice(0, 3).map(function(i) {
+    return ((i.aiTitle || i.content) || '').substring(0, 55);
+  }).join('; ');
+
+  var systemPrompt = 'You are a calm, warm companion for someone with ADHD. ' +
+    'In one sentence of at most 18 words, gently orient them for today. ' +
+    'Do not mention ADHD, productivity, or efficiency. ' +
+    'Do not use the word "today". No emojis. Lowercase only. No terminal punctuation.';
+  var userPrompt = 'Context \u2014 ' + moodLine + '. Things on their mind: ' + topItems;
+
+  callGemini(systemPrompt, userPrompt).then(function(text) {
+    if (text && briefText && briefText.parentNode) {
+      briefText.textContent = text.trim().toLowerCase().replace(/\.$/, '');
+    }
+  }).catch(function() {
+    if (briefCard && briefCard.parentNode) briefCard.parentNode.removeChild(briefCard);
+    localStorage.removeItem('forward_daily_brief_date');
+  });
+}
+
 function renderWork() {
   runLifecycle();
   const area = document.getElementById('work-area');
@@ -405,6 +451,9 @@ function renderWork() {
       </div>
     </div>
     <div class="mvna-wrap" id="mvna-wrap"></div>`;
+
+  // AI Daily Brief — ambient orientation on first open of day
+  renderDailyBrief(area, session);
 
   // AI Companion onboarding card — shown once when no key is configured
   const hasKey = typeof getGeminiKey === 'function' && getGeminiKey();
