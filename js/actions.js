@@ -400,7 +400,7 @@ function openProjectSheet(id) {
     var pIdx = projects.findIndex(function(px) { return px.id === id; });
     if (pIdx !== -1) {
       projects[pIdx].lastAIReadDate = todayStr;
-      save();
+      saveProjects();
     }
     setTimeout(function() {
       var aiThread = document.getElementById('project-ai-thread');
@@ -729,6 +729,7 @@ async function iaSummarise() {
   if (!item) return;
 
   const btn = document.getElementById('ia-summarise-btn');
+  if (!btn) return;
   const originalText = btn.textContent;
   btn.textContent = 'Summarising…';
   btn.style.opacity = '0.5';
@@ -807,34 +808,67 @@ function closeExistingProjectSheet() {
 }
 
 // ── REWIND INTEGRATION ────────────────────────────────────
+function animateIntoRewind(callback) {
+  var orbWrap    = document.getElementById('hero-orb-wrap');
+  var homeScreen = document.getElementById('home-screen');
+
+  if (orbWrap) {
+    orbWrap.style.transition = 'opacity 0.8s ease, transform 0.8s ease';
+    orbWrap.style.opacity    = '0';
+    orbWrap.style.transform  = 'translateY(60px)';
+  }
+  if (homeScreen) {
+    homeScreen.style.transition = 'opacity 0.7s ease';
+    homeScreen.style.opacity    = '0';
+  }
+
+  setTimeout(function() { callback(); }, 820);
+}
+
+function resetFromRewind() {
+  var orbWrap    = document.getElementById('hero-orb-wrap');
+  var homeScreen = document.getElementById('home-screen');
+
+  if (orbWrap) {
+    orbWrap.style.transition = '';
+    orbWrap.style.opacity    = '';
+    orbWrap.style.transform  = '';
+  }
+  if (homeScreen) {
+    homeScreen.style.transition = '';
+    homeScreen.style.opacity    = '';
+  }
+}
+
 function toggleRewindMode() {
-  const container = document.getElementById('rewind-mode-container');
-  const forwardNav = document.getElementById('forward-bottom-nav');
+  var container  = document.getElementById('rewind-mode-container');
+  var forwardNav = document.getElementById('forward-bottom-nav');
   if (!container) return;
 
-  const isShown = container.style.display !== 'none';
+  var isShown = container.style.display !== 'none';
   if (isShown) {
+    // Closing Rewind → restore Forward UI
+    resetFromRewind();
     if (typeof showScreen === 'function') {
       showScreen(S.screen || 'home');
     }
     if (forwardNav) forwardNav.style.display = 'flex';
     container.style.display = 'none';
   } else {
-    // Hide all Forward screens
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    // Un-highlight nav buttons except the rewind one
-    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    // Opening Rewind → animate out then show
+    animateIntoRewind(function() {
+      document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
+      document.querySelectorAll('.nav-btn').forEach(function(b) { b.classList.remove('active'); });
 
-    // Hide Forward nav entirely
-    if (forwardNav) forwardNav.style.display = 'none';
+      if (forwardNav) forwardNav.style.display = 'none';
 
-    // Reset Rewind iframe to welcome screen when entering
-    const iframe = document.getElementById('rewind-iframe');
-    if (iframe && iframe.contentWindow && iframe.contentWindow.navigate) {
-      iframe.contentWindow.navigate('welcome');
-    }
+      var iframe = document.getElementById('rewind-iframe');
+      if (iframe && iframe.contentWindow && iframe.contentWindow.navigate) {
+        iframe.contentWindow.navigate('welcome');
+      }
 
-    container.style.display = 'flex';
+      container.style.display = 'flex';
+    });
   }
 }
 
