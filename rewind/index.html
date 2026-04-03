@@ -462,6 +462,12 @@
       margin-bottom: 40px;
     }
 
+    .reflection-icon {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+
     .reflection-eyebrow {
       font-size: 11px;
       letter-spacing: 3px;
@@ -1282,27 +1288,27 @@
         <p class="step-sub">Don't think too long. First feeling.</p>
         <div class="mood-grid">
           <button class="mood-btn" onclick="selectMood(this, 'Heavy')" data-mood="Heavy">
-            <span class="mood-icon">🌧</span>
+            <span class="mood-icon"><svg width="36" height="36" viewBox="0 0 60 60" fill="none" stroke="#c4956a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 30 Q12 25 20 30 Q28 35 36 30 Q44 25 56 30"/><path d="M18 30 A12 12 0 0 1 42 30"/><path d="M12 34 Q30 28 48 34" stroke-opacity="0.65"/><path d="M6 39 Q30 31 54 39" stroke-opacity="0.35"/><path d="M18 30 A12 12 0 0 0 42 30" stroke-opacity="0.2"/></svg></span>
             <span class="mood-label">Heavy</span>
           </button>
           <button class="mood-btn" onclick="selectMood(this, 'Tired')" data-mood="Tired">
-            <span class="mood-icon">🌫</span>
+            <span class="mood-icon"><svg width="36" height="36" viewBox="0 0 60 60" fill="none" stroke="#c4956a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="30" y1="52" x2="30" y2="30"/><path d="M30 30 Q34 23 27 16"/><circle cx="26" cy="14" r="3"/><path d="M30 42 Q20 37 20 44"/><path d="M30 38 Q40 33 39 40"/></svg></span>
             <span class="mood-label">Tired</span>
           </button>
           <button class="mood-btn" onclick="selectMood(this, 'Restless')" data-mood="Restless">
-            <span class="mood-icon">⚡</span>
+            <span class="mood-icon"><svg width="36" height="36" viewBox="0 0 60 60" fill="none" stroke="#c4956a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22 Q26 17 42 22"/><path d="M8 30 Q26 24 46 29"/><path d="M10 38 Q26 32 44 37"/><path d="M14 46 Q28 40 42 45"/><path d="M43 27 L46 29 L43 31"/></svg></span>
             <span class="mood-label">Restless</span>
           </button>
           <button class="mood-btn" onclick="selectMood(this, 'Okay')" data-mood="Okay">
-            <span class="mood-icon">🌤</span>
+            <span class="mood-icon"><svg width="36" height="36" viewBox="0 0 60 60" fill="none" stroke="#c4956a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="10" y1="30" x2="50" y2="30"/><path d="M12 22 Q30 16 48 22"/><path d="M12 38 Q30 44 48 38"/></svg></span>
             <span class="mood-label">Okay</span>
           </button>
           <button class="mood-btn" onclick="selectMood(this, 'Calm')" data-mood="Calm">
-            <span class="mood-icon">🌊</span>
+            <span class="mood-icon"><svg width="36" height="36" viewBox="0 0 60 60" fill="none" stroke="#c4956a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="30" cy="30" r="5"/><circle cx="30" cy="30" r="11" stroke-opacity="0.7"/><circle cx="30" cy="30" r="17" stroke-opacity="0.4"/><circle cx="30" cy="30" r="23" stroke-opacity="0.2"/></svg></span>
             <span class="mood-label">Calm</span>
           </button>
           <button class="mood-btn" onclick="selectMood(this, 'Alive')" data-mood="Alive">
-            <span class="mood-icon">✨</span>
+            <span class="mood-icon"><svg width="36" height="36" viewBox="0 0 60 60" fill="none" stroke="#c4956a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="42" x2="52" y2="42"/><path d="M22 42 A8 8 0 0 1 38 42"/><line x1="30" y1="30" x2="30" y2="26"/><line x1="38" y1="33" x2="41" y2="30"/><line x1="22" y1="33" x2="19" y2="30"/><line x1="40" y1="40" x2="44" y2="38"/><line x1="20" y1="40" x2="16" y2="38"/><line x1="24" y1="46" x2="36" y2="46" stroke-opacity="0.55"/><line x1="27" y1="50" x2="33" y2="50" stroke-opacity="0.25"/></svg></span>
             <span class="mood-label">Alive</span>
           </button>
         </div>
@@ -1336,6 +1342,7 @@
     <!-- REFLECTION -->
     <div class="screen" id="screen-reflection">
       <div class="reflection-header">
+        <div class="reflection-icon" id="reflection-icon"></div>
         <p class="reflection-eyebrow">Your check-in</p>
         <h2 class="reflection-title" id="reflection-title">Here is where<br>you are.</h2>
       </div>
@@ -1450,6 +1457,48 @@
   </nav>
 
   <script>
+    // ── MOOD ICONS ──
+    function moodIcon(mood, size) {
+      var s = size || 32;
+      var defs = {
+        Heavy: '<path d="M4 30 Q12 25 20 30 Q28 35 36 30 Q44 25 56 30" stroke-linecap="round"/>' +
+               '<path d="M18 30 A12 12 0 0 1 42 30" stroke-linecap="round"/>' +
+               '<path d="M12 34 Q30 28 48 34" stroke-opacity="0.65" stroke-linecap="round"/>' +
+               '<path d="M6 39 Q30 31 54 39" stroke-opacity="0.35" stroke-linecap="round"/>' +
+               '<path d="M18 30 A12 12 0 0 0 42 30" stroke-opacity="0.2" stroke-linecap="round"/>',
+        Tired: '<line x1="30" y1="52" x2="30" y2="30" stroke-linecap="round"/>' +
+               '<path d="M30 30 Q34 23 27 16" stroke-linecap="round"/>' +
+               '<circle cx="26" cy="14" r="3"/>' +
+               '<path d="M30 42 Q20 37 20 44" stroke-linecap="round"/>' +
+               '<path d="M30 38 Q40 33 39 40" stroke-linecap="round"/>',
+        Restless: '<path d="M12 22 Q26 17 42 22" stroke-linecap="round"/>' +
+                  '<path d="M8 30 Q26 24 46 29" stroke-linecap="round"/>' +
+                  '<path d="M10 38 Q26 32 44 37" stroke-linecap="round"/>' +
+                  '<path d="M14 46 Q28 40 42 45" stroke-linecap="round"/>' +
+                  '<path d="M43 27 L46 29 L43 31" stroke-linecap="round"/>',
+        Okay: '<line x1="10" y1="30" x2="50" y2="30" stroke-linecap="round"/>' +
+              '<path d="M12 22 Q30 16 48 22" stroke-linecap="round"/>' +
+              '<path d="M12 38 Q30 44 48 38" stroke-linecap="round"/>',
+        Calm: '<circle cx="30" cy="30" r="5"/>' +
+              '<circle cx="30" cy="30" r="11" stroke-opacity="0.7"/>' +
+              '<circle cx="30" cy="30" r="17" stroke-opacity="0.4"/>' +
+              '<circle cx="30" cy="30" r="23" stroke-opacity="0.2"/>',
+        Alive: '<line x1="8" y1="42" x2="52" y2="42" stroke-linecap="round"/>' +
+               '<path d="M22 42 A8 8 0 0 1 38 42" stroke-linecap="round"/>' +
+               '<line x1="30" y1="30" x2="30" y2="26" stroke-linecap="round"/>' +
+               '<line x1="38" y1="33" x2="41" y2="30" stroke-linecap="round"/>' +
+               '<line x1="22" y1="33" x2="19" y2="30" stroke-linecap="round"/>' +
+               '<line x1="40" y1="40" x2="44" y2="38" stroke-linecap="round"/>' +
+               '<line x1="20" y1="40" x2="16" y2="38" stroke-linecap="round"/>' +
+               '<line x1="24" y1="46" x2="36" y2="46" stroke-opacity="0.55" stroke-linecap="round"/>' +
+               '<line x1="27" y1="50" x2="33" y2="50" stroke-opacity="0.25" stroke-linecap="round"/>'
+      };
+      var paths = defs[mood] || defs['Okay'];
+      return '<svg width="' + s + '" height="' + s + '" viewBox="0 0 60 60" fill="none" ' +
+             'stroke="#c4956a" stroke-width="1.5" stroke-linejoin="round" ' +
+             'style="display:inline-block;vertical-align:middle;">' + paths + '</svg>';
+    }
+
     // ── VERSION & UPDATE SYSTEM ──
     const REWIND_VERSION = '1.2.0';
 
@@ -1732,11 +1781,13 @@
     }
 
     function renderReflection(session) {
-      const moodIcons = { Heavy: '🌧', Tired: '🌫', Restless: '⚡', Okay: '🌤', Calm: '🌊', Alive: '✨' };
-      const icon = moodIcons[session.mood] || '○';
+      // Icon in header (48px)
+      var iconEl = document.getElementById('reflection-icon');
+      if (iconEl) iconEl.innerHTML = moodIcon(session.mood, 48);
 
-      document.getElementById('reflection-mood').textContent =
-        `${icon}  ${session.mood}  ·  ${session.intensity}/10`;
+      // Mood + intensity line — use innerHTML now (SVG not compatible with textContent)
+      document.getElementById('reflection-mood').innerHTML =
+        moodIcon(session.mood, 20) + '&nbsp;&nbsp;' + session.mood + '&nbsp;&nbsp;·&nbsp;&nbsp;' + session.intensity + '/10';
 
       if (session.feeling) {
         document.getElementById('reflection-feeling').textContent = session.feeling;
@@ -1748,7 +1799,7 @@
       document.getElementById('reflection-focus').textContent = session.focus;
       document.getElementById('rewind-response').textContent = getResponse(session.mood, session.focus);
 
-      const titles = { Heavy: 'Be gentle\nwith yourself.', Tired: 'You can rest\nhere first.', Restless: 'One thing.\nNot everything.', Okay: 'Here is where\nyou are.', Calm: 'Receive\nthis moment.', Alive: 'Hold onto\nthis.' };
+      var titles = { Heavy: 'Be gentle\nwith yourself.', Tired: 'You can rest\nhere first.', Restless: 'One thing.\nNot everything.', Okay: 'Here is where\nyou are.', Calm: 'Receive\nthis moment.', Alive: 'Hold onto\nthis.' };
       document.getElementById('reflection-title').textContent = titles[session.mood] || 'Here is where\nyou are.';
     }
 
@@ -1781,7 +1832,6 @@
 
       // ── Compute insights ──
       const moodCounts = {};
-      const moodIcons = { Heavy: '🌧', Tired: '🌫', Restless: '⚡', Okay: '🌤', Calm: '🌊', Alive: '✨' };
       const moodOrder = ['Heavy', 'Tired', 'Restless', 'Okay', 'Calm', 'Alive'];
       let totalIntensity = 0;
       let focusEntries = sessions.filter(s => s.focus && s.focus !== 'Rest').map(s => s.focus);
@@ -1837,7 +1887,7 @@
     <div class="insights-grid">
       <div class="insight-card highlight">
         <p class="insight-label">Most present mood</p>
-        <p class="insight-value">${moodIcons[dominantMood[0]]} ${dominantMood[0]}</p>
+        <p class="insight-value">${moodIcon(dominantMood[0], 22)} ${dominantMood[0]}</p>
         <p class="insight-sub">${dominantMood[1]} of ${sessions.length} check-ins</p>
       </div>
       <div class="insight-card">
@@ -1857,35 +1907,29 @@
       </div>
       <div class="insight-card full">
         <p class="insight-label">Mood distribution</p>
-        ${moodOrder.filter(m => moodCounts[m]).map(m => `
-          <div class="mood-bar-row">
-            <span class="mood-bar-label">${moodIcons[m]} ${m}</span>
-            <div class="mood-bar-track">
-              <div class="mood-bar-fill" style="width:${(moodCounts[m] / maxMood * 100)}%"></div>
-            </div>
-            <span class="mood-bar-count">${moodCounts[m]}</span>
-          </div>
-        `).join('')}
+        ${moodOrder.filter(function(m) { return moodCounts[m]; }).map(function(m) {
+          return '<div class="mood-bar-row">' +
+            '<span class="mood-bar-label">' + moodIcon(m, 18) + ' ' + m + '</span>' +
+            '<div class="mood-bar-track"><div class="mood-bar-fill" style="width:' + (moodCounts[m] / maxMood * 100) + '%"></div></div>' +
+            '<span class="mood-bar-count">' + moodCounts[m] + '</span>' +
+            '</div>';
+        }).join('')}
       </div>
     </div>
   `;
 
       // ── Full log ──
-      const moodIconsMap = { Heavy: '🌧', Tired: '🌫', Restless: '⚡', Okay: '🌤', Calm: '🌊', Alive: '✨' };
       const reversed = [...sessions].reverse();
-      list.innerHTML = reversed.map(s => {
+      list.innerHTML = reversed.map(function(s) {
         const d = new Date(s.date);
         const dateStr = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
         const timeStr = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-        const icon = moodIconsMap[s.mood] || '○';
-        return `
-      <div class="history-entry">
-        <p class="history-date">${dateStr}  ·  ${timeStr}</p>
-        <p class="history-mood">${icon} ${s.mood} · ${s.intensity}/10</p>
-        ${s.focus ? `<p class="history-focus">"${s.focus}"</p>` : ''}
-        ${s.feeling ? `<p class="history-feeling">${s.feeling.substring(0, 140)}${s.feeling.length > 140 ? '...' : ''}</p>` : ''}
-      </div>
-    `;
+        return '<div class="history-entry">' +
+          '<p class="history-date">' + dateStr + '  ·  ' + timeStr + '</p>' +
+          '<p class="history-mood">' + moodIcon(s.mood, 20) + ' ' + s.mood + ' · ' + s.intensity + '/10</p>' +
+          (s.focus ? '<p class="history-focus">"' + s.focus + '"</p>' : '') +
+          (s.feeling ? '<p class="history-feeling">' + s.feeling.substring(0, 140) + (s.feeling.length > 140 ? '...' : '') + '</p>' : '') +
+          '</div>';
       }).join('');
 
       // Trigger scroll reveal after render
