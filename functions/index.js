@@ -19,10 +19,11 @@ exports.rewindReflect = functions.region('asia-southeast1').https.onRequest(func
   }
 
   var body = req.body || {};
-  var mood = body.mood || 'Okay';
-  var feeling = body.feeling || '';
+  var VALID_MOODS = ['Heavy', 'Tired', 'Restless', 'Okay', 'Calm', 'Alive'];
+  var mood = VALID_MOODS.indexOf(body.mood) !== -1 ? body.mood : 'Okay';
+  var feeling = (body.feeling || '').replace(/"/g, '\\"').replace(/\n/g, ' ').slice(0, 500);
   var history = Array.isArray(body.history) ? body.history : [];
-  var forwardContext = body.forwardContext || '';
+  var forwardContext = (body.forwardContext || '').replace(/"/g, '\\"').replace(/\n/g, ' ').slice(0, 200);
 
   var apiKey;
   try {
@@ -78,11 +79,16 @@ exports.rewindReflect = functions.region('asia-southeast1').https.onRequest(func
       var text = result.response.text().trim();
       // Strip markdown fences if Gemini wrapped it anyway
       text = text.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
-      var parsed = JSON.parse(text);
-      res.json({
-        reflection: parsed.reflection || null,
-        followUp: parsed.followUp || null
-      });
+      try {
+        var parsed = JSON.parse(text);
+        res.json({
+          reflection: parsed.reflection || null,
+          followUp: parsed.followUp || null
+        });
+      } catch (parseErr) {
+        console.error('rewindReflect parse error:', parseErr.message, '| raw:', text.slice(0, 200));
+        res.status(200).json({ reflection: null, followUp: null });
+      }
     })
     .catch(function(err) {
       console.error('rewindReflect Gemini error:', err.message);
