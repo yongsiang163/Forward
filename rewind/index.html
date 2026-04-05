@@ -554,6 +554,40 @@
       transition: opacity 0.6s ease;
     }
 
+    .spark-capture {
+      margin: 8px 0 28px;
+    }
+    .spark-input {
+      width: 100%;
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid rgba(196, 149, 106, 0.2);
+      color: rgba(232, 221, 212, 0.6);
+      font-size: 13px;
+      padding: 10px 0;
+      font-family: inherit;
+      outline: none;
+      text-align: center;
+      transition: border-color 0.2s ease;
+      box-sizing: border-box;
+    }
+    .spark-input::placeholder {
+      color: rgba(232, 221, 212, 0.25);
+    }
+    .spark-input:focus {
+      border-bottom-color: rgba(196, 149, 106, 0.5);
+      color: rgba(232, 221, 212, 0.85);
+    }
+    .spark-confirm {
+      font-size: 12px;
+      color: rgba(196, 149, 106, 0.6);
+      text-align: center;
+      margin-top: 8px;
+      min-height: 18px;
+      transition: opacity 0.6s ease;
+      opacity: 0;
+    }
+
     .done-btn {
       width: 100%;
       background: transparent;
@@ -1376,6 +1410,13 @@
       <p class="rewind-response" id="rewind-response">—</p>
       <p class="rewind-follow-up" id="rewind-follow-up"></p>
 
+      <div class="spark-capture" id="spark-capture">
+        <input type="text" class="spark-input" id="spark-input"
+          placeholder="anything surface while you were here?"
+          onkeydown="if(event.key==='Enter') submitSpark()">
+        <p class="spark-confirm" id="spark-confirm"></p>
+      </div>
+
       <button class="done-btn" onclick="goHome()">Close for now</button>
       <button class="new-session-btn" onclick="startCheckin()">Start a new check-in</button>
     </div>
@@ -1843,6 +1884,32 @@
       .catch(function() {
         if (!done) { done = true; clearTimeout(timeoutId); callback(null); }
       });
+    }
+
+    // ── SPARK CAPTURE (B3) ──
+    function submitSpark() {
+      var input = document.getElementById('spark-input');
+      if (!input) return;
+      var text = input.value.trim();
+      if (!text) return;
+
+      try {
+        var sparks = JSON.parse(localStorage.getItem('rewind_sparks') || '[]');
+        sparks.push({ text: text, timestamp: new Date().toISOString(), source: 'rewind' });
+        localStorage.setItem('rewind_sparks', JSON.stringify(sparks));
+      } catch (e) {}
+
+      input.value = '';
+
+      var confirm = document.getElementById('spark-confirm');
+      if (confirm) {
+        confirm.textContent = 'captured.';
+        confirm.style.opacity = '1';
+        setTimeout(function() {
+          confirm.style.opacity = '0';
+          setTimeout(function() { confirm.textContent = ''; }, 600);
+        }, 2000);
+      }
     }
 
     function renderReflection(session) {
