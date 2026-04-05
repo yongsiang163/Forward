@@ -2239,7 +2239,7 @@
       var dateLabel = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
       var timeLabel = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 
-      var fwdCtx = getForwardContextAt(session.date);
+      var fwdCtx = (typeof getForwardContextAt === 'function') ? getForwardContextAt(session.date) : null;
 
       var detail = document.getElementById('mood-timeline-detail');
       if (!detail) return;
