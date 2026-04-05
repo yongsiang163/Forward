@@ -1,0 +1,11 @@
+{
+  "name": "rewind-functions",
+  "version": "1.0.0",
+  "description": "Firebase Cloud Functions for Rewind AI features",
+  "engines": { "node": "18" },
+  "main": "index.js",
+  "dependencies": {
+    "firebase-functions": "^4.9.0",
+    "@google/generative-ai": "^0.21.0"
+  }
+}
