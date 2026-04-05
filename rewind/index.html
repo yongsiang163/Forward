@@ -937,6 +937,77 @@
       color: var(--text-muted);
     }
 
+    /* ── MOOD TIMELINE (C1) ── */
+    .mood-timeline-wrap { width: 100%; }
+
+    .mood-timeline-track {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      overflow-x: auto;
+      padding: 20px 4px 12px;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    .mood-timeline-track::-webkit-scrollbar { display: none; }
+
+    .timeline-day {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+      min-width: 18px;
+    }
+
+    .timeline-dot {
+      border-radius: 50%;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+      opacity: 0.85;
+    }
+    .timeline-dot:hover { transform: scale(1.25); opacity: 1; }
+    .timeline-dot.filtered-out { opacity: 0.12; }
+    .timeline-dot.active-dot { outline: 2px solid rgba(196,149,106,0.7); outline-offset: 2px; }
+
+    .timeline-empty-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: rgba(196, 149, 106, 0.08);
+      flex-shrink: 0;
+    }
+
+    .mood-timeline-detail {
+      background: rgba(196, 149, 106, 0.05);
+      border: 1px solid rgba(196, 149, 106, 0.18);
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin-top: 10px;
+      font-size: 13px;
+      color: rgba(232, 221, 212, 0.7);
+      line-height: 1.6;
+      animation: fadeUp 0.25s ease forwards;
+    }
+
+    /* ── WORD CLOUD (C3) placeholder — full rules added in Task 6 ── */
+    .word-cloud {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 14px;
+      padding: 8px 0 16px;
+      align-items: baseline;
+    }
+    .word-cloud-word {
+      cursor: pointer;
+      color: #c4956a;
+      font-family: inherit;
+      transition: opacity 0.2s ease, color 0.2s ease;
+      user-select: none;
+    }
+    .word-cloud-word.active { color: #e8ddd4; }
+    .word-cloud-word:hover { opacity: 1 !important; }
+
     .toast {
       position: fixed;
       bottom: 90px;
@@ -1463,10 +1534,19 @@
           </div>
         </div>
 
-        <!-- Full log -->
-        <div class="reveal-section" id="reveal-log">
-          <p class="pattern-section-label">Full log</p>
-          <div id="history-list"></div>
+        <!-- Word cloud placeholder (populated by Task 6) -->
+        <div class="reveal-section" id="reveal-wordcloud" style="display:none;">
+          <p class="pattern-section-label">Your feeling vocabulary</p>
+          <div class="word-cloud" id="word-cloud"></div>
+        </div>
+
+        <!-- Mood Timeline (C1) -->
+        <div class="reveal-section" id="reveal-timeline">
+          <p class="pattern-section-label">30-day timeline</p>
+          <div class="mood-timeline-wrap" id="mood-timeline-wrap">
+            <div class="mood-timeline-track" id="mood-timeline-track"></div>
+            <div class="mood-timeline-detail" id="mood-timeline-detail" style="display:none;"></div>
+          </div>
           <div style="height:100px;"></div>
         </div>
 
@@ -1962,7 +2042,6 @@
 
     // ── PATTERN & INSIGHTS ──
     function renderHistory() {
-      const list = document.getElementById('history-list');
       const insights = document.getElementById('pattern-insights');
       const sub = document.getElementById('pattern-sub');
       const heroTitle = document.getElementById('pattern-hero-title');
@@ -1975,7 +2054,6 @@
         heroTitle.innerHTML = 'Nothing yet.<br><em>Begin when ready.</em>';
         revealWrap.style.display = 'none';
         scrollHint.style.display = 'none';
-        list.innerHTML = '';
         return;
       }
 
@@ -2075,22 +2153,104 @@
     </div>
   `;
 
-      // ── Full log ──
-      const reversed = [...sessions].reverse();
-      list.innerHTML = reversed.map(function(s) {
-        const d = new Date(s.date);
-        const dateStr = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-        const timeStr = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-        return '<div class="history-entry">' +
-          '<p class="history-date">' + dateStr + '  ·  ' + timeStr + '</p>' +
-          '<p class="history-mood">' + moodIcon(s.mood, 20) + ' ' + s.mood + ' · ' + s.intensity + '/10</p>' +
-          (s.focus ? '<p class="history-focus">"' + s.focus + '"</p>' : '') +
-          (s.feeling ? '<p class="history-feeling">' + s.feeling.substring(0, 140) + (s.feeling.length > 140 ? '...' : '') + '</p>' : '') +
-          '</div>';
-      }).join('');
+      renderTimeline();
 
       // Trigger scroll reveal after render
       setTimeout(() => initScrollReveal(), 100);
+    }
+
+    // ── MOOD TIMELINE (C1) ──
+    var MOOD_COLORS = {
+      Heavy: '#6b7a8d',
+      Tired: '#8d7a6b',
+      Restless: '#c4956a',
+      Okay: '#a89880',
+      Calm: '#7a9688',
+      Alive: '#e8c170'
+    };
+
+    function renderTimeline() {
+      var track = document.getElementById('mood-timeline-track');
+      var detail = document.getElementById('mood-timeline-detail');
+      if (!track) return;
+
+      var now = new Date();
+      var DAY_MS = 24 * 60 * 60 * 1000;
+
+      // Index sessions by date key (Y-M-D)
+      var byDate = {};
+      sessions.forEach(function(s) {
+        var d = new Date(s.date);
+        var key = d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+        if (!byDate[key]) byDate[key] = [];
+        byDate[key].push(s);
+      });
+
+      var html = '';
+      for (var i = 29; i >= 0; i--) {
+        var d = new Date(now.getTime() - i * DAY_MS);
+        var key = d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+        var daySessions = byDate[key] || [];
+
+        html += '<div class="timeline-day">';
+        if (daySessions.length > 0) {
+          daySessions.forEach(function(s) {
+            var sz = Math.round(8 + ((s.intensity - 1) / 9) * 12);
+            var color = MOOD_COLORS[s.mood] || '#a89880';
+            html += '<div class="timeline-dot"' +
+              ' style="width:' + sz + 'px;height:' + sz + 'px;background:' + color + ';min-width:' + sz + 'px;"' +
+              ' data-session-date="' + s.date + '"' +
+              ' onclick="expandTimelineDot(this)">' +
+              '</div>';
+          });
+        } else {
+          html += '<div class="timeline-empty-dot"></div>';
+        }
+        html += '</div>';
+      }
+
+      track.innerHTML = html;
+      // Scroll to most recent (right end)
+      track.scrollLeft = track.scrollWidth;
+
+      if (detail) { detail.style.display = 'none'; detail.innerHTML = ''; }
+    }
+
+    function expandTimelineDot(dot) {
+      // Toggle off if clicking the same dot again
+      var prev = document.querySelector('.timeline-dot.active-dot');
+      if (prev === dot) {
+        prev.classList.remove('active-dot');
+        var det = document.getElementById('mood-timeline-detail');
+        if (det) det.style.display = 'none';
+        return;
+      }
+      if (prev) prev.classList.remove('active-dot');
+      dot.classList.add('active-dot');
+
+      var dateStr = dot.getAttribute('data-session-date');
+      var session = null;
+      for (var i = 0; i < sessions.length; i++) {
+        if (sessions[i].date === dateStr) { session = sessions[i]; break; }
+      }
+      if (!session) return;
+
+      var d = new Date(session.date);
+      var dateLabel = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+      var timeLabel = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+
+      var fwdCtx = getForwardContextAt(session.date);
+
+      var detail = document.getElementById('mood-timeline-detail');
+      if (!detail) return;
+
+      detail.innerHTML =
+        '<p style="font-size:11px;color:rgba(232,221,212,0.3);margin-bottom:10px;">' + dateLabel + ' · ' + timeLabel + '</p>' +
+        '<p style="margin-bottom:6px;">' + moodIcon(session.mood, 18) + '&nbsp;' + session.mood + '&nbsp;·&nbsp;' + session.intensity + '/10</p>' +
+        (session.feeling ? '<p style="font-size:12px;color:rgba(232,221,212,0.5);margin-top:10px;line-height:1.6;">' + session.feeling + '</p>' : '') +
+        (fwdCtx ? '<p style="font-size:11px;color:rgba(196,149,106,0.5);margin-top:8px;">' + fwdCtx + '</p>' : '');
+
+      detail.style.display = 'block';
     }
 
     // ── SCROLL REVEAL ──
