@@ -543,6 +543,17 @@
       margin-bottom: 32px;
     }
 
+    .rewind-follow-up {
+      font-size: 14px;
+      font-style: italic;
+      color: rgba(232, 221, 212, 0.4);
+      text-align: center;
+      margin: 12px 0 24px;
+      min-height: 0;
+      line-height: 1.6;
+      transition: opacity 0.6s ease;
+    }
+
     .done-btn {
       width: 100%;
       background: transparent;
@@ -1363,6 +1374,7 @@
       </div>
 
       <p class="rewind-response" id="rewind-response">—</p>
+      <p class="rewind-follow-up" id="rewind-follow-up"></p>
 
       <button class="done-btn" onclick="goHome()">Close for now</button>
       <button class="new-session-btn" onclick="startCheckin()">Start a new check-in</button>
@@ -1780,6 +1792,59 @@
       return r;
     }
 
+    // ── FORWARD CONTEXT SUMMARY ──
+    function getForwardContextSummary() {
+      try {
+        var items = JSON.parse(localStorage.getItem('forward_items') || '[]');
+        var active = items.filter(function(item) { return !item.archived && !item.completed; });
+        if (active.length === 0) return '';
+        var projects = JSON.parse(localStorage.getItem('forward_projects') || '[]');
+        var recentItem = active.sort(function(a, b) {
+          return new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0);
+        })[0];
+        var projectName = '';
+        if (recentItem && recentItem.projectId) {
+          var proj = projects.find(function(p) { return p.id === recentItem.projectId; });
+          if (proj && proj.name) projectName = ' · ' + proj.name;
+        }
+        return active.length + ' active capture' + (active.length !== 1 ? 's' : '') + projectName;
+      } catch (e) { return ''; }
+    }
+
+    // ── AI REFLECTION (B1 + B2) ──
+    var REWIND_REFLECT_URL = 'https://asia-southeast1-forward-163fr.cloudfunctions.net/rewindReflect';
+
+    function fetchAIReflection(session, callback) {
+      var history = sessions.slice(-7).map(function(s) {
+        return { mood: s.mood, feeling: s.feeling || '', date: s.date };
+      });
+
+      var payload = {
+        mood: session.mood,
+        feeling: session.feeling || '',
+        history: history,
+        forwardContext: getForwardContextSummary()
+      };
+
+      var done = false;
+      var timeoutId = setTimeout(function() {
+        if (!done) { done = true; callback(null); }
+      }, 5000);
+
+      fetch(REWIND_REFLECT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (!done) { done = true; clearTimeout(timeoutId); callback(data); }
+      })
+      .catch(function() {
+        if (!done) { done = true; clearTimeout(timeoutId); callback(null); }
+      });
+    }
+
     function renderReflection(session) {
       // Icon in header (48px)
       var iconEl = document.getElementById('reflection-icon');
@@ -1801,6 +1866,31 @@
 
       var titles = { Heavy: 'Be gentle\nwith yourself.', Tired: 'You can rest\nhere first.', Restless: 'One thing.\nNot everything.', Okay: 'Here is where\nyou are.', Calm: 'Receive\nthis moment.', Alive: 'Hold onto\nthis.' };
       document.getElementById('reflection-title').textContent = titles[session.mood] || 'Here is where\nyou are.';
+
+      // Clear any previous follow-up
+      var followUpEl = document.getElementById('rewind-follow-up');
+      if (followUpEl) { followUpEl.textContent = ''; followUpEl.style.opacity = '0'; }
+
+      // Attempt AI reflection — falls back to hardcoded response already set above
+      fetchAIReflection(session, function(data) {
+        if (!data) return;
+        var responseEl = document.getElementById('rewind-response');
+        if (data.reflection && responseEl) {
+          responseEl.style.transition = 'opacity 0.5s ease';
+          responseEl.style.opacity = '0';
+          setTimeout(function() {
+            responseEl.textContent = data.reflection;
+            responseEl.style.opacity = '1';
+          }, 300);
+        }
+        if (data.followUp && followUpEl) {
+          setTimeout(function() {
+            followUpEl.textContent = data.followUp;
+            followUpEl.style.transition = 'opacity 0.6s ease';
+            followUpEl.style.opacity = '1';
+          }, 800);
+        }
+      });
     }
 
     // ── PATTERN & INSIGHTS ──
@@ -1981,16 +2071,14 @@
 
     // ── EXPORT PDF (as printable HTML) ──
     function exportPDF() {
-      const moodIcons = { Heavy: '🌧', Tired: '🌫', Restless: '⚡', Okay: '🌤', Calm: '🌊', Alive: '✨' };
       const rows = [...sessions].reverse().map(s => {
         const d = new Date(s.date);
         const dateStr = d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
         const timeStr = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-        const icon = moodIcons[s.mood] || '';
         return `
       <div style="border:1px solid #e0d5cd; border-radius:10px; padding:18px 22px; margin-bottom:14px; page-break-inside:avoid;">
         <p style="font-size:11px; color:#9a8878; letter-spacing:1px; margin-bottom:8px; text-transform:uppercase;">${dateStr} · ${timeStr}</p>
-        <p style="font-size:18px; color:#2c2520; margin-bottom:6px;">${icon} ${s.mood} · ${s.intensity}/10</p>
+        <p style="font-size:18px; color:#2c2520; margin-bottom:6px;">${moodIcon(s.mood, 20)} ${s.mood} · ${s.intensity}/10</p>
         ${s.focus ? `<p style="font-family:Georgia; font-size:16px; color:#8b6f5e; font-style:italic; margin-bottom:6px;">"${s.focus}"</p>` : ''}
         ${s.feeling ? `<p style="font-size:14px; color:#5a4e45; line-height:1.6;">${s.feeling}</p>` : ''}
       </div>
@@ -2130,7 +2218,6 @@
     function renderRecentEntries() {
       if (sessions.length === 0) return;
 
-      const moodIcons = { Heavy: '🌧', Tired: '🌫', Restless: '⚡', Okay: '🌤', Calm: '🌊', Alive: '✨' };
       const recentSection = document.getElementById('recent-section');
       const recentEntries = document.getElementById('recent-entries');
       const scrollHint = document.getElementById('scroll-hint');
@@ -2155,13 +2242,11 @@
         else if (diffDays < 2) timeLabel = 'Yesterday';
         else timeLabel = d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
 
-        const icon = moodIcons[s.mood] || '○';
-
         return `
       <div class="recent-entry">
         <p class="recent-entry-time">${timeLabel}</p>
         <div class="recent-entry-mood">
-          <span class="recent-mood-icon">${icon}</span>
+          <span class="recent-mood-icon">${moodIcon(s.mood, 22)}</span>
           <span class="recent-mood-name">${s.mood}</span>
           <span class="recent-mood-intensity">${s.intensity}/10</span>
         </div>
