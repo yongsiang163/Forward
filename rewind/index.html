@@ -2154,6 +2154,7 @@
   `;
 
       renderTimeline();
+      renderWordCloud();
 
       // Trigger scroll reveal after render
       setTimeout(() => initScrollReveal(), 100);
@@ -2251,6 +2252,96 @@
         (fwdCtx ? '<p style="font-size:11px;color:rgba(196,149,106,0.5);margin-top:8px;">' + fwdCtx + '</p>' : '');
 
       detail.style.display = 'block';
+    }
+
+    // ── WORD CLOUD (C3) ──
+    var STOP_WORDS = ['a', 'an', 'the', 'and', 'or', 'but', 'i', 'me', 'my', 'am',
+      'is', 'are', 'was', 'were', 'be', 'been', 'have', 'has', 'had', 'do', 'does',
+      'did', 'will', 'would', 'could', 'should', 'may', 'might', 'so', 'if', 'in',
+      'on', 'at', 'to', 'for', 'of', 'with', 'by', 'from', 'up', 'as', 'it', 'its',
+      'this', 'that', 'these', 'those', 'not', 'no', 'just', 'than', 'then', 'when',
+      'what', 'how', 'very', 'really', 'like', 'feel', 'feeling', 'about', 'there',
+      'their', 'they', 'into', 'all', 'been', 'him', 'her', 'out', 'one', 'can',
+      'still', 'even', 'much', 'only', 'also', 'bit', 'kind', 'lot', 'some'];
+
+    var activeWordFilter = null;
+
+    function renderWordCloud() {
+      var el = document.getElementById('word-cloud');
+      var wrap = document.getElementById('reveal-wordcloud');
+      if (!el || !wrap) return;
+
+      var wordCounts = {};
+      sessions.forEach(function(s) {
+        if (!s.feeling) return;
+        var words = s.feeling.toLowerCase().replace(/[^a-z\s]/g, '').split(/\s+/);
+        words.forEach(function(w) {
+          if (w.length < 3) return;
+          if (STOP_WORDS.indexOf(w) !== -1) return;
+          wordCounts[w] = (wordCounts[w] || 0) + 1;
+        });
+      });
+
+      // Only words appearing in 2+ sessions
+      var entries = [];
+      for (var w in wordCounts) {
+        if (wordCounts[w] >= 2) entries.push([w, wordCounts[w]]);
+      }
+
+      if (entries.length === 0) {
+        wrap.style.display = 'none';
+        return;
+      }
+
+      entries.sort(function(a, b) { return b[1] - a[1]; });
+      var top = entries.slice(0, 20);
+      var maxCount = top[0][1];
+      var minCount = top[top.length - 1][1];
+
+      el.innerHTML = top.map(function(e) {
+        var word = e[0], count = e[1];
+        var t = maxCount === minCount ? 1 : (count - minCount) / (maxCount - minCount);
+        var fontSize = Math.round(11 + t * 11);
+        var opacity = (0.35 + t * 0.6).toFixed(2);
+        return '<span class="word-cloud-word" ' +
+          'style="font-size:' + fontSize + 'px;opacity:' + opacity + ';" ' +
+          'onclick="filterByWord(\'' + word.replace(/'/g, "\\'") + '\')">' +
+          word + '</span>';
+      }).join('');
+
+      wrap.style.display = 'block';
+    }
+
+    function filterByWord(word) {
+      var dots = document.querySelectorAll('.timeline-dot');
+      var words = document.querySelectorAll('.word-cloud-word');
+
+      if (activeWordFilter === word) {
+        // Clear filter
+        activeWordFilter = null;
+        dots.forEach(function(d) { d.classList.remove('filtered-out'); });
+        words.forEach(function(w) { w.classList.remove('active'); });
+        return;
+      }
+
+      activeWordFilter = word;
+
+      // Highlight active word
+      words.forEach(function(w) {
+        w.classList.toggle('active', w.textContent === word);
+      });
+
+      // Dim non-matching dots
+      dots.forEach(function(dot) {
+        var dateStr = dot.getAttribute('data-session-date');
+        var session = null;
+        for (var i = 0; i < sessions.length; i++) {
+          if (sessions[i].date === dateStr) { session = sessions[i]; break; }
+        }
+        var matches = session && session.feeling &&
+          session.feeling.toLowerCase().replace(/[^a-z\s]/g, '').split(/\s+/).indexOf(word) !== -1;
+        dot.classList.toggle('filtered-out', !matches);
+      });
     }
 
     // ── SCROLL REVEAL ──
