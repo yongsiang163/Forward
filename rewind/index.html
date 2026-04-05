@@ -1932,6 +1932,38 @@
       } catch (e) { return ''; }
     }
 
+    // ── FORWARD CONTEXT AT TIME (C4) ──
+    function getForwardContextAt(dateStr) {
+      try {
+        var items = JSON.parse(localStorage.getItem('forward_items') || '[]');
+        var checkinTime = new Date(dateStr).getTime();
+        var WINDOW_MS = 12 * 60 * 60 * 1000; // ±12 hours
+
+        var nearby = items.filter(function(item) {
+          var updated = item.updatedAt ? new Date(item.updatedAt).getTime() : 0;
+          if (!updated) updated = item.createdAt ? new Date(item.createdAt).getTime() : 0;
+          return Math.abs(updated - checkinTime) <= WINDOW_MS;
+        });
+
+        if (nearby.length === 0) return null;
+
+        var projects = JSON.parse(localStorage.getItem('forward_projects') || '[]');
+        var projectNames = [];
+        nearby.forEach(function(item) {
+          if (item.projectId) {
+            var proj = projects.find(function(p) { return p.id === item.projectId; });
+            if (proj && proj.name && projectNames.indexOf(proj.name) === -1) {
+              projectNames.push(proj.name);
+            }
+          }
+        });
+
+        var count = nearby.length;
+        var projectPart = projectNames.length > 0 ? ' · ' + projectNames[0] : '';
+        return count + ' active capture' + (count !== 1 ? 's' : '') + projectPart;
+      } catch (e) { return null; }
+    }
+
     // ── AI REFLECTION (B1 + B2) ──
     var REWIND_REFLECT_URL = 'https://asia-southeast1-forward-163fr.cloudfunctions.net/rewindReflect';
 
