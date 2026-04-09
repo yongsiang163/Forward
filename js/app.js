@@ -63,6 +63,14 @@ function setMainMode(mode) {
   }
 }
 
+// Sync floating pill active state
+function syncPillNav(screenId) {
+  var mapping = { 'home': 'fp-home', 'inbox': 'fp-inbox', 'plan': 'fp-plan' };
+  document.querySelectorAll('.fp-btn').forEach(function(b) { b.classList.remove('active'); });
+  var target = mapping[screenId];
+  if (target) { var el = document.getElementById(target); if (el) el.classList.add('active'); }
+}
+
 function initSwipe() {
   let startX = 0, startY = 0, startTime = 0;
 

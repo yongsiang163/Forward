@@ -536,46 +536,72 @@
     .hero-horizon[data-mood="fatigued"]   { opacity: 0.4; }
     .hero-horizon[data-mood="overwhelmed"] { opacity: 0.18; }
 
-    /* Swipe direction hints — fade in late */
-    .home-swipe-hints {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      width: 100%;
-      padding: 0 4px;
-      position: absolute;
-      bottom: 28px;
-      left: 0;
-      right: 0;
-      padding: 0 28px;
-      opacity: 0;
-      animation: fadeUp 0.8s ease 1.3s forwards;
-      pointer-events: none;
-    }
+    /* ── FLOATING PILL NAVIGATION ── */
+.float-pill {
+  position: fixed;
+  bottom: calc(14px + env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: rgba(20, 16, 8, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(212, 164, 114, 0.2);
+  border-radius: 40px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 5px 6px;
+  z-index: 100;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(212, 164, 114, 0.06);
+  animation: pillEntrance 400ms var(--ease-out) 1s forwards;
+}
+@keyframes pillEntrance {
+  to { transform: translateX(-50%) translateY(0); }
+}
 
-    .swipe-hint {
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      font-size: 10px;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      color: var(--text-muted);
-    }
+.fp-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: rgba(212, 164, 114, 0.4);
+  transition: color 0.2s, background 0.2s, transform 0.15s;
+  position: relative;
+}
+.fp-btn:active {
+  transform: scale(0.92);
+}
+.fp-btn.active {
+  color: rgba(212, 164, 114, 0.95);
+  background: rgba(212, 164, 114, 0.1);
+}
+.fp-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(212, 164, 114, 0.8);
+  box-shadow: 0 0 6px rgba(212, 164, 114, 0.5);
+}
 
-    .swipe-hint-arrow {
-      font-size: 13px;
-      color: var(--text-muted);
-      opacity: 0.6;
-    }
-
-    .swipe-hint-teal {
-      color: var(--teal-soft);
-    }
-
-    .swipe-hint-warm {
-      color: var(--warm-soft);
-    }
+/* Mini sun orb icon in pill */
+.fp-orb-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, rgba(230, 175, 110, 0.95), rgba(160, 90, 20, 0.75));
+  box-shadow: 0 0 10px rgba(212, 164, 114, 0.5);
+  pointer-events: none;
+}
 
     /* Scroll-down section — stats revealed below fold */
     /* Stats drawer — fixed to bottom, hidden below viewport, revealed on swipe-up */

@@ -986,6 +986,9 @@ function showScreen(id) {
 
   S.screen = id;
 
+  // Sync floating pill nav active state
+  syncPillNav(id);
+
   // Manage body class for home-specific fixed elements
   document.body.classList.toggle('on-home', id === 'home');
   // Hide stats drawer when leaving home
