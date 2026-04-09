@@ -992,8 +992,9 @@
       background: var(--surface);
       border: 1px solid var(--border-soft);
       border-radius: 14px;
-      padding: 18px 20px 16px;
+      padding: 14px 16px 12px;
       margin-bottom: 10px;
+      min-height: 44px;
       position: relative;
       overflow: hidden;
       animation: fadeUp 0.3s ease forwards;
@@ -1030,12 +1031,12 @@
 
     /* Category left bar */
     .inbox-item-bar {
-      position: absolute;
-      left: 0;
-      top: 0;
-      bottom: 0;
-      width: 3px;
-      border-radius: 3px 0 0 3px;
+      width: 4px;
+      border-radius: 4px;
+      flex-shrink: 0;
+      align-self: stretch;
+      min-height: 100%;
+      background: rgba(212, 164, 114, 0.6);
     }
 
     .cat-task .inbox-item-bar {
@@ -1056,6 +1057,16 @@
 
     .cat-uncategorised .inbox-item-bar {
       background: var(--text-muted);
+    }
+
+    .inbox-item-chip {
+      font-size: 8px;
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: rgba(212, 164, 114, 0.08);
+      border: 1px solid rgba(212, 164, 114, 0.14);
+      color: rgba(212, 164, 114, 0.6);
+      flex-shrink: 0;
     }
 
     .inbox-item-title {
