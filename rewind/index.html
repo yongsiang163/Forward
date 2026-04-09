@@ -1052,6 +1052,60 @@
     }
     .mood-timeline-track::-webkit-scrollbar { display: none; }
 
+    /* ── CALENDAR HEAT MAP ── */
+    .cal-wrap { flex: 1; display: flex; flex-direction: column; padding: 0 2px; }
+    .cal-day-headers {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 3px;
+      margin-bottom: 4px;
+    }
+    .cal-day-hdr {
+      font-size: 7px;
+      color: rgba(90, 78, 69, 0.4);
+      text-align: center;
+      letter-spacing: 0.3px;
+    }
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 3px;
+      flex: 1;
+    }
+    .cal-cell {
+      border-radius: 3px;
+      aspect-ratio: 1;
+      cursor: pointer;
+      transition: transform 0.15s var(--ease-spring), box-shadow 0.15s;
+    }
+    .cal-cell:active { transform: scale(1.15); }
+    .cal-cell.today  { box-shadow: 0 0 0 1.5px rgba(212, 164, 114, 0.65); }
+    .cal-cell.selected { box-shadow: 0 0 0 1.5px rgba(212, 164, 114, 0.9); transform: scale(1.1); }
+    .cal-cell.empty  { background: rgba(255, 255, 255, 0.04); cursor: default; }
+    .cal-cell.lv1    { background: rgba(220, 130, 100, 0.22); border: 1px solid rgba(220, 130, 100, 0.12); }
+    .cal-cell.lv2    { background: rgba(212, 164, 114, 0.28); border: 1px solid rgba(212, 164, 114, 0.14); }
+    .cal-cell.lv3    { background: rgba(212, 164, 114, 0.45); border: 1px solid rgba(212, 164, 114, 0.22); }
+    .cal-cell.lv4    { background: rgba(212, 164, 114, 0.65); border: 1px solid rgba(212, 164, 114, 0.30); box-shadow: 0 0 4px rgba(212, 164, 114, 0.2); }
+    .cal-cell.lv5    { background: rgba(126, 184, 164, 0.45); border: 1px solid rgba(126, 184, 164, 0.22); }
+
+    .cal-legend { display: flex; align-items: center; gap: 6px; margin-top: 10px; }
+    .cal-legend-label { font-size: 7px; color: rgba(90, 78, 69, 0.4); }
+    .cal-legend-dots  { display: flex; gap: 3px; }
+    .cal-legend-dot   { width: 9px; height: 9px; border-radius: 2px; }
+
+    .cal-detail {
+      margin-top: 10px;
+      padding: 12px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border-soft);
+      border-radius: 12px;
+      animation: screenEnter 250ms var(--ease-reveal) forwards;
+      display: none;
+    }
+    .cal-detail.visible { display: block; }
+    .cal-detail-mood { font-size: 11px; color: var(--text); margin-bottom: 4px; }
+    .cal-detail-meta { font-size: 9px; color: var(--text-soft); }
+
     .timeline-day {
       display: flex;
       flex-direction: column;
@@ -2430,7 +2484,7 @@
     </div>
   `;
 
-      renderTimeline();
+      renderCalendar();
       renderWordCloud();
 
       // Trigger scroll reveal after render
@@ -2446,6 +2500,94 @@
       Calm: '#7a9688',
       Alive: '#e8c170'
     };
+
+    function renderCalendar() {
+      var container = document.getElementById('mood-timeline-wrap');
+      if (!container) return;
+
+      var sessions_data = sessions;
+      var today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      // Build a map: dateString → session
+      var byDate = {};
+      sessions_data.forEach(function(s) {
+        var d = new Date(s.date);
+        d.setHours(0, 0, 0, 0);
+        var key = d.toISOString().slice(0, 10);
+        byDate[key] = s;
+      });
+
+      // Mood → intensity level mapping
+      function moodLevel(mood) {
+        var map = { heavy: 1, tired: 1, restless: 2, okay: 2, calm: 5, alive: 4 };
+        return map[(mood || '').toLowerCase()] || 3;
+      }
+
+      // Build 5 weeks of cells ending today
+      var cells = [];
+      for (var i = 34; i >= 0; i--) {
+        var d = new Date(today);
+        d.setDate(today.getDate() - i);
+        cells.push(d);
+      }
+
+      var DAY_LABELS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+
+      var html = '<div class="cal-wrap">' +
+        '<div class="cal-day-headers">' +
+        DAY_LABELS.map(function(l) { return '<div class="cal-day-hdr">' + l + '</div>'; }).join('') +
+        '</div>' +
+        '<div class="cal-grid" id="cal-grid">';
+
+      cells.forEach(function(d) {
+        var key = d.toISOString().slice(0, 10);
+        var todayKey = today.toISOString().slice(0, 10);
+        var session = byDate[key];
+        var cls = 'cal-cell';
+        if (!session) {
+          cls += ' empty';
+        } else {
+          cls += ' lv' + moodLevel(session.mood);
+        }
+        if (key === todayKey) cls += ' today';
+        html += '<div class="' + cls + '" data-date="' + key + '"></div>';
+      });
+
+      html += '</div>' +
+        '<div class="cal-legend">' +
+        '<span class="cal-legend-label">heavy</span>' +
+        '<div class="cal-legend-dots">' +
+        '<div class="cal-legend-dot" style="background:rgba(220,130,100,0.3)"></div>' +
+        '<div class="cal-legend-dot" style="background:rgba(212,164,114,0.3)"></div>' +
+        '<div class="cal-legend-dot" style="background:rgba(212,164,114,0.5)"></div>' +
+        '<div class="cal-legend-dot" style="background:rgba(212,164,114,0.7)"></div>' +
+        '<div class="cal-legend-dot" style="background:rgba(126,184,164,0.5)"></div>' +
+        '</div>' +
+        '<span class="cal-legend-label">alive / calm</span>' +
+        '</div>' +
+        '<div class="cal-detail" id="cal-detail"></div>' +
+        '</div>';
+
+      container.innerHTML = html;
+
+      // Wire up cell taps
+      var detail = document.getElementById('cal-detail');
+      document.querySelectorAll('.cal-cell:not(.empty)').forEach(function(cell) {
+        cell.addEventListener('click', function() {
+          var key = cell.getAttribute('data-date');
+          var session = byDate[key];
+          if (!session) return;
+          document.querySelectorAll('.cal-cell').forEach(function(c) { c.classList.remove('selected'); });
+          cell.classList.add('selected');
+          detail.innerHTML = '<div class="cal-detail-mood">' +
+            (typeof moodIcon === 'function' ? moodIcon(session.mood, 16) : '') + '&nbsp;' + session.mood + ' &middot; ' + (session.intensity || '–') + '/10' +
+            '</div>' +
+            '<div class="cal-detail-meta">' + new Date(session.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) + '</div>';
+          detail.classList.add('visible');
+        });
+      });
+    }
 
     function renderTimeline() {
       var track = document.getElementById('mood-timeline-track');
