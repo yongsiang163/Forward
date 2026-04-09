@@ -1918,6 +1918,7 @@
       setStep(0);
       showScreen('checkin');
       document.getElementById('nav-checkin').classList.add('active');
+      initMoodWheel();
     }
 
     function setStep(n) {
@@ -1930,6 +1931,138 @@
         if (i === n) d.classList.add('active');
       });
       state.currentStep = n;
+    }
+
+    var WHEEL_MOODS = [
+      {
+        name: 'alive', angle: -90, glow: 'rgba(212,164,114,0.45)',
+        svgPaths: '<line x1="8" y1="42" x2="52" y2="42"/><path d="M22 42 A8 8 0 0 1 38 42"/><line x1="30" y1="30" x2="30" y2="26"/><line x1="38" y1="33" x2="41" y2="30"/><line x1="22" y1="33" x2="19" y2="30"/><line x1="40" y1="40" x2="44" y2="38"/><line x1="20" y1="40" x2="16" y2="38"/><line x1="24" y1="46" x2="36" y2="46" stroke-opacity="0.55"/><line x1="27" y1="50" x2="33" y2="50" stroke-opacity="0.25"/>',
+      },
+      {
+        name: 'calm', angle: -30, glow: 'rgba(126,184,164,0.35)',
+        svgPaths: '<circle cx="30" cy="30" r="5"/><circle cx="30" cy="30" r="11" stroke-opacity="0.7"/><circle cx="30" cy="30" r="17" stroke-opacity="0.4"/><circle cx="30" cy="30" r="23" stroke-opacity="0.2"/>',
+      },
+      {
+        name: 'okay', angle: 30, glow: 'rgba(212,164,114,0.25)',
+        svgPaths: '<line x1="10" y1="30" x2="50" y2="30"/><path d="M12 22 Q30 16 48 22"/><path d="M12 38 Q30 44 48 38"/>',
+      },
+      {
+        name: 'restless', angle: 90, glow: 'rgba(140,160,196,0.30)',
+        svgPaths: '<path d="M12 22 Q26 17 42 22"/><path d="M8 30 Q26 24 46 29"/><path d="M10 38 Q26 32 44 37"/><path d="M14 46 Q28 40 42 45"/><path d="M43 27 L46 29 L43 31"/>',
+      },
+      {
+        name: 'tired', angle: 150, glow: 'rgba(160,140,196,0.28)',
+        svgPaths: '<line x1="30" y1="52" x2="30" y2="30"/><path d="M30 30 Q34 23 27 16"/><circle cx="26" cy="14" r="3"/><path d="M30 42 Q20 37 20 44"/><path d="M30 38 Q40 33 39 40"/>',
+      },
+      {
+        name: 'heavy', angle: 210, glow: 'rgba(220,130,100,0.30)',
+        svgPaths: '<path d="M4 30 Q12 25 20 30 Q28 35 36 30 Q44 25 56 30"/><path d="M18 30 A12 12 0 0 1 42 30"/><path d="M12 34 Q30 28 48 34" stroke-opacity="0.65"/><path d="M6 39 Q30 31 54 39" stroke-opacity="0.35"/><path d="M18 30 A12 12 0 0 0 42 30" stroke-opacity="0.2"/>',
+      },
+    ];
+    var WHEEL_MOOD_CLASSES = ['mood-alive','mood-calm','mood-okay','mood-restless','mood-tired','mood-heavy'];
+
+    function initMoodWheel() {
+      var canvas = document.getElementById('mood-wheel');
+      if (!canvas) return;
+      var center = document.getElementById('wh-center');
+      var centerSvg = document.getElementById('wh-center-svg');
+      var R = 80, CX = 110, CY = 110;
+      var spokes = [], nodes = [];
+      var dragging = false, activeIdx = -1;
+
+      WHEEL_MOODS.forEach(function(m, i) {
+        var rad = m.angle * Math.PI / 180;
+        var nx = CX + R * Math.cos(rad);
+        var ny = CY + R * Math.sin(rad);
+
+        // Spoke
+        var sp = document.createElement('div');
+        sp.className = 'wh-spoke';
+        sp.style.left = CX + 'px';
+        sp.style.top = CY + 'px';
+        sp.style.height = (R - 26) + 'px';
+        sp.style.transform = 'rotate(' + (m.angle + 90) + 'deg)';
+        sp.style.setProperty('--mood-col', m.glow);
+        canvas.appendChild(sp);
+        spokes.push(sp);
+
+        // Node
+        var nd = document.createElement('div');
+        nd.className = 'wh-node';
+        nd.style.left = nx + 'px';
+        nd.style.top  = ny + 'px';
+        nd.style.setProperty('--mood-col', m.glow);
+        nd.innerHTML = '<svg width="22" height="22" viewBox="0 0 60 60" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' + m.svgPaths + '</svg>' +
+          '<div class="wh-node-label">' + m.name + '</div>';
+        canvas.appendChild(nd);
+        nodes.push(nd);
+      });
+
+      function setActive(idx) {
+        if (idx === activeIdx) return;
+        activeIdx = idx;
+        WHEEL_MOOD_CLASSES.forEach(function(c) { center.classList.remove(c); });
+        nodes.forEach(function(nd, i) {
+          var on = (i === idx);
+          nd.classList.toggle('active', on);
+          spokes[i].classList.toggle('active', on);
+          nd.style.opacity = (idx === -1 || on) ? '1' : '0.35';
+        });
+        if (idx !== -1) {
+          center.style.setProperty('--mood-col', WHEEL_MOODS[idx].glow);
+          center.classList.add('active');
+          center.classList.add(WHEEL_MOOD_CLASSES[idx]);
+          centerSvg.innerHTML = WHEEL_MOODS[idx].svgPaths;
+        } else {
+          center.classList.remove('active');
+          centerSvg.innerHTML = '';
+        }
+      }
+
+      function handleMove(clientX, clientY) {
+        var rect = canvas.getBoundingClientRect();
+        var dx = clientX - (rect.left + CX);
+        var dy = clientY - (rect.top  + CY);
+        var dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 14) { setActive(-1); return; }
+        var ang = Math.atan2(dy, dx) * 180 / Math.PI;
+        var best = -1, bestD = 9999;
+        WHEEL_MOODS.forEach(function(m, i) {
+          var diff = ((ang - m.angle + 540) % 360) - 180;
+          var d = Math.abs(diff);
+          if (d < bestD) { bestD = d; best = i; }
+        });
+        setActive(bestD < 40 ? best : -1);
+      }
+
+      function onRelease() {
+        dragging = false;
+        if (activeIdx !== -1) {
+          selectMoodByName(WHEEL_MOODS[activeIdx].name);
+        }
+      }
+
+      canvas.addEventListener('mousedown',  function(e) { dragging = true; handleMove(e.clientX, e.clientY); });
+      document.addEventListener('mousemove',function(e) { if (dragging) handleMove(e.clientX, e.clientY); });
+      document.addEventListener('mouseup',  function()  { if (dragging) onRelease(); });
+      canvas.addEventListener('touchstart', function(e) { e.preventDefault(); dragging = true; handleMove(e.touches[0].clientX, e.touches[0].clientY); }, { passive: false });
+      canvas.addEventListener('touchmove',  function(e) { e.preventDefault(); if (dragging) handleMove(e.touches[0].clientX, e.touches[0].clientY); }, { passive: false });
+      canvas.addEventListener('touchend',   function()  { onRelease(); });
+    }
+
+    function selectMoodByName(moodName) {
+      // capitalise first letter to match existing data (e.g. 'alive' → 'Alive')
+      var name = moodName.charAt(0).toUpperCase() + moodName.slice(1);
+      // Set state.mood directly (no separate currentMood global — mood lives on the state object)
+      state.mood = name;
+      // Try to find the hidden mood-btn to piggyback on existing selectMood flow
+      var btn = document.querySelector('.mood-btn[data-mood="' + name + '"]');
+      if (btn) {
+        selectMood(btn, name);
+      } else {
+        // Fallback: advance to step 1 (intensity) directly via nextStep
+        nextStep(1);
+      }
     }
 
     function selectMood(btn, mood) {
