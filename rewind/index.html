@@ -17,17 +17,23 @@
     rel="stylesheet">
   <style>
     :root {
-      --bg: #0e0b09;
-      --surface: #1a1410;
-      --surface2: #221c16;
-      --warm: #c4956a;
-      --warm-soft: #8b6540;
-      --warm-glow: rgba(196, 149, 106, 0.12);
+      --bg: #080603;
+      --surface: #141008;
+      --surface2: #1e160c;
+      --surface3: #281e10;
+      --warm: #d4a472;
+      --warm-soft: #a06840;
+      --warm-glow: rgba(212, 164, 114, 0.18);
+      --warm-glow-strong: rgba(212, 164, 114, 0.28);
+      --border: rgba(212, 164, 114, 0.22);
+      --border-soft: rgba(255, 255, 255, 0.07);
+      --teal: #7eb8a4;
       --text: #e8ddd4;
       --text-soft: #9a8878;
-      --text-muted: #5a4e45;
-      --border: rgba(196, 149, 106, 0.15);
-      --border-soft: rgba(255, 255, 255, 0.05);
+      --ease-spring:  cubic-bezier(0.34, 1.56, 0.64, 1);
+      --ease-breathe: cubic-bezier(0.4, 0, 0.2, 1);
+      --ease-out:     cubic-bezier(0, 0, 0.2, 1);
+      --ease-reveal:  cubic-bezier(0.25, 0.46, 0.45, 0.94);
     }
 
     * {
@@ -89,9 +95,9 @@
       inset: 0;
       z-index: 1;
       pointer-events: none;
-      opacity: 0.03;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-      background-size: 128px;
+      opacity: 0.055;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      background-size: 160px;
     }
 
     /* Main layout */
@@ -209,25 +215,42 @@
     }
 
     .begin-btn {
-      background: transparent;
-      border: 1px solid var(--border);
-      color: var(--warm);
-      font-family: 'DM Sans', sans-serif;
-      font-size: 13px;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      padding: 16px 40px;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 10px 22px 10px 12px;
       border-radius: 40px;
+      min-height: 44px;
+      border: 1px solid rgba(220, 200, 155, 0.22);
+      background: rgba(215, 190, 145, 0.05);
+      box-shadow: 0 0 16px rgba(210, 185, 140, 0.1);
+      color: rgba(218, 198, 158, 0.8);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 9px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
       cursor: pointer;
-      transition: all 0.3s ease;
       opacity: 0;
       animation: fadeUp 0.8s ease 1.1s forwards;
     }
-
-    .begin-btn:active {
-      background: var(--warm-glow);
-      border-color: var(--warm);
-      transform: scale(0.97);
+    .begin-btn-icon {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: rgba(215, 190, 145, 0.12);
+      flex-shrink: 0;
+      position: relative;
+    }
+    .begin-btn-icon::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 8px;
+      height: 8px;
+      border-right: 1.5px solid rgba(220, 200, 155, 0.8);
+      border-top: 1.5px solid rgba(220, 200, 155, 0.8);
+      transform: translate(-60%, -50%) rotate(45deg);
     }
 
     /* ── CHECK-IN SCREEN ── */
@@ -1114,25 +1137,41 @@
       width: 80px;
       height: 80px;
       border-radius: 50%;
-      background: radial-gradient(circle, rgba(196, 149, 106, 0.3), rgba(196, 149, 106, 0.05));
-      margin: 0 auto 40px;
-      animation: breathe 4s ease-in-out infinite;
-      opacity: 0;
-      animation-delay: 1.3s;
+      background: radial-gradient(circle at 38% 34%,
+        rgba(240, 220, 180, 0.32),
+        rgba(215, 190, 145, 0.18) 45%,
+        rgba(190, 165, 120, 0.08) 70%,
+        transparent 88%
+      );
+      border: 1px solid rgba(225, 200, 155, 0.28);
+      box-shadow:
+        0 0 28px rgba(215, 190, 145, 0.18),
+        0 0 55px rgba(200, 175, 130, 0.08),
+        inset 0 0 22px rgba(235, 210, 165, 0.1),
+        inset 0 1px 2px rgba(245, 230, 195, 0.25);
+      position: relative;
+      margin-bottom: 16px;
+      animation: moonBreathe 4.5s ease-in-out infinite;
     }
-
-    @keyframes breathe {
-
-      0%,
-      100% {
-        transform: scale(0.9);
-        opacity: 0.5;
-      }
-
-      50% {
-        transform: scale(1.1);
-        opacity: 1;
-      }
+    .breath-orb::after {
+      content: '';
+      position: absolute;
+      inset: -4px;
+      border-radius: 50%;
+      border: 1px solid rgba(225, 195, 145, 0.2);
+      pointer-events: none;
+    }
+    .breath-orb::before {
+      content: '';
+      position: absolute;
+      inset: -20px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(225, 200, 155, 0.1), transparent 65%);
+      pointer-events: none;
+    }
+    @keyframes moonBreathe {
+      0%, 100% { transform: scale(1); }
+      50%       { transform: scale(1.05); }
     }
 
     /* New element pulse for updates */
@@ -1343,7 +1382,10 @@
           <span id="returning-body"></span>
         </div>
         <p class="welcome-question" id="welcome-question">How are you coming in<br>right now?</p>
-        <button class="begin-btn" id="begin-btn" onclick="startCheckin()">Begin</button>
+        <button class="begin-btn" id="begin-btn" onclick="startCheckin()">
+          <span class="begin-btn-icon"></span>
+          <span>Reflect</span>
+        </button>
         <div class="scroll-hint" id="scroll-hint" style="display:none;">
           <div class="scroll-hint-line"></div>
           <span class="scroll-hint-text">scroll to read back</span>
