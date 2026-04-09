@@ -310,51 +310,128 @@
       line-height: 1.6;
     }
 
-    /* Mood selector */
-    .mood-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-      margin-bottom: 32px;
+    /* ── MOOD WHEEL ── */
+    .mood-wheel-wrap {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      z-index: 1;
+    }
+    .mood-wheel {
+      position: relative;
+      width: 220px;
+      height: 220px;
+      cursor: grab;
+      user-select: none;
+      touch-action: none;
+    }
+    .mood-wheel:active { cursor: grabbing; }
+
+    /* Centre ghost orb */
+    .wh-center {
+      position: absolute;
+      left: 110px; top: 110px;
+      transform: translate(-50%, -50%);
+      width: 52px; height: 52px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 40% 35%,
+        rgba(240, 220, 180, 0.22),
+        rgba(215, 190, 145, 0.08) 50%,
+        transparent 80%
+      );
+      border: 1px solid rgba(225, 200, 155, 0.2);
+      box-shadow: 0 0 16px rgba(215, 190, 145, 0.12);
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      transition: box-shadow 0.35s var(--ease-spring), border-color 0.35s;
+    }
+    .wh-center.active {
+      box-shadow: 0 0 28px var(--mood-col, rgba(212, 164, 114, 0.45));
+      border-color: var(--mood-col, rgba(212, 164, 114, 0.3));
+    }
+    .wh-center-dot {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: rgba(212, 164, 114, 0.35);
+      box-shadow: 0 0 5px rgba(212, 164, 114, 0.2);
+      transition: all 0.35s var(--ease-spring);
+      flex-shrink: 0;
+    }
+    .wh-center.active .wh-center-dot { display: none; }
+    .wh-center-svg {
+      display: none;
+      color: var(--mood-col, rgba(212, 164, 114, 0.85));
+      width: 30px; height: 30px;
+    }
+    .wh-center.active .wh-center-svg { display: block; }
+
+    /* Spoke lines */
+    .wh-spoke {
+      position: absolute;
+      left: 110px; top: 110px;
+      width: 1px;
+      transform-origin: top center;
+      background: rgba(212, 164, 114, 0.07);
+      transition: background 0.25s;
+      pointer-events: none;
+    }
+    .wh-spoke.active {
+      background: var(--mood-col, rgba(212, 164, 114, 0.35));
+      opacity: 0.8;
     }
 
-    .mood-btn {
-      background: var(--surface);
-      border: 1px solid var(--border-soft);
-      border-radius: 12px;
-      padding: 18px 14px;
-      cursor: pointer;
-      text-align: center;
-      transition: all 0.2s;
+    /* Mood nodes */
+    .wh-node {
+      position: absolute;
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 8px;
+      justify-content: center;
+      gap: 2px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(212, 164, 114, 0.1);
+      transition: all 0.25s var(--ease-spring);
+      z-index: 5;
+      color: rgba(180, 145, 100, 0.45);
     }
+    .wh-node.active {
+      border-color: var(--mood-col, rgba(212, 164, 114, 0.4));
+      box-shadow: 0 0 16px var(--mood-col, rgba(212, 164, 114, 0.3));
+      transform: translate(-50%, -50%) scale(1.18);
+      color: rgba(232, 210, 170, 0.92);
+    }
+    .wh-node svg { display: block; flex-shrink: 0; }
+    .wh-node-label {
+      font-size: 6.5px;
+      letter-spacing: 0.3px;
+      color: rgba(90, 78, 69, 0.6);
+      transition: color 0.2s;
+      pointer-events: none;
+    }
+    .wh-node.active .wh-node-label { color: rgba(232, 221, 212, 0.9); }
 
-    .mood-btn:active {
-      transform: scale(0.97);
-    }
+    /* Per-mood centre animations */
+    @keyframes wh-alive  { 0%,100%{transform:scale(1);opacity:.85} 50%{transform:scale(1.18);opacity:1} }
+    @keyframes wh-calm   { 0%{transform:scale(.85);opacity:.3} 50%{transform:scale(1);opacity:.9} 100%{transform:scale(1.15);opacity:0} }
+    @keyframes wh-okay   { 0%,100%{transform:scaleX(1) translateX(0)} 33%{transform:scaleX(1.06) translateX(1px)} 66%{transform:scaleX(.96) translateX(-1px)} }
+    @keyframes wh-restless { 0%,100%{transform:translateX(0)} 20%{transform:translateX(2px) rotate(1deg)} 40%{transform:translateX(-2px) rotate(-1deg)} 60%{transform:translateX(1.5px)} 80%{transform:translateX(-1px)} }
+    @keyframes wh-tired  { 0%,100%{transform:rotate(0deg) translateY(0)} 40%{transform:rotate(-5deg) translateY(2px)} 70%{transform:rotate(2deg) translateY(1px)} }
+    @keyframes wh-heavy  { 0%,100%{transform:scaleY(1) translateY(0);opacity:.75} 50%{transform:scaleY(.9) translateY(2px);opacity:.95} }
 
-    .mood-btn.selected {
-      border-color: var(--warm);
-      background: var(--warm-glow);
-    }
-
-    .mood-icon {
-      font-size: 26px;
-      line-height: 1;
-    }
-
-    .mood-label {
-      font-size: 12px;
-      color: var(--text-soft);
-      letter-spacing: 0.5px;
-    }
-
-    .mood-btn.selected .mood-label {
-      color: var(--warm);
-    }
+    .wh-center.mood-alive   .wh-center-svg { animation: wh-alive    1.6s ease-in-out infinite; }
+    .wh-center.mood-calm    .wh-center-svg { animation: wh-calm     2.0s ease-out infinite; }
+    .wh-center.mood-okay    .wh-center-svg { animation: wh-okay     2.2s ease-in-out infinite; }
+    .wh-center.mood-restless .wh-center-svg { animation: wh-restless 0.85s ease-in-out infinite; }
+    .wh-center.mood-tired   .wh-center-svg { animation: wh-tired    3.0s ease-in-out infinite; }
+    .wh-center.mood-heavy   .wh-center-svg { animation: wh-heavy    2.5s ease-in-out infinite; }
 
     /* Intensity slider */
     .intensity-wrap {
@@ -1445,31 +1522,16 @@
       <div class="checkin-step active" id="step-0">
         <p class="step-q">What is the weather<br>inside you right now?</p>
         <p class="step-sub">Don't think too long. First feeling.</p>
-        <div class="mood-grid">
-          <button class="mood-btn" onclick="selectMood(this, 'Heavy')" data-mood="Heavy">
-            <span class="mood-icon"><svg width="36" height="36" viewBox="0 0 60 60" fill="none" stroke="#c4956a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 30 Q12 25 20 30 Q28 35 36 30 Q44 25 56 30"/><path d="M18 30 A12 12 0 0 1 42 30"/><path d="M12 34 Q30 28 48 34" stroke-opacity="0.65"/><path d="M6 39 Q30 31 54 39" stroke-opacity="0.35"/><path d="M18 30 A12 12 0 0 0 42 30" stroke-opacity="0.2"/></svg></span>
-            <span class="mood-label">Heavy</span>
-          </button>
-          <button class="mood-btn" onclick="selectMood(this, 'Tired')" data-mood="Tired">
-            <span class="mood-icon"><svg width="36" height="36" viewBox="0 0 60 60" fill="none" stroke="#c4956a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="30" y1="52" x2="30" y2="30"/><path d="M30 30 Q34 23 27 16"/><circle cx="26" cy="14" r="3"/><path d="M30 42 Q20 37 20 44"/><path d="M30 38 Q40 33 39 40"/></svg></span>
-            <span class="mood-label">Tired</span>
-          </button>
-          <button class="mood-btn" onclick="selectMood(this, 'Restless')" data-mood="Restless">
-            <span class="mood-icon"><svg width="36" height="36" viewBox="0 0 60 60" fill="none" stroke="#c4956a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22 Q26 17 42 22"/><path d="M8 30 Q26 24 46 29"/><path d="M10 38 Q26 32 44 37"/><path d="M14 46 Q28 40 42 45"/><path d="M43 27 L46 29 L43 31"/></svg></span>
-            <span class="mood-label">Restless</span>
-          </button>
-          <button class="mood-btn" onclick="selectMood(this, 'Okay')" data-mood="Okay">
-            <span class="mood-icon"><svg width="36" height="36" viewBox="0 0 60 60" fill="none" stroke="#c4956a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="10" y1="30" x2="50" y2="30"/><path d="M12 22 Q30 16 48 22"/><path d="M12 38 Q30 44 48 38"/></svg></span>
-            <span class="mood-label">Okay</span>
-          </button>
-          <button class="mood-btn" onclick="selectMood(this, 'Calm')" data-mood="Calm">
-            <span class="mood-icon"><svg width="36" height="36" viewBox="0 0 60 60" fill="none" stroke="#c4956a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="30" cy="30" r="5"/><circle cx="30" cy="30" r="11" stroke-opacity="0.7"/><circle cx="30" cy="30" r="17" stroke-opacity="0.4"/><circle cx="30" cy="30" r="23" stroke-opacity="0.2"/></svg></span>
-            <span class="mood-label">Calm</span>
-          </button>
-          <button class="mood-btn" onclick="selectMood(this, 'Alive')" data-mood="Alive">
-            <span class="mood-icon"><svg width="36" height="36" viewBox="0 0 60 60" fill="none" stroke="#c4956a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="42" x2="52" y2="42"/><path d="M22 42 A8 8 0 0 1 38 42"/><line x1="30" y1="30" x2="30" y2="26"/><line x1="38" y1="33" x2="41" y2="30"/><line x1="22" y1="33" x2="19" y2="30"/><line x1="40" y1="40" x2="44" y2="38"/><line x1="20" y1="40" x2="16" y2="38"/><line x1="24" y1="46" x2="36" y2="46" stroke-opacity="0.55"/><line x1="27" y1="50" x2="33" y2="50" stroke-opacity="0.25"/></svg></span>
-            <span class="mood-label">Alive</span>
-          </button>
+        <div class="mood-wheel-wrap">
+          <div class="mood-wheel" id="mood-wheel">
+            <div class="wh-center" id="wh-center">
+              <div class="wh-center-dot" id="wh-center-dot"></div>
+              <svg class="wh-center-svg" id="wh-center-svg"
+                   viewBox="0 0 60 60" fill="none" stroke="currentColor"
+                   stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></svg>
+            </div>
+            <!-- Spokes and nodes injected by initMoodWheel() -->
+          </div>
         </div>
         <div class="intensity-wrap">
           <div class="intensity-labels"><span>Barely</span><span>How much?</span><span>Fully</span></div>
