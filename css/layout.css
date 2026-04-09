@@ -454,84 +454,87 @@
 
     /* ── MOOD STATES — driven by Rewind session ── */
 
-    /* focused (Alive) — vibrant sun */
+    /* focused = Alive — rising sun, full energy */
     .hero-orb-wrap[data-mood="focused"] .hero-orb-inner {
-      background: radial-gradient(circle at 40% 35%,
-        rgba(255, 250, 210, 0.98) 0%,
-        rgba(250, 205, 95, 0.9) 16%,
-        rgba(220, 155, 55, 0.62) 42%,
-        rgba(165, 95, 15, 0.2) 68%,
+      background: radial-gradient(circle at 32% 28%,
+        rgba(255, 248, 210, 0.99) 0%,
+        rgba(255, 205, 80, 0.92) 18%,
+        rgba(225, 150, 40, 0.65) 44%,
+        rgba(165, 90, 10, 0.22) 68%,
         transparent 84%
       );
       box-shadow:
-        0 0 70px rgba(245, 195, 70, 0.65),
-        0 0 140px rgba(210, 155, 45, 0.3),
-        inset 0 2px 5px rgba(255, 248, 210, 0.5);
+        0 0 72px rgba(245, 195, 70, 0.72),
+        0 0 145px rgba(215, 150, 40, 0.32),
+        inset 0 2px 5px rgba(255, 248, 200, 0.55);
     }
     .hero-orb-wrap[data-mood="focused"] .hero-ring-halo {
-      background: radial-gradient(circle, rgba(220, 175, 65, 0.32) 0%, rgba(196, 149, 106, 0.14) 38%, transparent 65%);
+      background: radial-gradient(circle, rgba(230, 180, 60, 0.38) 0%, rgba(212, 164, 114, 0.16) 38%, transparent 65%);
     }
     .hero-orb-wrap[data-mood="focused"] .hero-ring {
-      border-color: rgba(230, 185, 75, 0.45);
+      border-color: rgba(235, 188, 72, 0.5);
+      box-shadow: 0 0 38px rgba(235, 188, 72, 0.2);
     }
     .hero-bg-glow[data-mood="focused"] {
       background: radial-gradient(circle,
-        rgba(190, 110, 10, 0.55) 0%,
-        rgba(155, 85, 8, 0.32) 35%,
-        rgba(90, 45, 5, 0.12) 60%,
+        rgba(200, 120, 10, 0.6) 0%,
+        rgba(160, 88, 8, 0.35) 35%,
+        rgba(95, 48, 5, 0.14) 60%,
         transparent 75%
       );
     }
     /* drifting (Calm, Okay, Restless) — warm default, no override needed */
 
-    /* fatigued (Tired, Heavy) — dying ember */
+    /* fatigued = Tired — setting sun */
     .hero-orb-wrap[data-mood="fatigued"] .hero-orb-inner {
-      background: radial-gradient(circle at 40% 36%,
-        rgba(175, 115, 60, 0.72) 0%,
-        rgba(135, 85, 38, 0.5) 30%,
-        rgba(95, 55, 18, 0.22) 60%,
+      background: radial-gradient(circle at 36% 34%,
+        rgba(200, 125, 55, 0.78) 0%,
+        rgba(155, 90, 32, 0.55) 32%,
+        rgba(105, 58, 14, 0.24) 62%,
         transparent 80%
       );
       box-shadow:
-        0 0 32px rgba(155, 95, 45, 0.28),
-        0 0 72px rgba(130, 80, 35, 0.1);
+        0 0 36px rgba(175, 105, 40, 0.35),
+        0 0 80px rgba(145, 80, 28, 0.14);
+      animation-duration: 5s;
     }
     .hero-orb-wrap[data-mood="fatigued"] .hero-ring-halo {
-      background: radial-gradient(circle, rgba(160, 100, 50, 0.1) 0%, transparent 62%);
+      background: radial-gradient(circle, rgba(165, 100, 45, 0.14) 0%, transparent 62%);
     }
     .hero-orb-wrap[data-mood="fatigued"] .hero-ring,
     .hero-orb-wrap[data-mood="fatigued"] .hero-ring-2 {
-      opacity: 0.55;
+      opacity: 0.5;
+      animation-duration: 5s;
     }
     .hero-bg-glow[data-mood="fatigued"] {
       background: radial-gradient(circle,
-        rgba(105, 55, 8, 0.22) 0%,
-        rgba(75, 35, 5, 0.1) 40%,
+        rgba(120, 60, 8, 0.28) 0%,
+        rgba(85, 38, 5, 0.14) 40%,
         transparent 68%
       );
     }
-    /* overwhelmed — near dark */
+    /* overwhelmed = Heavy — sun below horizon */
     .hero-orb-wrap[data-mood="overwhelmed"] .hero-orb-inner {
-      background: radial-gradient(circle at 40% 36%,
-        rgba(130, 85, 45, 0.42) 0%,
-        rgba(90, 55, 22, 0.2) 48%,
-        transparent 70%
+      background: radial-gradient(circle at 38% 36%,
+        rgba(145, 88, 40, 0.48) 0%,
+        rgba(100, 58, 20, 0.25) 46%,
+        transparent 72%
       );
-      box-shadow: 0 0 18px rgba(120, 80, 40, 0.14);
+      box-shadow: 0 0 20px rgba(128, 78, 35, 0.18);
       animation-duration: 7s;
     }
     .hero-orb-wrap[data-mood="overwhelmed"] .hero-ring,
     .hero-orb-wrap[data-mood="overwhelmed"] .hero-ring-2,
     .hero-orb-wrap[data-mood="overwhelmed"] .hero-ring-halo {
-      opacity: 0.3;
+      opacity: 0.25;
       animation-duration: 7s;
     }
     .hero-bg-glow[data-mood="overwhelmed"] {
-      opacity: 0.35;
+      opacity: 0.28;
     }
     /* Horizon SVG — mood state modifiers */
-    .hero-horizon[data-mood="fatigued"]   { opacity: 0.45; }
-    .hero-horizon[data-mood="overwhelmed"] { opacity: 0.22; }
+    .hero-horizon[data-mood="fatigued"]   { opacity: 0.4; }
+    .hero-horizon[data-mood="overwhelmed"] { opacity: 0.18; }
 
     /* Swipe direction hints — fade in late */
     .home-swipe-hints {
