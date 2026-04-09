@@ -111,6 +111,29 @@
 
   <div class="app">
 
+    <!-- TOP MODE BAR -->
+    <div class="top-mode-bar" id="top-mode-bar">
+      <div class="mode-switch-wrap">
+        <button class="mode-btn" id="mode-btn-plan" onclick="setMainMode('plan')">Plan</button>
+        <button class="mode-btn active" id="mode-btn-work" onclick="setMainMode('work')">Work</button>
+      </div>
+      <button class="top-settings-btn" id="nav-settings-btn" onclick="showScreen('settings')" title="Settings">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+      </button>
+    </div>
+
+    <!-- PLAN SUB NAV -->
+    <div class="plan-sub-nav" id="plan-sub-nav" style="display:none;">
+      <button class="plan-sub-btn active" id="subnav-inbox" onclick="showScreen('inbox')">Inbox</button>
+      <button class="plan-sub-btn" id="subnav-projects" onclick="showScreen('projects')">Projects</button>
+      <button class="plan-sub-btn" id="subnav-tasks" onclick="showScreen('tasks')">All Captures</button>
+    </div>
+
+    <!-- GLOBAL CAPTURE BUTTON -->
+    <button class="global-capture-btn" id="global-capture-btn" onclick="openCapture()">
+      <span class="global-capture-plus">+</span>
+    </button>
+
     <!-- Orientation pill — injected by JS, floats and dissolves -->
     <div class="mode-pill" id="mode-pill"></div>
     <!-- Swipe-up handle — fixed, visible only on home -->
@@ -167,6 +190,9 @@
 
         <p class="hero-capture-hint">tap to capture · hold for voice</p>
 
+        <!-- Rewind Link -->
+        <p class="home-rewind-link" id="home-rewind-link" onclick="toggleRewindMode()">check in with yourself &rarr;</p>
+
         <!-- Momentum warmth meter -->
         <div class="momentum-wrap" id="momentum-wrap">
           <div class="momentum-bar" id="momentum-bar"></div>
@@ -176,31 +202,31 @@
             onclick="openWeeklyReview()">Review your week →</button>
         </div>
 
-        <!-- Swipe direction hints -->
-        <div class="home-swipe-hints">
-          <div class="swipe-hint swipe-hint-teal">
-            <span class="swipe-hint-arrow">←</span>
-            <span>Plan</span>
-          </div>
-          <div class="swipe-hint swipe-hint-warm">
-            <span>Work</span>
-            <span class="swipe-hint-arrow">→</span>
-          </div>
-        </div>
+        <!-- Floating pill navigation -->
+<div class="float-pill" id="float-pill">
+  <button class="fp-btn" id="fp-plan" onclick="setMainMode('plan')" title="Plan">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+  </button>
+  <button class="fp-btn fp-home active" id="fp-home" onclick="showScreen('home')" title="Home">
+    <div class="fp-orb-icon"></div>
+  </button>
+  <button class="fp-btn" id="fp-inbox" onclick="showScreen('inbox')" title="Inbox">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+  </button>
+  <button class="fp-btn" id="fp-rewind" onclick="toggleRewindMode()" title="Rewind">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+  </button>
+</div>
       </div>
 
-      <!-- Stats drawer — hidden, slides up from fixed bottom position -->
-      <div class="home-below-fold" id="home-below-fold">
-        <div class="home-stat-card" onclick="showScreen('inbox')">
-          <span class="home-stat-num" id="stat-inbox">0</span>
-          <span class="home-stat-label">In inbox</span>
+        <!-- Right Now Tasks Area -->
+        <div id="work-area" class="home-work-area"></div>
+        <div class="ai-thinking" id="ai-thinking">
+          <div class="ai-thinking-orb"></div>
+          <span class="ai-thinking-label">thinking...</span>
         </div>
-        <div class="home-stat-card" onclick="showScreen('inbox')">
-          <span class="home-stat-num" id="stat-fresh">0</span>
-          <span class="home-stat-label">Fresh today</span>
-        </div>
-      </div>
 
+      </div>
     </div>
 
     <!-- PROJECTS SCREEN -->
@@ -277,17 +303,7 @@
       <div class="scroll-pad"></div>
     </div>
 
-    <!-- WORK SCREEN -->
-    <div class="screen" id="screen-work">
-      <p class="work-eyebrow" id="work-eyebrow">Right now</p>
-      <p class="work-headline" id="work-headline">—</p>
-      <div id="work-area"></div>
-      <div class="ai-thinking" id="ai-thinking">
-        <div class="ai-thinking-orb"></div>
-        <span class="ai-thinking-label">thinking...</span>
-      </div>
-      <div class="scroll-pad"></div>
-    </div>
+
 
     <!-- SETTINGS SCREEN -->
     <div class="screen" id="screen-settings">
@@ -399,34 +415,7 @@
       style="width:100%; height:100%; border:none;"></iframe>
   </div>
 
-  <!-- GHOST SETTINGS BUTTON -->
-  <button class="ghost-settings-btn" id="nav-settings-ghost" onclick="showScreen('settings')" title="Settings">
-    ○
-  </button>
-
-  <!-- BOTTOM NAV — Home · Projects · Rewind · Inbox · Tasks -->
-  <nav class="bottom-nav" id="forward-bottom-nav">
-    <button class="nav-btn active" id="nav-home" onclick="showScreen('home')">
-      <span class="nav-icon">⬡</span>
-      <span class="nav-label">Home</span>
-    </button>
-    <button class="nav-btn" id="nav-projects" onclick="showScreen('projects')">
-      <span class="nav-icon" style="color:var(--teal)">◫</span>
-      <span class="nav-label">Projects</span>
-    </button>
-    <button class="nav-btn" id="nav-rewind" onclick="toggleRewindMode()">
-      <span class="nav-icon" style="font-size:22px;">🌬</span>
-      <span class="nav-label">Rewind</span>
-    </button>
-    <button class="nav-btn" id="nav-inbox" onclick="showScreen('inbox')">
-      <span class="nav-icon" style="color:var(--warm)">▤</span>
-      <span class="nav-label">Inbox</span>
-    </button>
-    <button class="nav-btn" id="nav-tasks" onclick="showScreen('tasks')">
-      <span class="nav-icon">○</span>
-      <span class="nav-label">Tasks</span>
-    </button>
-  </nav>
+  <!-- BOTTOM NAV REMOVED -->
 
   <div class="toast" id="toast"></div>
 
@@ -477,9 +466,9 @@
           <input class="project-sheet-name" id="ps-name" type="text" placeholder="Project name" />
         </div>
 
-        <!-- Vision — locked -->
+        <!-- Vision — locked after 48hrs -->
         <div class="project-sheet-section">
-          <p class="project-sheet-eyebrow">The Vision</p>
+          <p class="project-sheet-eyebrow">what you believed</p>
           <div class="project-vision-text" id="ps-vision"></div>
           <p class="project-vision-locked" id="ps-vision-lock">captured when you believed in this · cannot be edited</p>
         </div>
@@ -612,6 +601,9 @@
       <div class="item-action-handle"></div>
       <p class="item-action-content" id="ia-content"></p>
 
+      <!-- Rewind echo bridge card (for spark items) -->
+      <div id="ia-rewind-echo"></div>
+
       <p class="item-action-label">Category</p>
       <div class="item-action-row" id="ia-cat-row">
         <button class="item-action-cat-btn" data-cat="task" onclick="iaSetCat('task')">Task</button>
@@ -640,6 +632,21 @@
       <button class="item-action-main-btn" onclick="openAddToExistingProject()"
         style="margin-bottom:12px; border-color:transparent; background: rgba(0,0,0,0.05);">Add to Existing
         Project</button>
+
+      <div class="item-action-divider"></div>
+      <button class="item-action-main-btn ia-edit-trigger" onclick="enterItemEditMode()"
+        style="border-color:rgba(196,149,106,0.2); color:rgba(232,221,212,0.5); margin-bottom:12px;">edit capture</button>
+
+      <!-- Edit panel — hidden until enterItemEditMode() is called -->
+      <div id="ia-edit-panel" style="display:none; margin-bottom:12px;">
+        <textarea id="ia-edit-content" class="ia-edit-textarea"
+          placeholder="what did you capture?"></textarea>
+        <div class="ia-edit-actions">
+          <button class="item-action-main-btn ia-edit-save" onclick="saveItemEdit()">save</button>
+          <button class="item-action-main-btn ia-edit-cancel" onclick="cancelItemEdit()"
+            style="background:transparent; border-color:transparent; color:rgba(232,221,212,0.4);">cancel</button>
+        </div>
+      </div>
 
       <div class="item-action-divider"></div>
       <button class="item-action-main-btn archive" onclick="iaArchive()">Archive</button>

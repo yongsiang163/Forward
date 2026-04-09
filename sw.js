@@ -1,4 +1,4 @@
-const CACHE_NAME = 'forward-cache-v22';
+const CACHE_NAME = 'forward-cache-v23';
 
 const urlsToCache = [
     './',
@@ -49,7 +49,9 @@ self.addEventListener('fetch', event => {
                     caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseClone));
                     return response;
                 })
-                .catch(() => caches.match(event.request))
+                .catch(() => caches.match(event.request).then(function(cached) {
+                    return cached || caches.match('./404.html');
+                }))
         );
         return;
     }

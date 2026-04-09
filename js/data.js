@@ -151,12 +151,11 @@ function load() {
         // If the resulting merge is different from what we had, or cloud gave us stuff
         if (mergedArray.length > 0) {
           items = mergedArray;
+          // Update local stores only — do NOT call save() here as that would
+          // write back to Firestore, triggering another onSnapshot (infinite loop)
           try { localStorage.setItem('forward_items', JSON.stringify(items)); } catch (e) { }
-
-          // Re-save to cloud to ensure any local-only items are pushed up
-          save();
-
-          if (typeof renderInbox === 'function') renderInbox();
+          forwardDB.items.bulkPut(items).catch(e => console.warn('IndexedDB sync failed:', e));
+          if (typeof renderAllViews === 'function') renderAllViews();
         }
       }, err => console.warn('Firestore items listener error:', err));
   }
@@ -208,12 +207,11 @@ function loadProjects() {
         // If the resulting merge is different from what we had, or cloud gave us stuff
         if (mergedArray.length > 0) {
           projects = mergedArray;
+          // Update local stores only — do NOT call saveProjects() here as that would
+          // write back to Firestore, triggering another onSnapshot (infinite loop)
           try { localStorage.setItem('forward_projects', JSON.stringify(projects)); } catch (e) { }
-
-          // Re-save to cloud to ensure any local-only items are pushed up
-          saveProjects();
-
-          if (typeof renderProjects === 'function') renderProjects();
+          forwardDB.projects.bulkPut(projects).catch(e => console.warn('IndexedDB sync failed:', e));
+          if (typeof renderAllViews === 'function') renderAllViews();
         }
       }, err => console.warn('Firestore projects listener error:', err));
   }
@@ -375,7 +373,7 @@ function renderProjects() {
   const addBtn = '<button class="add-project-btn" onclick="openNewProject(null)">+ new project</button>';
 
   if (filtered.length === 0) {
-    container.innerHTML = `<div style="padding:40px 0;text-align:center"><p style="color:var(--text-muted);font-size:13px;margin-bottom:20px">No projects yet.</p></div>` + addBtn;
+    container.innerHTML = `<div style="padding:40px 0;text-align:center"><p style="color:var(--text-muted);font-size:13px;margin-bottom:20px">your first project is waiting to be named.</p></div>` + addBtn;
     return;
   }
   const cards = filtered.map(p => {

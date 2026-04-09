@@ -23,9 +23,9 @@ function showToast(msg) {
 }
 
 // ── SWIPE NAVIGATION ─────────────────────────────────────
-// Horizontal: Work ← Home → Plan
-// Vertical on home: swipe up → reveal stats, swipe down → hide stats
-const SCREEN_ORDER = ['work', 'home', 'projects'];
+// Horizontal: Sub-nav within Plan (Inbox <-> Projects <-> Tasks)
+// Vertical on Work mode (home): swipe up → reveal stats, swipe down → hide stats
+const PLAN_SCREENS = ['inbox', 'projects', 'tasks'];
 let statsRevealed = false;
 
 function revealStats(show) {
@@ -34,6 +34,41 @@ function revealStats(show) {
   statsRevealed = show;
   if (show) drawer.classList.add('revealed');
   else drawer.classList.remove('revealed');
+}
+
+let currentMainMode = 'plan'; // 'plan' or 'work'
+
+function setMainMode(mode) {
+  currentMainMode = mode;
+  
+  // Update Top Mode Bar Active states
+  const btnPlan = document.getElementById('mode-btn-plan');
+  const btnWork = document.getElementById('mode-btn-work');
+  if (btnPlan) btnPlan.classList.toggle('active', mode === 'plan');
+  if (btnWork) btnWork.classList.toggle('active', mode === 'work');
+
+  // Toggle Plan Sub-nav
+  const planSubNav = document.getElementById('plan-sub-nav');
+  if (planSubNav) planSubNav.style.display = mode === 'plan' ? 'flex' : 'none';
+
+  // Navigate to default screen for that mode
+  if (mode === 'plan') {
+    // If we transition to Plan, default to Inbox if we aren't already in a Plan screen
+    if (!PLAN_SCREENS.includes(S.screen)) {
+      showScreen('inbox');
+    }
+  } else if (mode === 'work') {
+    // Work mode default is home
+    showScreen('home');
+  }
+}
+
+// Sync floating pill active state
+function syncPillNav(screenId) {
+  var mapping = { 'home': 'fp-home', 'inbox': 'fp-inbox', 'projects': 'fp-plan', 'tasks': 'fp-plan' };
+  document.querySelectorAll('.fp-btn').forEach(function(b) { b.classList.remove('active'); });
+  var target = mapping[screenId];
+  if (target) { var el = document.getElementById(target); if (el) el.classList.add('active'); }
 }
 
 function initSwipe() {
@@ -63,14 +98,23 @@ function initSwipe() {
     const isVertical = Math.abs(dy) > Math.abs(dx) * 1.4 && Math.abs(dy) > 48;
 
     if (isHorizontal) {
-      // Don't fire horizontal swipe on scrollable inbox list
-      if (e.target.closest('.inbox-list')) return;
+      if (e.target.closest('.inbox-list')) return; // Don't fire on scrollable list
+      
       const cur = S.screen;
-      const idx = SCREEN_ORDER.indexOf(cur);
-      // If stats drawer is open, first swipe closes it
-      if (statsRevealed && cur === 'home') { revealStats(false); return; }
-      if (dx < 0 && idx < SCREEN_ORDER.length - 1) showScreen(SCREEN_ORDER[idx + 1]);
-      else if (dx > 0 && idx > 0) showScreen(SCREEN_ORDER[idx - 1]);
+      // Plan Mode sub-nav swiping
+      if (currentMainMode === 'plan') {
+        const idx = PLAN_SCREENS.indexOf(cur);
+        if (idx !== -1) {
+          if (dx < 0 && idx < PLAN_SCREENS.length - 1) showScreen(PLAN_SCREENS[idx + 1]);
+          else if (dx > 0 && idx > 0) showScreen(PLAN_SCREENS[idx - 1]);
+        }
+      } else if (currentMainMode === 'work') {
+        // Work mode swiping? Maybe Plan <-> Work?
+        if (dx > 0) {
+          // Swipe right to go back to Plan mode
+          setMainMode('plan');
+        }
+      }
     }
 
     if (isVertical && S.screen === 'home') {
@@ -178,9 +222,10 @@ function init() {
   // Horizon living wave — starts immediately, invisible until CSS fade-in at 0.9s
   startHorizonWave();
 
-  renderHome();
   if (typeof updateAIKeyStatus === 'function') updateAIKeyStatus();
-  document.body.classList.add('on-home');
+  
+  // Set default mode to Plan (Inbox) on open 
+  setMainMode('plan');
 
   // Swipe navigation
   initSwipe();
@@ -207,6 +252,20 @@ function init() {
   } else {
     updateNotificationToggleUI(false);
   }
+
+  // Session tracking to measure gaps > 4 hours
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') {
+      localStorage.setItem('forward_last_session', Date.now().toString());
+    } else {
+      // Re-eval on return
+      if (typeof S !== 'undefined') S.hasClearedReturnIntercept = false;
+      if (currentMainMode === 'work') renderHome();
+    }
+  });
+
+  // Track initial load (if they actually close the tab)
+  localStorage.setItem('forward_last_session', Date.now().toString());
 }
 
 // ── SMART NOTIFICATIONS ──────────────────────────────────

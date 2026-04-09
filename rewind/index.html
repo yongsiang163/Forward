@@ -17,17 +17,24 @@
     rel="stylesheet">
   <style>
     :root {
-      --bg: #0e0b09;
-      --surface: #1a1410;
-      --surface2: #221c16;
-      --warm: #c4956a;
-      --warm-soft: #8b6540;
-      --warm-glow: rgba(196, 149, 106, 0.12);
+      --bg: #080603;
+      --surface: #141008;
+      --surface2: #1e160c;
+      --surface3: #281e10;
+      --warm: #d4a472;
+      --warm-soft: #a06840;
+      --warm-glow: rgba(212, 164, 114, 0.18);
+      --warm-glow-strong: rgba(212, 164, 114, 0.28);
+      --border: rgba(212, 164, 114, 0.22);
+      --border-soft: rgba(255, 255, 255, 0.07);
+      --teal: #7eb8a4;
       --text: #e8ddd4;
       --text-soft: #9a8878;
-      --text-muted: #5a4e45;
-      --border: rgba(196, 149, 106, 0.15);
-      --border-soft: rgba(255, 255, 255, 0.05);
+      --text-muted: rgba(90, 78, 69, 0.8);
+      --ease-spring:  cubic-bezier(0.34, 1.56, 0.64, 1);
+      --ease-breathe: cubic-bezier(0.4, 0, 0.2, 1);
+      --ease-out:     cubic-bezier(0, 0, 0.2, 1);
+      --ease-reveal:  cubic-bezier(0.25, 0.46, 0.45, 0.94);
     }
 
     * {
@@ -89,9 +96,9 @@
       inset: 0;
       z-index: 1;
       pointer-events: none;
-      opacity: 0.03;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-      background-size: 128px;
+      opacity: 0.055;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      background-size: 160px;
     }
 
     /* Main layout */
@@ -209,25 +216,42 @@
     }
 
     .begin-btn {
-      background: transparent;
-      border: 1px solid var(--border);
-      color: var(--warm);
-      font-family: 'DM Sans', sans-serif;
-      font-size: 13px;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      padding: 16px 40px;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 10px 22px 10px 12px;
       border-radius: 40px;
+      min-height: 44px;
+      border: 1px solid rgba(220, 200, 155, 0.22);
+      background: rgba(215, 190, 145, 0.05);
+      box-shadow: 0 0 16px rgba(210, 185, 140, 0.1);
+      color: rgba(218, 198, 158, 0.8);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 9px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
       cursor: pointer;
-      transition: all 0.3s ease;
       opacity: 0;
       animation: fadeUp 0.8s ease 1.1s forwards;
     }
-
-    .begin-btn:active {
-      background: var(--warm-glow);
-      border-color: var(--warm);
-      transform: scale(0.97);
+    .begin-btn-icon {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: rgba(215, 190, 145, 0.12);
+      flex-shrink: 0;
+      position: relative;
+    }
+    .begin-btn-icon::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 8px;
+      height: 8px;
+      border-right: 1.5px solid rgba(220, 200, 155, 0.8);
+      border-top: 1.5px solid rgba(220, 200, 155, 0.8);
+      transform: translate(-60%, -50%) rotate(45deg);
     }
 
     /* ── CHECK-IN SCREEN ── */
@@ -286,51 +310,128 @@
       line-height: 1.6;
     }
 
-    /* Mood selector */
-    .mood-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-      margin-bottom: 32px;
+    /* ── MOOD WHEEL ── */
+    .mood-wheel-wrap {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      z-index: 1;
+    }
+    .mood-wheel {
+      position: relative;
+      width: 220px;
+      height: 220px;
+      cursor: grab;
+      user-select: none;
+      touch-action: none;
+    }
+    .mood-wheel:active { cursor: grabbing; }
+
+    /* Centre ghost orb */
+    .wh-center {
+      position: absolute;
+      left: 110px; top: 110px;
+      transform: translate(-50%, -50%);
+      width: 52px; height: 52px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 40% 35%,
+        rgba(240, 220, 180, 0.22),
+        rgba(215, 190, 145, 0.08) 50%,
+        transparent 80%
+      );
+      border: 1px solid rgba(225, 200, 155, 0.2);
+      box-shadow: 0 0 16px rgba(215, 190, 145, 0.12);
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      transition: box-shadow 0.35s var(--ease-spring), border-color 0.35s;
+    }
+    .wh-center.active {
+      box-shadow: 0 0 28px var(--mood-col, rgba(212, 164, 114, 0.45));
+      border-color: var(--mood-col, rgba(212, 164, 114, 0.3));
+    }
+    .wh-center-dot {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: rgba(212, 164, 114, 0.35);
+      box-shadow: 0 0 5px rgba(212, 164, 114, 0.2);
+      transition: all 0.35s var(--ease-spring);
+      flex-shrink: 0;
+    }
+    .wh-center.active .wh-center-dot { display: none; }
+    .wh-center-svg {
+      display: none;
+      color: var(--mood-col, rgba(212, 164, 114, 0.85));
+      width: 30px; height: 30px;
+    }
+    .wh-center.active .wh-center-svg { display: block; }
+
+    /* Spoke lines */
+    .wh-spoke {
+      position: absolute;
+      left: 110px; top: 110px;
+      width: 1px;
+      transform-origin: top center;
+      background: rgba(212, 164, 114, 0.07);
+      transition: background 0.25s;
+      pointer-events: none;
+    }
+    .wh-spoke.active {
+      background: var(--mood-col, rgba(212, 164, 114, 0.35));
+      opacity: 0.8;
     }
 
-    .mood-btn {
-      background: var(--surface);
-      border: 1px solid var(--border-soft);
-      border-radius: 12px;
-      padding: 18px 14px;
-      cursor: pointer;
-      text-align: center;
-      transition: all 0.2s;
+    /* Mood nodes */
+    .wh-node {
+      position: absolute;
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 8px;
+      justify-content: center;
+      gap: 2px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(212, 164, 114, 0.1);
+      transition: all 0.25s var(--ease-spring);
+      z-index: 5;
+      color: rgba(180, 145, 100, 0.45);
     }
+    .wh-node.active {
+      border-color: var(--mood-col, rgba(212, 164, 114, 0.4));
+      box-shadow: 0 0 16px var(--mood-col, rgba(212, 164, 114, 0.3));
+      transform: translate(-50%, -50%) scale(1.18);
+      color: rgba(232, 210, 170, 0.92);
+    }
+    .wh-node svg { display: block; flex-shrink: 0; }
+    .wh-node-label {
+      font-size: 6.5px;
+      letter-spacing: 0.3px;
+      color: rgba(90, 78, 69, 0.6);
+      transition: color 0.2s;
+      pointer-events: none;
+    }
+    .wh-node.active .wh-node-label { color: rgba(232, 221, 212, 0.9); }
 
-    .mood-btn:active {
-      transform: scale(0.97);
-    }
+    /* Per-mood centre animations */
+    @keyframes wh-alive  { 0%,100%{transform:scale(1);opacity:.85} 50%{transform:scale(1.18);opacity:1} }
+    @keyframes wh-calm   { 0%{transform:scale(.85);opacity:.3} 50%{transform:scale(1);opacity:.9} 100%{transform:scale(1.15);opacity:0} }
+    @keyframes wh-okay   { 0%,100%{transform:scaleX(1) translateX(0)} 33%{transform:scaleX(1.06) translateX(1px)} 66%{transform:scaleX(.96) translateX(-1px)} }
+    @keyframes wh-restless { 0%,100%{transform:translateX(0)} 20%{transform:translateX(2px) rotate(1deg)} 40%{transform:translateX(-2px) rotate(-1deg)} 60%{transform:translateX(1.5px)} 80%{transform:translateX(-1px)} }
+    @keyframes wh-tired  { 0%,100%{transform:rotate(0deg) translateY(0)} 40%{transform:rotate(-5deg) translateY(2px)} 70%{transform:rotate(2deg) translateY(1px)} }
+    @keyframes wh-heavy  { 0%,100%{transform:scaleY(1) translateY(0);opacity:.75} 50%{transform:scaleY(.9) translateY(2px);opacity:.95} }
 
-    .mood-btn.selected {
-      border-color: var(--warm);
-      background: var(--warm-glow);
-    }
-
-    .mood-icon {
-      font-size: 26px;
-      line-height: 1;
-    }
-
-    .mood-label {
-      font-size: 12px;
-      color: var(--text-soft);
-      letter-spacing: 0.5px;
-    }
-
-    .mood-btn.selected .mood-label {
-      color: var(--warm);
-    }
+    .wh-center.mood-alive   .wh-center-svg { animation: wh-alive    1.6s ease-in-out infinite; }
+    .wh-center.mood-calm    .wh-center-svg { animation: wh-calm     2.0s ease-out infinite; }
+    .wh-center.mood-okay    .wh-center-svg { animation: wh-okay     2.2s ease-in-out infinite; }
+    .wh-center.mood-restless .wh-center-svg { animation: wh-restless 0.85s ease-in-out infinite; }
+    .wh-center.mood-tired   .wh-center-svg { animation: wh-tired    3.0s ease-in-out infinite; }
+    .wh-center.mood-heavy   .wh-center-svg { animation: wh-heavy    2.5s ease-in-out infinite; }
 
     /* Intensity slider */
     .intensity-wrap {
@@ -462,6 +563,12 @@
       margin-bottom: 40px;
     }
 
+    .reflection-icon {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+
     .reflection-eyebrow {
       font-size: 11px;
       letter-spacing: 3px;
@@ -480,10 +587,23 @@
 
     .reflection-card {
       background: var(--surface);
-      border: 1px solid var(--border-soft);
-      border-radius: 16px;
-      padding: 24px;
-      margin-bottom: 16px;
+      border: 1px solid rgba(212, 164, 114, 0.14);
+      border-radius: 14px;
+      padding: 16px;
+      flex: 1;
+      margin-bottom: 10px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(212, 164, 114, 0.04);
+    }
+    .reflection-card::before {
+      content: '';
+      position: absolute;
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(212, 164, 114, 0.1), transparent 70%);
+      top: -20px; right: -20px;
+      pointer-events: none;
     }
 
     .reflection-card-label {
@@ -535,6 +655,48 @@
       border-top: 1px solid var(--border-soft);
       border-bottom: 1px solid var(--border-soft);
       margin-bottom: 32px;
+    }
+
+    .rewind-follow-up {
+      font-size: 14px;
+      font-style: italic;
+      color: rgba(232, 221, 212, 0.4);
+      text-align: center;
+      margin: 12px 0 24px;
+      min-height: 0;
+      line-height: 1.6;
+      transition: opacity 0.6s ease;
+    }
+
+    .spark-capture {
+      margin: 8px 0 28px;
+    }
+    .spark-input {
+      background: rgba(8, 6, 3, 0.5);
+      border: 1px solid rgba(212, 164, 114, 0.16);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: 13px;
+      font-style: italic;
+      color: rgba(90, 78, 69, 0.6);
+      margin-bottom: 8px;
+    }
+    .spark-input::placeholder {
+      color: rgba(232, 221, 212, 0.25);
+    }
+    .spark-input:focus {
+      border-bottom-color: rgba(196, 149, 106, 0.5);
+      color: rgba(232, 221, 212, 0.85);
+    }
+    .spark-confirm {
+      font-size: 12px;
+      color: rgba(196, 149, 106, 0.6);
+      text-align: center;
+      margin-top: 8px;
+      min-height: 18px;
+      transition: opacity 0.6s ease;
+      opacity: 0;
     }
 
     .done-btn {
@@ -886,6 +1048,131 @@
       color: var(--text-muted);
     }
 
+    /* ── MOOD TIMELINE (C1) ── */
+    .mood-timeline-wrap { width: 100%; }
+
+    .mood-timeline-track {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      overflow-x: auto;
+      padding: 20px 4px 12px;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    .mood-timeline-track::-webkit-scrollbar { display: none; }
+
+    /* ── CALENDAR HEAT MAP ── */
+    .cal-wrap { flex: 1; display: flex; flex-direction: column; padding: 0 2px; }
+    .cal-day-headers {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 3px;
+      margin-bottom: 4px;
+    }
+    .cal-day-hdr {
+      font-size: 7px;
+      color: rgba(90, 78, 69, 0.4);
+      text-align: center;
+      letter-spacing: 0.3px;
+    }
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 3px;
+      flex: 1;
+    }
+    .cal-cell {
+      border-radius: 3px;
+      aspect-ratio: 1;
+      cursor: pointer;
+      transition: transform 0.15s var(--ease-spring), box-shadow 0.15s;
+    }
+    .cal-cell:active { transform: scale(1.15); }
+    .cal-cell.today  { box-shadow: 0 0 0 1.5px rgba(212, 164, 114, 0.65); }
+    .cal-cell.selected { box-shadow: 0 0 0 1.5px rgba(212, 164, 114, 0.9); transform: scale(1.1); }
+    .cal-cell.empty  { background: rgba(255, 255, 255, 0.04); cursor: default; }
+    .cal-cell.lv1    { background: rgba(220, 130, 100, 0.22); border: 1px solid rgba(220, 130, 100, 0.12); }
+    .cal-cell.lv2    { background: rgba(212, 164, 114, 0.28); border: 1px solid rgba(212, 164, 114, 0.14); }
+    .cal-cell.lv3    { background: rgba(212, 164, 114, 0.45); border: 1px solid rgba(212, 164, 114, 0.22); }
+    .cal-cell.lv4    { background: rgba(212, 164, 114, 0.65); border: 1px solid rgba(212, 164, 114, 0.30); box-shadow: 0 0 4px rgba(212, 164, 114, 0.2); }
+    .cal-cell.lv5    { background: rgba(126, 184, 164, 0.45); border: 1px solid rgba(126, 184, 164, 0.22); }
+
+    .cal-legend { display: flex; align-items: center; gap: 6px; margin-top: 10px; }
+    .cal-legend-label { font-size: 7px; color: rgba(90, 78, 69, 0.4); }
+    .cal-legend-dots  { display: flex; gap: 3px; }
+    .cal-legend-dot   { width: 9px; height: 9px; border-radius: 2px; }
+
+    .cal-detail {
+      margin-top: 10px;
+      padding: 12px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border-soft);
+      border-radius: 12px;
+      animation: screenEnter 250ms var(--ease-reveal) forwards;
+      display: none;
+    }
+    .cal-detail.visible { display: block; }
+    .cal-detail-mood { font-size: 11px; color: var(--text); margin-bottom: 4px; }
+    .cal-detail-meta { font-size: 9px; color: var(--text-soft); }
+
+    .timeline-day {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+      min-width: 18px;
+    }
+
+    .timeline-dot {
+      border-radius: 50%;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+      opacity: 0.85;
+    }
+    .timeline-dot:hover { transform: scale(1.25); opacity: 1; }
+    .timeline-dot.filtered-out { opacity: 0.12; }
+    .timeline-dot.active-dot { outline: 2px solid rgba(196,149,106,0.7); outline-offset: 2px; }
+
+    .timeline-empty-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: rgba(196, 149, 106, 0.08);
+      flex-shrink: 0;
+    }
+
+    .mood-timeline-detail {
+      background: rgba(196, 149, 106, 0.05);
+      border: 1px solid rgba(196, 149, 106, 0.18);
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin-top: 10px;
+      font-size: 13px;
+      color: rgba(232, 221, 212, 0.7);
+      line-height: 1.6;
+      animation: fadeUp 0.25s ease forwards;
+    }
+
+    /* ── WORD CLOUD (C3) placeholder — full rules added in Task 6 ── */
+    .word-cloud {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 14px;
+      padding: 8px 0 16px;
+      align-items: baseline;
+    }
+    .word-cloud-word {
+      cursor: pointer;
+      color: #c4956a;
+      font-family: inherit;
+      transition: opacity 0.2s ease, color 0.2s ease;
+      user-select: none;
+    }
+    .word-cloud-word.active { color: #e8ddd4; }
+    .word-cloud-word:hover { opacity: 1 !important; }
+
     .toast {
       position: fixed;
       bottom: 90px;
@@ -992,25 +1279,41 @@
       width: 80px;
       height: 80px;
       border-radius: 50%;
-      background: radial-gradient(circle, rgba(196, 149, 106, 0.3), rgba(196, 149, 106, 0.05));
-      margin: 0 auto 40px;
-      animation: breathe 4s ease-in-out infinite;
-      opacity: 0;
-      animation-delay: 1.3s;
+      background: radial-gradient(circle at 38% 34%,
+        rgba(240, 220, 180, 0.32),
+        rgba(215, 190, 145, 0.18) 45%,
+        rgba(190, 165, 120, 0.08) 70%,
+        transparent 88%
+      );
+      border: 1px solid rgba(225, 200, 155, 0.28);
+      box-shadow:
+        0 0 28px rgba(215, 190, 145, 0.18),
+        0 0 55px rgba(200, 175, 130, 0.08),
+        inset 0 0 22px rgba(235, 210, 165, 0.1),
+        inset 0 1px 2px rgba(245, 230, 195, 0.25);
+      position: relative;
+      margin-bottom: 16px;
+      animation: moonBreathe 4.5s ease-in-out infinite;
     }
-
-    @keyframes breathe {
-
-      0%,
-      100% {
-        transform: scale(0.9);
-        opacity: 0.5;
-      }
-
-      50% {
-        transform: scale(1.1);
-        opacity: 1;
-      }
+    .breath-orb::after {
+      content: '';
+      position: absolute;
+      inset: -4px;
+      border-radius: 50%;
+      border: 1px solid rgba(225, 195, 145, 0.2);
+      pointer-events: none;
+    }
+    .breath-orb::before {
+      content: '';
+      position: absolute;
+      inset: -20px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(225, 200, 155, 0.1), transparent 65%);
+      pointer-events: none;
+    }
+    @keyframes moonBreathe {
+      0%, 100% { transform: scale(1); }
+      50%       { transform: scale(1.05); }
     }
 
     /* New element pulse for updates */
@@ -1194,6 +1497,47 @@
     .recent-divider:active {
       color: var(--warm);
     }
+
+    .refl-btn-done {
+      flex: 1;
+      min-height: 38px;
+      border-radius: 10px;
+      font-size: 9px;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(212, 164, 114, 0.12);
+      border: 1px solid rgba(212, 164, 114, 0.22);
+      color: rgba(212, 164, 114, 0.9);
+      cursor: pointer;
+    }
+    .refl-btn-new {
+      flex: 1;
+      min-height: 38px;
+      border-radius: 10px;
+      font-size: 9px;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      color: rgba(90, 78, 69, 0.6);
+      cursor: pointer;
+    }
+
+    @keyframes screenEnter {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .screen.active {
+      animation: screenEnter 500ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+    button:active, [role="button"]:active {
+      transform: scale(0.96);
+      transition: transform 150ms;
+    }
   </style>
 </head>
 
@@ -1221,7 +1565,10 @@
           <span id="returning-body"></span>
         </div>
         <p class="welcome-question" id="welcome-question">How are you coming in<br>right now?</p>
-        <button class="begin-btn" id="begin-btn" onclick="startCheckin()">Begin</button>
+        <button class="begin-btn" id="begin-btn" onclick="startCheckin()">
+          <span class="begin-btn-icon"></span>
+          <span>Reflect</span>
+        </button>
         <div class="scroll-hint" id="scroll-hint" style="display:none;">
           <div class="scroll-hint-line"></div>
           <span class="scroll-hint-text">scroll to read back</span>
@@ -1280,31 +1627,16 @@
       <div class="checkin-step active" id="step-0">
         <p class="step-q">What is the weather<br>inside you right now?</p>
         <p class="step-sub">Don't think too long. First feeling.</p>
-        <div class="mood-grid">
-          <button class="mood-btn" onclick="selectMood(this, 'Heavy')" data-mood="Heavy">
-            <span class="mood-icon">🌧</span>
-            <span class="mood-label">Heavy</span>
-          </button>
-          <button class="mood-btn" onclick="selectMood(this, 'Tired')" data-mood="Tired">
-            <span class="mood-icon">🌫</span>
-            <span class="mood-label">Tired</span>
-          </button>
-          <button class="mood-btn" onclick="selectMood(this, 'Restless')" data-mood="Restless">
-            <span class="mood-icon">⚡</span>
-            <span class="mood-label">Restless</span>
-          </button>
-          <button class="mood-btn" onclick="selectMood(this, 'Okay')" data-mood="Okay">
-            <span class="mood-icon">🌤</span>
-            <span class="mood-label">Okay</span>
-          </button>
-          <button class="mood-btn" onclick="selectMood(this, 'Calm')" data-mood="Calm">
-            <span class="mood-icon">🌊</span>
-            <span class="mood-label">Calm</span>
-          </button>
-          <button class="mood-btn" onclick="selectMood(this, 'Alive')" data-mood="Alive">
-            <span class="mood-icon">✨</span>
-            <span class="mood-label">Alive</span>
-          </button>
+        <div class="mood-wheel-wrap">
+          <div class="mood-wheel" id="mood-wheel">
+            <div class="wh-center" id="wh-center">
+              <div class="wh-center-dot" id="wh-center-dot"></div>
+              <svg class="wh-center-svg" id="wh-center-svg"
+                   viewBox="0 0 60 60" fill="none" stroke="currentColor"
+                   stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></svg>
+            </div>
+            <!-- Spokes and nodes injected by initMoodWheel() -->
+          </div>
         </div>
         <div class="intensity-wrap">
           <div class="intensity-labels"><span>Barely</span><span>How much?</span><span>Fully</span></div>
@@ -1336,6 +1668,7 @@
     <!-- REFLECTION -->
     <div class="screen" id="screen-reflection">
       <div class="reflection-header">
+        <div class="reflection-icon" id="reflection-icon"></div>
         <p class="reflection-eyebrow">Your check-in</p>
         <h2 class="reflection-title" id="reflection-title">Here is where<br>you are.</h2>
       </div>
@@ -1356,6 +1689,14 @@
       </div>
 
       <p class="rewind-response" id="rewind-response">—</p>
+      <p class="rewind-follow-up" id="rewind-follow-up"></p>
+
+      <div class="spark-capture" id="spark-capture">
+        <input type="text" class="spark-input" id="spark-input"
+          placeholder="anything surface while you were here?"
+          onkeydown="if(event.key==='Enter') submitSpark()">
+        <p class="spark-confirm" id="spark-confirm"></p>
+      </div>
 
       <button class="done-btn" onclick="goHome()">Close for now</button>
       <button class="new-session-btn" onclick="startCheckin()">Start a new check-in</button>
@@ -1403,10 +1744,19 @@
           </div>
         </div>
 
-        <!-- Full log -->
-        <div class="reveal-section" id="reveal-log">
-          <p class="pattern-section-label">Full log</p>
-          <div id="history-list"></div>
+        <!-- Word cloud placeholder (populated by Task 6) -->
+        <div class="reveal-section" id="reveal-wordcloud" style="display:none;">
+          <p class="pattern-section-label">Your feeling vocabulary</p>
+          <div class="word-cloud" id="word-cloud"></div>
+        </div>
+
+        <!-- Mood Timeline (C1) -->
+        <div class="reveal-section" id="reveal-timeline">
+          <p class="pattern-section-label">30-day timeline</p>
+          <div class="mood-timeline-wrap" id="mood-timeline-wrap">
+            <div class="mood-timeline-track" id="mood-timeline-track"></div>
+            <div class="mood-timeline-detail" id="mood-timeline-detail" style="display:none;"></div>
+          </div>
           <div style="height:100px;"></div>
         </div>
 
@@ -1450,8 +1800,50 @@
   </nav>
 
   <script>
+    // ── MOOD ICONS ──
+    function moodIcon(mood, size) {
+      var s = size || 32;
+      var defs = {
+        Heavy: '<path d="M4 30 Q12 25 20 30 Q28 35 36 30 Q44 25 56 30" stroke-linecap="round"/>' +
+               '<path d="M18 30 A12 12 0 0 1 42 30" stroke-linecap="round"/>' +
+               '<path d="M12 34 Q30 28 48 34" stroke-opacity="0.65" stroke-linecap="round"/>' +
+               '<path d="M6 39 Q30 31 54 39" stroke-opacity="0.35" stroke-linecap="round"/>' +
+               '<path d="M18 30 A12 12 0 0 0 42 30" stroke-opacity="0.2" stroke-linecap="round"/>',
+        Tired: '<line x1="30" y1="52" x2="30" y2="30" stroke-linecap="round"/>' +
+               '<path d="M30 30 Q34 23 27 16" stroke-linecap="round"/>' +
+               '<circle cx="26" cy="14" r="3"/>' +
+               '<path d="M30 42 Q20 37 20 44" stroke-linecap="round"/>' +
+               '<path d="M30 38 Q40 33 39 40" stroke-linecap="round"/>',
+        Restless: '<path d="M12 22 Q26 17 42 22" stroke-linecap="round"/>' +
+                  '<path d="M8 30 Q26 24 46 29" stroke-linecap="round"/>' +
+                  '<path d="M10 38 Q26 32 44 37" stroke-linecap="round"/>' +
+                  '<path d="M14 46 Q28 40 42 45" stroke-linecap="round"/>' +
+                  '<path d="M43 27 L46 29 L43 31" stroke-linecap="round"/>',
+        Okay: '<line x1="10" y1="30" x2="50" y2="30" stroke-linecap="round"/>' +
+              '<path d="M12 22 Q30 16 48 22" stroke-linecap="round"/>' +
+              '<path d="M12 38 Q30 44 48 38" stroke-linecap="round"/>',
+        Calm: '<circle cx="30" cy="30" r="5"/>' +
+              '<circle cx="30" cy="30" r="11" stroke-opacity="0.7"/>' +
+              '<circle cx="30" cy="30" r="17" stroke-opacity="0.4"/>' +
+              '<circle cx="30" cy="30" r="23" stroke-opacity="0.2"/>',
+        Alive: '<line x1="8" y1="42" x2="52" y2="42" stroke-linecap="round"/>' +
+               '<path d="M22 42 A8 8 0 0 1 38 42" stroke-linecap="round"/>' +
+               '<line x1="30" y1="30" x2="30" y2="26" stroke-linecap="round"/>' +
+               '<line x1="38" y1="33" x2="41" y2="30" stroke-linecap="round"/>' +
+               '<line x1="22" y1="33" x2="19" y2="30" stroke-linecap="round"/>' +
+               '<line x1="40" y1="40" x2="44" y2="38" stroke-linecap="round"/>' +
+               '<line x1="20" y1="40" x2="16" y2="38" stroke-linecap="round"/>' +
+               '<line x1="24" y1="46" x2="36" y2="46" stroke-opacity="0.55" stroke-linecap="round"/>' +
+               '<line x1="27" y1="50" x2="33" y2="50" stroke-opacity="0.25" stroke-linecap="round"/>'
+      };
+      var paths = defs[mood] || defs['Okay'];
+      return '<svg width="' + s + '" height="' + s + '" viewBox="0 0 60 60" fill="none" ' +
+             'stroke="#c4956a" stroke-width="1.5" stroke-linejoin="round" ' +
+             'style="display:inline-block;vertical-align:middle;">' + paths + '</svg>';
+    }
+
     // ── VERSION & UPDATE SYSTEM ──
-    const REWIND_VERSION = '1.2.0';
+    const REWIND_VERSION = '1.3.0';
 
     const UPDATES = {
       '1.1.0': {
@@ -1467,6 +1859,13 @@
         newElements: [
           { selector: '#scroll-hint', hint: 'Scroll down to read recent entries' },
           { selector: '.recent-section', hint: 'Your recent check-ins live here now' }
+        ]
+      },
+      '1.3.0': {
+        message: "Rewind just got quieter and richer.",
+        body: "New mood icons — natural, minimal. AI reflection shaped to this moment. A place to capture what surfaces. Your feeling vocabulary, mirrored back. 30-day mood timeline with Forward context.",
+        newElements: [
+          { selector: '#nav-history', hint: 'Pattern screen: timeline, word cloud, and more' }
         ]
       }
     };
@@ -1624,6 +2023,7 @@
       setStep(0);
       showScreen('checkin');
       document.getElementById('nav-checkin').classList.add('active');
+      initMoodWheel();
     }
 
     function setStep(n) {
@@ -1636,6 +2036,140 @@
         if (i === n) d.classList.add('active');
       });
       state.currentStep = n;
+    }
+
+    var WHEEL_MOODS = [
+      {
+        name: 'alive', angle: -90, glow: 'rgba(212,164,114,0.45)',
+        svgPaths: '<line x1="8" y1="42" x2="52" y2="42"/><path d="M22 42 A8 8 0 0 1 38 42"/><line x1="30" y1="30" x2="30" y2="26"/><line x1="38" y1="33" x2="41" y2="30"/><line x1="22" y1="33" x2="19" y2="30"/><line x1="40" y1="40" x2="44" y2="38"/><line x1="20" y1="40" x2="16" y2="38"/><line x1="24" y1="46" x2="36" y2="46" stroke-opacity="0.55"/><line x1="27" y1="50" x2="33" y2="50" stroke-opacity="0.25"/>',
+      },
+      {
+        name: 'calm', angle: -30, glow: 'rgba(126,184,164,0.35)',
+        svgPaths: '<circle cx="30" cy="30" r="5"/><circle cx="30" cy="30" r="11" stroke-opacity="0.7"/><circle cx="30" cy="30" r="17" stroke-opacity="0.4"/><circle cx="30" cy="30" r="23" stroke-opacity="0.2"/>',
+      },
+      {
+        name: 'okay', angle: 30, glow: 'rgba(212,164,114,0.25)',
+        svgPaths: '<line x1="10" y1="30" x2="50" y2="30"/><path d="M12 22 Q30 16 48 22"/><path d="M12 38 Q30 44 48 38"/>',
+      },
+      {
+        name: 'restless', angle: 90, glow: 'rgba(140,160,196,0.30)',
+        svgPaths: '<path d="M12 22 Q26 17 42 22"/><path d="M8 30 Q26 24 46 29"/><path d="M10 38 Q26 32 44 37"/><path d="M14 46 Q28 40 42 45"/><path d="M43 27 L46 29 L43 31"/>',
+      },
+      {
+        name: 'tired', angle: 150, glow: 'rgba(160,140,196,0.28)',
+        svgPaths: '<line x1="30" y1="52" x2="30" y2="30"/><path d="M30 30 Q34 23 27 16"/><circle cx="26" cy="14" r="3"/><path d="M30 42 Q20 37 20 44"/><path d="M30 38 Q40 33 39 40"/>',
+      },
+      {
+        name: 'heavy', angle: 210, glow: 'rgba(220,130,100,0.30)',
+        svgPaths: '<path d="M4 30 Q12 25 20 30 Q28 35 36 30 Q44 25 56 30"/><path d="M18 30 A12 12 0 0 1 42 30"/><path d="M12 34 Q30 28 48 34" stroke-opacity="0.65"/><path d="M6 39 Q30 31 54 39" stroke-opacity="0.35"/><path d="M18 30 A12 12 0 0 0 42 30" stroke-opacity="0.2"/>',
+      },
+    ];
+    var WHEEL_MOOD_CLASSES = ['mood-alive','mood-calm','mood-okay','mood-restless','mood-tired','mood-heavy'];
+
+    function initMoodWheel() {
+      var canvas = document.getElementById('mood-wheel');
+      if (!canvas) return;
+      // Clear previously injected spokes and nodes to prevent duplication
+      canvas.querySelectorAll('.wh-spoke, .wh-node').forEach(function(el) { el.remove(); });
+      var center = document.getElementById('wh-center');
+      var centerSvg = document.getElementById('wh-center-svg');
+      var R = 80, CX = 110, CY = 110;
+      var spokes = [], nodes = [];
+      var dragging = false, activeIdx = -1;
+
+      WHEEL_MOODS.forEach(function(m, i) {
+        var rad = m.angle * Math.PI / 180;
+        var nx = CX + R * Math.cos(rad);
+        var ny = CY + R * Math.sin(rad);
+
+        // Spoke
+        var sp = document.createElement('div');
+        sp.className = 'wh-spoke';
+        sp.style.left = CX + 'px';
+        sp.style.top = CY + 'px';
+        sp.style.height = (R - 26) + 'px';
+        sp.style.transform = 'rotate(' + (m.angle + 90) + 'deg)';
+        sp.style.setProperty('--mood-col', m.glow);
+        canvas.appendChild(sp);
+        spokes.push(sp);
+
+        // Node
+        var nd = document.createElement('div');
+        nd.className = 'wh-node';
+        nd.style.left = nx + 'px';
+        nd.style.top  = ny + 'px';
+        nd.style.setProperty('--mood-col', m.glow);
+        nd.innerHTML = '<svg width="22" height="22" viewBox="0 0 60 60" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' + m.svgPaths + '</svg>' +
+          '<div class="wh-node-label">' + m.name + '</div>';
+        canvas.appendChild(nd);
+        nodes.push(nd);
+      });
+
+      function setActive(idx) {
+        if (idx === activeIdx) return;
+        activeIdx = idx;
+        WHEEL_MOOD_CLASSES.forEach(function(c) { center.classList.remove(c); });
+        nodes.forEach(function(nd, i) {
+          var on = (i === idx);
+          nd.classList.toggle('active', on);
+          spokes[i].classList.toggle('active', on);
+          nd.style.opacity = (idx === -1 || on) ? '1' : '0.35';
+        });
+        if (idx !== -1) {
+          center.style.setProperty('--mood-col', WHEEL_MOODS[idx].glow);
+          center.classList.add('active');
+          center.classList.add(WHEEL_MOOD_CLASSES[idx]);
+          centerSvg.innerHTML = WHEEL_MOODS[idx].svgPaths;
+        } else {
+          center.classList.remove('active');
+          centerSvg.innerHTML = '';
+        }
+      }
+
+      function handleMove(clientX, clientY) {
+        var rect = canvas.getBoundingClientRect();
+        var dx = clientX - (rect.left + CX);
+        var dy = clientY - (rect.top  + CY);
+        var dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 14) { setActive(-1); return; }
+        var ang = Math.atan2(dy, dx) * 180 / Math.PI;
+        var best = -1, bestD = 9999;
+        WHEEL_MOODS.forEach(function(m, i) {
+          var diff = ((ang - m.angle + 540) % 360) - 180;
+          var d = Math.abs(diff);
+          if (d < bestD) { bestD = d; best = i; }
+        });
+        setActive(bestD < 40 ? best : -1);
+      }
+
+      function onRelease() {
+        dragging = false;
+        if (activeIdx !== -1) {
+          selectMoodByName(WHEEL_MOODS[activeIdx].name);
+        }
+      }
+
+      canvas.addEventListener('mousedown',  function(e) { dragging = true; handleMove(e.clientX, e.clientY); });
+      document.addEventListener('mousemove',function(e) { if (dragging) handleMove(e.clientX, e.clientY); });
+      document.addEventListener('mouseup',  function()  { if (dragging) onRelease(); });
+      canvas.addEventListener('touchstart', function(e) { e.preventDefault(); dragging = true; handleMove(e.touches[0].clientX, e.touches[0].clientY); }, { passive: false });
+      canvas.addEventListener('touchmove',  function(e) { e.preventDefault(); if (dragging) handleMove(e.touches[0].clientX, e.touches[0].clientY); }, { passive: false });
+      canvas.addEventListener('touchend',   function()  { onRelease(); });
+    }
+
+    function selectMoodByName(moodName) {
+      // capitalise first letter to match existing data (e.g. 'alive' → 'Alive')
+      var name = moodName.charAt(0).toUpperCase() + moodName.slice(1);
+      // Set state.mood directly (no separate currentMood global — mood lives on the state object)
+      state.mood = name;
+      // Try to find the hidden mood-btn to piggyback on existing selectMood flow
+      var btn = document.querySelector('.mood-btn[data-mood="' + name + '"]');
+      if (btn) {
+        selectMood(btn, name);
+      } else {
+        // Fallback: advance to step 1 (intensity) directly via nextStep
+        nextStep(1);
+      }
     }
 
     function selectMood(btn, mood) {
@@ -1731,12 +2265,125 @@
       return r;
     }
 
-    function renderReflection(session) {
-      const moodIcons = { Heavy: '🌧', Tired: '🌫', Restless: '⚡', Okay: '🌤', Calm: '🌊', Alive: '✨' };
-      const icon = moodIcons[session.mood] || '○';
+    // ── FORWARD CONTEXT SUMMARY ──
+    function getForwardContextSummary() {
+      try {
+        var items = JSON.parse(localStorage.getItem('forward_items') || '[]');
+        var active = items.filter(function(item) { return !item.archived && !item.completed; });
+        if (active.length === 0) return '';
+        var projects = JSON.parse(localStorage.getItem('forward_projects') || '[]');
+        var recentItem = active.sort(function(a, b) {
+          return new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0);
+        })[0];
+        var projectName = '';
+        if (recentItem && recentItem.projectId) {
+          var proj = projects.find(function(p) { return p.id === recentItem.projectId; });
+          if (proj && proj.name) projectName = ' · ' + proj.name;
+        }
+        return active.length + ' active capture' + (active.length !== 1 ? 's' : '') + projectName;
+      } catch (e) { return ''; }
+    }
 
-      document.getElementById('reflection-mood').textContent =
-        `${icon}  ${session.mood}  ·  ${session.intensity}/10`;
+    // ── FORWARD CONTEXT AT TIME (C4) ──
+    function getForwardContextAt(dateStr) {
+      try {
+        var items = JSON.parse(localStorage.getItem('forward_items') || '[]');
+        var checkinTime = new Date(dateStr).getTime();
+        var WINDOW_MS = 12 * 60 * 60 * 1000; // ±12 hours
+
+        var nearby = items.filter(function(item) {
+          var updated = item.updatedAt ? new Date(item.updatedAt).getTime() : 0;
+          if (!updated) updated = item.createdAt ? new Date(item.createdAt).getTime() : 0;
+          return Math.abs(updated - checkinTime) <= WINDOW_MS;
+        });
+
+        if (nearby.length === 0) return null;
+
+        var projects = JSON.parse(localStorage.getItem('forward_projects') || '[]');
+        var projectNames = [];
+        nearby.forEach(function(item) {
+          if (item.projectId) {
+            var proj = projects.find(function(p) { return p.id === item.projectId; });
+            if (proj && proj.name && projectNames.indexOf(proj.name) === -1) {
+              projectNames.push(proj.name);
+            }
+          }
+        });
+
+        var count = nearby.length;
+        var projectPart = projectNames.length > 0 ? ' · ' + projectNames[0] : '';
+        return count + ' active capture' + (count !== 1 ? 's' : '') + projectPart;
+      } catch (e) { return null; }
+    }
+
+    // ── AI REFLECTION (B1 + B2) ──
+    var REWIND_REFLECT_URL = 'https://asia-southeast1-forward-163fr.cloudfunctions.net/rewindReflect';
+
+    function fetchAIReflection(session, callback) {
+      var history = sessions.slice(-7).map(function(s) {
+        return { mood: s.mood, feeling: s.feeling || '', date: s.date };
+      });
+
+      var payload = {
+        mood: session.mood,
+        feeling: session.feeling || '',
+        history: history,
+        forwardContext: getForwardContextSummary()
+      };
+
+      var done = false;
+      var timeoutId = setTimeout(function() {
+        if (!done) { done = true; callback(null); }
+      }, 5000);
+
+      fetch(REWIND_REFLECT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (!done) { done = true; clearTimeout(timeoutId); callback(data); }
+      })
+      .catch(function() {
+        if (!done) { done = true; clearTimeout(timeoutId); callback(null); }
+      });
+    }
+
+    // ── SPARK CAPTURE (B3) ──
+    function submitSpark() {
+      var input = document.getElementById('spark-input');
+      if (!input) return;
+      var text = input.value.trim();
+      if (!text) return;
+
+      try {
+        var sparks = JSON.parse(localStorage.getItem('rewind_sparks') || '[]');
+        sparks.push({ text: text, timestamp: new Date().toISOString(), source: 'rewind' });
+        localStorage.setItem('rewind_sparks', JSON.stringify(sparks));
+      } catch (e) {}
+
+      input.value = '';
+
+      var confirm = document.getElementById('spark-confirm');
+      if (confirm) {
+        confirm.textContent = 'captured.';
+        confirm.style.opacity = '1';
+        setTimeout(function() {
+          confirm.style.opacity = '0';
+          setTimeout(function() { confirm.textContent = ''; }, 600);
+        }, 2000);
+      }
+    }
+
+    function renderReflection(session) {
+      // Icon in header (48px)
+      var iconEl = document.getElementById('reflection-icon');
+      if (iconEl) iconEl.innerHTML = moodIcon(session.mood, 48);
+
+      // Mood + intensity line — use innerHTML now (SVG not compatible with textContent)
+      document.getElementById('reflection-mood').innerHTML =
+        moodIcon(session.mood, 20) + '&nbsp;&nbsp;' + session.mood + '&nbsp;&nbsp;·&nbsp;&nbsp;' + session.intensity + '/10';
 
       if (session.feeling) {
         document.getElementById('reflection-feeling').textContent = session.feeling;
@@ -1748,13 +2395,37 @@
       document.getElementById('reflection-focus').textContent = session.focus;
       document.getElementById('rewind-response').textContent = getResponse(session.mood, session.focus);
 
-      const titles = { Heavy: 'Be gentle\nwith yourself.', Tired: 'You can rest\nhere first.', Restless: 'One thing.\nNot everything.', Okay: 'Here is where\nyou are.', Calm: 'Receive\nthis moment.', Alive: 'Hold onto\nthis.' };
+      var titles = { Heavy: 'Be gentle\nwith yourself.', Tired: 'You can rest\nhere first.', Restless: 'One thing.\nNot everything.', Okay: 'Here is where\nyou are.', Calm: 'Receive\nthis moment.', Alive: 'Hold onto\nthis.' };
       document.getElementById('reflection-title').textContent = titles[session.mood] || 'Here is where\nyou are.';
+
+      // Clear any previous follow-up
+      var followUpEl = document.getElementById('rewind-follow-up');
+      if (followUpEl) { followUpEl.textContent = ''; followUpEl.style.opacity = '0'; }
+
+      // Attempt AI reflection — falls back to hardcoded response already set above
+      fetchAIReflection(session, function(data) {
+        if (!data) return;
+        var responseEl = document.getElementById('rewind-response');
+        if (data.reflection && responseEl) {
+          responseEl.style.transition = 'opacity 0.5s ease';
+          responseEl.style.opacity = '0';
+          setTimeout(function() {
+            responseEl.textContent = data.reflection;
+            responseEl.style.opacity = '1';
+          }, 300);
+        }
+        if (data.followUp && followUpEl) {
+          setTimeout(function() {
+            followUpEl.textContent = data.followUp;
+            followUpEl.style.transition = 'opacity 0.6s ease';
+            followUpEl.style.opacity = '1';
+          }, 800);
+        }
+      });
     }
 
     // ── PATTERN & INSIGHTS ──
     function renderHistory() {
-      const list = document.getElementById('history-list');
       const insights = document.getElementById('pattern-insights');
       const sub = document.getElementById('pattern-sub');
       const heroTitle = document.getElementById('pattern-hero-title');
@@ -1767,7 +2438,6 @@
         heroTitle.innerHTML = 'Nothing yet.<br><em>Begin when ready.</em>';
         revealWrap.style.display = 'none';
         scrollHint.style.display = 'none';
-        list.innerHTML = '';
         return;
       }
 
@@ -1781,7 +2451,6 @@
 
       // ── Compute insights ──
       const moodCounts = {};
-      const moodIcons = { Heavy: '🌧', Tired: '🌫', Restless: '⚡', Okay: '🌤', Calm: '🌊', Alive: '✨' };
       const moodOrder = ['Heavy', 'Tired', 'Restless', 'Okay', 'Calm', 'Alive'];
       let totalIntensity = 0;
       let focusEntries = sessions.filter(s => s.focus && s.focus !== 'Rest').map(s => s.focus);
@@ -1837,7 +2506,7 @@
     <div class="insights-grid">
       <div class="insight-card highlight">
         <p class="insight-label">Most present mood</p>
-        <p class="insight-value">${moodIcons[dominantMood[0]]} ${dominantMood[0]}</p>
+        <p class="insight-value">${moodIcon(dominantMood[0], 22)} ${dominantMood[0]}</p>
         <p class="insight-sub">${dominantMood[1]} of ${sessions.length} check-ins</p>
       </div>
       <div class="insight-card">
@@ -1857,39 +2526,294 @@
       </div>
       <div class="insight-card full">
         <p class="insight-label">Mood distribution</p>
-        ${moodOrder.filter(m => moodCounts[m]).map(m => `
-          <div class="mood-bar-row">
-            <span class="mood-bar-label">${moodIcons[m]} ${m}</span>
-            <div class="mood-bar-track">
-              <div class="mood-bar-fill" style="width:${(moodCounts[m] / maxMood * 100)}%"></div>
-            </div>
-            <span class="mood-bar-count">${moodCounts[m]}</span>
-          </div>
-        `).join('')}
+        ${moodOrder.filter(function(m) { return moodCounts[m]; }).map(function(m) {
+          return '<div class="mood-bar-row">' +
+            '<span class="mood-bar-label">' + moodIcon(m, 18) + ' ' + m + '</span>' +
+            '<div class="mood-bar-track"><div class="mood-bar-fill" style="width:' + (moodCounts[m] / maxMood * 100) + '%"></div></div>' +
+            '<span class="mood-bar-count">' + moodCounts[m] + '</span>' +
+            '</div>';
+        }).join('')}
       </div>
     </div>
   `;
 
-      // ── Full log ──
-      const moodIconsMap = { Heavy: '🌧', Tired: '🌫', Restless: '⚡', Okay: '🌤', Calm: '🌊', Alive: '✨' };
-      const reversed = [...sessions].reverse();
-      list.innerHTML = reversed.map(s => {
-        const d = new Date(s.date);
-        const dateStr = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-        const timeStr = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-        const icon = moodIconsMap[s.mood] || '○';
-        return `
-      <div class="history-entry">
-        <p class="history-date">${dateStr}  ·  ${timeStr}</p>
-        <p class="history-mood">${icon} ${s.mood} · ${s.intensity}/10</p>
-        ${s.focus ? `<p class="history-focus">"${s.focus}"</p>` : ''}
-        ${s.feeling ? `<p class="history-feeling">${s.feeling.substring(0, 140)}${s.feeling.length > 140 ? '...' : ''}</p>` : ''}
-      </div>
-    `;
-      }).join('');
+      renderCalendar();
+      renderWordCloud();
 
       // Trigger scroll reveal after render
       setTimeout(() => initScrollReveal(), 100);
+    }
+
+    // ── MOOD TIMELINE (C1) ──
+    var MOOD_COLORS = {
+      Heavy: '#6b7a8d',
+      Tired: '#8d7a6b',
+      Restless: '#c4956a',
+      Okay: '#a89880',
+      Calm: '#7a9688',
+      Alive: '#e8c170'
+    };
+
+    function renderCalendar() {
+      var container = document.getElementById('mood-timeline-wrap');
+      if (!container) return;
+
+      var sessions_data = sessions;
+      var today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      // Build a map: dateString → session
+      var byDate = {};
+      sessions_data.forEach(function(s) {
+        var d = new Date(s.date);
+        d.setHours(0, 0, 0, 0);
+        var key = d.toISOString().slice(0, 10);
+        byDate[key] = s;
+      });
+
+      // Mood → intensity level mapping
+      function moodLevel(mood) {
+        var map = { heavy: 1, tired: 1, restless: 2, okay: 2, calm: 5, alive: 4 };
+        return map[(mood || '').toLowerCase()] || 3;
+      }
+
+      // Build 5 weeks of cells ending today
+      var cells = [];
+      for (var i = 34; i >= 0; i--) {
+        var d = new Date(today);
+        d.setDate(today.getDate() - i);
+        cells.push(d);
+      }
+
+      var DAY_LABELS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+
+      var html = '<div class="cal-wrap">' +
+        '<div class="cal-day-headers">' +
+        DAY_LABELS.map(function(l) { return '<div class="cal-day-hdr">' + l + '</div>'; }).join('') +
+        '</div>' +
+        '<div class="cal-grid" id="cal-grid">';
+
+      cells.forEach(function(d) {
+        var key = d.toISOString().slice(0, 10);
+        var todayKey = today.toISOString().slice(0, 10);
+        var session = byDate[key];
+        var cls = 'cal-cell';
+        if (!session) {
+          cls += ' empty';
+        } else {
+          cls += ' lv' + moodLevel(session.mood);
+        }
+        if (key === todayKey) cls += ' today';
+        html += '<div class="' + cls + '" data-date="' + key + '"></div>';
+      });
+
+      html += '</div>' +
+        '<div class="cal-legend">' +
+        '<span class="cal-legend-label">heavy</span>' +
+        '<div class="cal-legend-dots">' +
+        '<div class="cal-legend-dot" style="background:rgba(220,130,100,0.3)"></div>' +
+        '<div class="cal-legend-dot" style="background:rgba(212,164,114,0.3)"></div>' +
+        '<div class="cal-legend-dot" style="background:rgba(212,164,114,0.5)"></div>' +
+        '<div class="cal-legend-dot" style="background:rgba(212,164,114,0.7)"></div>' +
+        '<div class="cal-legend-dot" style="background:rgba(126,184,164,0.5)"></div>' +
+        '</div>' +
+        '<span class="cal-legend-label">alive / calm</span>' +
+        '</div>' +
+        '<div class="cal-detail" id="cal-detail"></div>' +
+        '</div>';
+
+      container.innerHTML = html;
+
+      // Wire up cell taps
+      var detail = document.getElementById('cal-detail');
+      document.querySelectorAll('.cal-cell:not(.empty)').forEach(function(cell) {
+        cell.addEventListener('click', function() {
+          var key = cell.getAttribute('data-date');
+          var session = byDate[key];
+          if (!session) return;
+          document.querySelectorAll('.cal-cell').forEach(function(c) { c.classList.remove('selected'); });
+          cell.classList.add('selected');
+          detail.innerHTML = '<div class="cal-detail-mood">' +
+            (typeof moodIcon === 'function' ? moodIcon(session.mood, 16) : '') + '&nbsp;' + session.mood + ' &middot; ' + (session.intensity || '–') + '/10' +
+            '</div>' +
+            '<div class="cal-detail-meta">' + new Date(session.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) + '</div>';
+          detail.classList.add('visible');
+        });
+      });
+    }
+
+    function renderTimeline() {
+      var track = document.getElementById('mood-timeline-track');
+      var detail = document.getElementById('mood-timeline-detail');
+      if (!track) return;
+
+      var now = new Date();
+      var DAY_MS = 24 * 60 * 60 * 1000;
+
+      // Index sessions by date key (Y-M-D)
+      var byDate = {};
+      sessions.forEach(function(s) {
+        var d = new Date(s.date);
+        var key = d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+        if (!byDate[key]) byDate[key] = [];
+        byDate[key].push(s);
+      });
+
+      var html = '';
+      for (var i = 29; i >= 0; i--) {
+        var d = new Date(now.getTime() - i * DAY_MS);
+        var key = d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+        var daySessions = byDate[key] || [];
+
+        html += '<div class="timeline-day">';
+        if (daySessions.length > 0) {
+          daySessions.forEach(function(s) {
+            var sz = Math.round(8 + ((s.intensity - 1) / 9) * 12);
+            var color = MOOD_COLORS[s.mood] || '#a89880';
+            html += '<div class="timeline-dot"' +
+              ' style="width:' + sz + 'px;height:' + sz + 'px;background:' + color + ';min-width:' + sz + 'px;"' +
+              ' data-session-date="' + s.date + '"' +
+              ' onclick="expandTimelineDot(this)">' +
+              '</div>';
+          });
+        } else {
+          html += '<div class="timeline-empty-dot"></div>';
+        }
+        html += '</div>';
+      }
+
+      track.innerHTML = html;
+      // Scroll to most recent (right end)
+      track.scrollLeft = track.scrollWidth;
+
+      if (detail) { detail.style.display = 'none'; detail.innerHTML = ''; }
+    }
+
+    function expandTimelineDot(dot) {
+      // Toggle off if clicking the same dot again
+      var prev = document.querySelector('.timeline-dot.active-dot');
+      if (prev === dot) {
+        prev.classList.remove('active-dot');
+        var det = document.getElementById('mood-timeline-detail');
+        if (det) det.style.display = 'none';
+        return;
+      }
+      if (prev) prev.classList.remove('active-dot');
+      dot.classList.add('active-dot');
+
+      var dateStr = dot.getAttribute('data-session-date');
+      var session = null;
+      for (var i = 0; i < sessions.length; i++) {
+        if (sessions[i].date === dateStr) { session = sessions[i]; break; }
+      }
+      if (!session) return;
+
+      var d = new Date(session.date);
+      var dateLabel = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+      var timeLabel = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+
+      var fwdCtx = (typeof getForwardContextAt === 'function') ? getForwardContextAt(session.date) : null;
+
+      var detail = document.getElementById('mood-timeline-detail');
+      if (!detail) return;
+
+      detail.innerHTML =
+        '<p style="font-size:11px;color:rgba(232,221,212,0.3);margin-bottom:10px;">' + dateLabel + ' · ' + timeLabel + '</p>' +
+        '<p style="margin-bottom:6px;">' + moodIcon(session.mood, 18) + '&nbsp;' + session.mood + '&nbsp;·&nbsp;' + session.intensity + '/10</p>' +
+        (session.feeling ? '<p style="font-size:12px;color:rgba(232,221,212,0.5);margin-top:10px;line-height:1.6;">' + session.feeling + '</p>' : '') +
+        (fwdCtx ? '<p style="font-size:11px;color:rgba(196,149,106,0.5);margin-top:8px;">' + fwdCtx + '</p>' : '');
+
+      detail.style.display = 'block';
+    }
+
+    // ── WORD CLOUD (C3) ──
+    var STOP_WORDS = ['a', 'an', 'the', 'and', 'or', 'but', 'i', 'me', 'my', 'am',
+      'is', 'are', 'was', 'were', 'be', 'been', 'have', 'has', 'had', 'do', 'does',
+      'did', 'will', 'would', 'could', 'should', 'may', 'might', 'so', 'if', 'in',
+      'on', 'at', 'to', 'for', 'of', 'with', 'by', 'from', 'up', 'as', 'it', 'its',
+      'this', 'that', 'these', 'those', 'not', 'no', 'just', 'than', 'then', 'when',
+      'what', 'how', 'very', 'really', 'like', 'feel', 'feeling', 'about', 'there',
+      'their', 'they', 'into', 'all', 'been', 'him', 'her', 'out', 'one', 'can',
+      'still', 'even', 'much', 'only', 'also', 'bit', 'kind', 'lot', 'some'];
+
+    var activeWordFilter = null;
+
+    function renderWordCloud() {
+      var el = document.getElementById('word-cloud');
+      var wrap = document.getElementById('reveal-wordcloud');
+      if (!el || !wrap) return;
+
+      var wordCounts = {};
+      sessions.forEach(function(s) {
+        if (!s.feeling) return;
+        var words = s.feeling.toLowerCase().replace(/[^a-z\s]/g, '').split(/\s+/);
+        words.forEach(function(w) {
+          if (w.length < 3) return;
+          if (STOP_WORDS.indexOf(w) !== -1) return;
+          wordCounts[w] = (wordCounts[w] || 0) + 1;
+        });
+      });
+
+      // Only words appearing in 2+ sessions
+      var entries = [];
+      for (var w in wordCounts) {
+        if (wordCounts[w] >= 2) entries.push([w, wordCounts[w]]);
+      }
+
+      if (entries.length === 0) {
+        wrap.style.display = 'none';
+        return;
+      }
+
+      entries.sort(function(a, b) { return b[1] - a[1]; });
+      var top = entries.slice(0, 20);
+      var maxCount = top[0][1];
+      var minCount = top[top.length - 1][1];
+
+      el.innerHTML = top.map(function(e) {
+        var word = e[0], count = e[1];
+        var t = maxCount === minCount ? 1 : (count - minCount) / (maxCount - minCount);
+        var fontSize = Math.round(11 + t * 11);
+        var opacity = (0.35 + t * 0.6).toFixed(2);
+        return '<span class="word-cloud-word" ' +
+          'style="font-size:' + fontSize + 'px;opacity:' + opacity + ';" ' +
+          'onclick="filterByWord(\'' + word.replace(/'/g, "\\'") + '\')">' +
+          word + '</span>';
+      }).join('');
+
+      wrap.style.display = 'block';
+    }
+
+    function filterByWord(word) {
+      var dots = document.querySelectorAll('.timeline-dot');
+      var words = document.querySelectorAll('.word-cloud-word');
+
+      if (activeWordFilter === word) {
+        // Clear filter
+        activeWordFilter = null;
+        dots.forEach(function(d) { d.classList.remove('filtered-out'); });
+        words.forEach(function(w) { w.classList.remove('active'); });
+        return;
+      }
+
+      activeWordFilter = word;
+
+      // Highlight active word
+      words.forEach(function(w) {
+        w.classList.toggle('active', w.textContent === word);
+      });
+
+      // Dim non-matching dots
+      dots.forEach(function(dot) {
+        var dateStr = dot.getAttribute('data-session-date');
+        var session = null;
+        for (var i = 0; i < sessions.length; i++) {
+          if (sessions[i].date === dateStr) { session = sessions[i]; break; }
+        }
+        var matches = session && session.feeling &&
+          session.feeling.toLowerCase().replace(/[^a-z\s]/g, '').split(/\s+/).indexOf(word) !== -1;
+        dot.classList.toggle('filtered-out', !matches);
+      });
     }
 
     // ── SCROLL REVEAL ──
@@ -1937,16 +2861,14 @@
 
     // ── EXPORT PDF (as printable HTML) ──
     function exportPDF() {
-      const moodIcons = { Heavy: '🌧', Tired: '🌫', Restless: '⚡', Okay: '🌤', Calm: '🌊', Alive: '✨' };
       const rows = [...sessions].reverse().map(s => {
         const d = new Date(s.date);
         const dateStr = d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
         const timeStr = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-        const icon = moodIcons[s.mood] || '';
         return `
       <div style="border:1px solid #e0d5cd; border-radius:10px; padding:18px 22px; margin-bottom:14px; page-break-inside:avoid;">
         <p style="font-size:11px; color:#9a8878; letter-spacing:1px; margin-bottom:8px; text-transform:uppercase;">${dateStr} · ${timeStr}</p>
-        <p style="font-size:18px; color:#2c2520; margin-bottom:6px;">${icon} ${s.mood} · ${s.intensity}/10</p>
+        <p style="font-size:18px; color:#2c2520; margin-bottom:6px;">${moodIcon(s.mood, 20)} ${s.mood} · ${s.intensity}/10</p>
         ${s.focus ? `<p style="font-family:Georgia; font-size:16px; color:#8b6f5e; font-style:italic; margin-bottom:6px;">"${s.focus}"</p>` : ''}
         ${s.feeling ? `<p style="font-size:14px; color:#5a4e45; line-height:1.6;">${s.feeling}</p>` : ''}
       </div>
@@ -2086,7 +3008,6 @@
     function renderRecentEntries() {
       if (sessions.length === 0) return;
 
-      const moodIcons = { Heavy: '🌧', Tired: '🌫', Restless: '⚡', Okay: '🌤', Calm: '🌊', Alive: '✨' };
       const recentSection = document.getElementById('recent-section');
       const recentEntries = document.getElementById('recent-entries');
       const scrollHint = document.getElementById('scroll-hint');
@@ -2111,13 +3032,11 @@
         else if (diffDays < 2) timeLabel = 'Yesterday';
         else timeLabel = d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
 
-        const icon = moodIcons[s.mood] || '○';
-
         return `
       <div class="recent-entry">
         <p class="recent-entry-time">${timeLabel}</p>
         <div class="recent-entry-mood">
-          <span class="recent-mood-icon">${icon}</span>
+          <span class="recent-mood-icon">${moodIcon(s.mood, 22)}</span>
           <span class="recent-mood-name">${s.mood}</span>
           <span class="recent-mood-intensity">${s.intensity}/10</span>
         </div>

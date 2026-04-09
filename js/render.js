@@ -46,6 +46,98 @@ function renderTagChips() {
   ).join('');
 }
 
+function attachInboxSwipe(list) {
+  var fresh = list.cloneNode(true);
+  list.parentNode.replaceChild(fresh, list);
+
+  var _startX = 0;
+  var _target = null;
+  var _bgEl   = null;
+
+  fresh.addEventListener('touchstart', function(e) {
+    var item = e.target.closest('.inbox-item');
+    if (!item) return;
+    var id = item.dataset.id;
+    var it = id && items.find(function(i) { return i.id === id; });
+    if (it && (it.status === 'archived' || it.status === 'done')) return;
+
+    _startX = e.touches[0].clientX;
+    _target = item;
+
+    _bgEl = item.querySelector('.inbox-item-swipe-bg');
+    if (!_bgEl) {
+      _bgEl = document.createElement('div');
+      _bgEl.className = 'inbox-item-swipe-bg';
+      item.insertBefore(_bgEl, item.firstChild);
+    }
+  }, { passive: true });
+
+  fresh.addEventListener('touchmove', function(e) {
+    if (!_target) return;
+    var dx = e.touches[0].clientX - _startX;
+    _target.style.transform = 'translateX(' + dx + 'px)';
+
+    if (_bgEl) {
+      if (dx > 20) {
+        _bgEl.className = 'inbox-item-swipe-bg right';
+        _bgEl.style.opacity = Math.min(dx / 100, 0.8).toString();
+      } else if (dx < -20) {
+        _bgEl.className = 'inbox-item-swipe-bg left';
+        _bgEl.style.opacity = Math.min(-dx / 100, 0.8).toString();
+      } else {
+        _bgEl.style.opacity = '0';
+      }
+    }
+  }, { passive: true });
+
+  fresh.addEventListener('touchend', function(e) {
+    if (!_target) return;
+    var dx = e.changedTouches[0].clientX - _startX;
+    var item = _target;
+    var id   = item.dataset.id;
+    var it   = id && items.find(function(i) { return i.id === id; });
+
+    _target = null;
+    _bgEl   = null;
+
+    if (!it) {
+      item.style.transform = '';
+      return;
+    }
+
+    if (dx > 80) {
+      item.classList.add('swipe-dismiss-right');
+      setTimeout(function() {
+        it.status     = 'archived';
+        it.archivedAt = new Date().toISOString();
+        save();
+        if (navigator.vibrate) navigator.vibrate(30);
+        renderInbox();
+        showToast('archived — tap to undo');
+      }, 260);
+    } else if (dx < -80) {
+      item.classList.add('swipe-dismiss-left');
+      setTimeout(function() {
+        it.category  = 'task';
+        it.confirmed = true;
+        it.touchedAt = new Date().toISOString();
+        save();
+        if (navigator.vibrate) navigator.vibrate(30);
+        renderInbox();
+        showToast('moved to tasks');
+      }, 260);
+    } else {
+      item.style.transition = 'transform 0.22s ease';
+      item.style.transform  = 'translateX(0)';
+      setTimeout(function() { item.style.transition = ''; }, 240);
+      var bg = item.querySelector('.inbox-item-swipe-bg');
+      if (bg) bg.style.opacity = '0';
+    }
+  }, { passive: true });
+
+  return fresh;
+}
+
 function renderInbox() {
   runLifecycle();
   const list = document.getElementById('inbox-list');
@@ -89,10 +181,13 @@ function renderInbox() {
   renderTagChips();
 
   if (searched.length === 0) {
+    const defaultText = items.length === 0 
+      ? "nothing captured yet — what's on your mind?" 
+      : "a clean slate. something will surface.";
     list.innerHTML = `
       <div class="inbox-empty">
         <div class="inbox-empty-orb"></div>
-        <p class="inbox-empty-text">${_searchQuery || _activeTag ? 'No matches.' : 'Nothing here yet.<br>Capture something.'}</p>
+        <p class="inbox-empty-text">${_searchQuery || _activeTag ? 'No matches.' : defaultText}</p>
       </div>`;
     return;
   }
@@ -112,6 +207,7 @@ function renderInbox() {
   }
 
   list.innerHTML = html;
+  attachInboxSwipe(list);
 }
 
 function toggleCold() {
@@ -132,6 +228,28 @@ function renderItemHTML(item, isCold = false) {
   const developBtn = (cat === 'project')
     ? `<button class="inbox-item-develop" onclick="promoteToProject('${item.id}')">Develop →</button>`
     : '';
+
+  // Rewind spark echo badge — read rewind_sparks, check for substring match
+  var sparkEchoHTML = '';
+  if (cat === 'spark') {
+    try {
+      var rawSparks = localStorage.getItem('rewind_sparks');
+      var rewindSparks = rawSparks ? JSON.parse(rawSparks) : [];
+      var itemSnippet = (item.content || '').toLowerCase().substring(0, 30);
+      var hasEcho = false;
+      for (var sri = 0; sri < rewindSparks.length; sri++) {
+        var rsp = rewindSparks[sri];
+        var sparkText = (rsp && rsp.text) ? rsp.text.toLowerCase() : '';
+        if (itemSnippet && sparkText && (itemSnippet.indexOf(sparkText.substring(0, 30)) !== -1 || sparkText.indexOf(itemSnippet) !== -1)) {
+          hasEcho = true;
+          break;
+        }
+      }
+      if (hasEcho) {
+        sparkEchoHTML = '<span class="spark-echo-badge">\u21AF Rewind</span>';
+      }
+    } catch (e) { /* safe — graceful no-op */ }
+  }
 
   // Brain dump title
   const titleHTML = item.aiTitle
@@ -158,7 +276,7 @@ function renderItemHTML(item, isCold = false) {
   }
 
   return `
-    <div class="inbox-item cat-${cat}${isCold ? ' status-cold' : ''}" onclick="openItemAction('${item.id}')">
+    <div class="inbox-item cat-${cat}${isCold ? ' status-cold' : ''}" data-id="${item.id}" onclick="openItemAction('${item.id}')">
       <div class="inbox-item-bar"></div>
       ${titleHTML}
       <p class="inbox-item-content">${esc(item.content)}</p>
@@ -168,6 +286,7 @@ function renderItemHTML(item, isCold = false) {
         <span class="inbox-item-time">${offlineDot}${timeAgo(item.createdAt)}</span>
         <span class="cat-tag ${tagClass}" ${tagAction}>${label}</span>
         ${pendingHint}
+        ${sparkEchoHTML}
         ${developBtn}
         <button class="inbox-item-archive" onclick="archiveItem('${item.id}')" title="Archive">↓</button>
       </div>
@@ -185,10 +304,54 @@ function toggleRawContent(id) {
 }
 
 // ── WORK MODE ─────────────────────────────────────────────
+function renderDailyBrief(area, session) {
+  var today = new Date().toDateString();
+  if (localStorage.getItem('forward_daily_brief_date') === today) return;
+
+  var key = typeof getGeminiKey === 'function' && getGeminiKey();
+  if (!key) return;
+
+  var mood = session && session.mood ? session.mood : null;
+  if (mood === 'Heavy' || mood === 'Overwhelmed') return;
+
+  var aliveItems = items.filter(function(i) {
+    return i.status === 'fresh' || i.status === 'alive';
+  });
+  if (aliveItems.length === 0) return;
+
+  localStorage.setItem('forward_daily_brief_date', today);
+
+  var briefCard = document.createElement('div');
+  briefCard.className = 'daily-brief-card';
+  var briefText = document.createElement('p');
+  briefText.className = 'daily-brief-text';
+  briefText.textContent = '\u2026';
+  briefCard.appendChild(briefText);
+  area.insertBefore(briefCard, area.firstChild);
+
+  var moodLine  = mood ? ('mood: ' + mood.toLowerCase()) : 'no check-in today';
+  var topItems  = aliveItems.slice(0, 3).map(function(i) {
+    return ((i.aiTitle || i.content) || '').substring(0, 55);
+  }).join('; ');
+
+  var systemPrompt = 'You are a calm, warm companion for someone with ADHD. ' +
+    'In one sentence of at most 18 words, gently orient them for today. ' +
+    'Do not mention ADHD, productivity, or efficiency. ' +
+    'Do not use the word "today". No emojis. Lowercase only. No terminal punctuation.';
+  var userPrompt = 'Context \u2014 ' + moodLine + '. Things on their mind: ' + topItems;
+
+  callGemini(systemPrompt, userPrompt).then(function(text) {
+    if (text && briefText && briefText.parentNode) {
+      briefText.textContent = text.trim().toLowerCase().replace(/\.$/, '');
+    }
+  }).catch(function() {
+    if (briefCard && briefCard.parentNode) briefCard.parentNode.removeChild(briefCard);
+    localStorage.removeItem('forward_daily_brief_date');
+  });
+}
+
 function renderWork() {
   runLifecycle();
-  const eyebrow = document.getElementById('work-eyebrow');
-  const headline = document.getElementById('work-headline');
   const area = document.getElementById('work-area');
   const thinking = document.getElementById('ai-thinking');
 
@@ -199,8 +362,16 @@ function renderWork() {
   S.maxSteps = moodInfo ? moodInfo.maxSteps : 3;
   S.attentionState = moodInfo ? moodInfo.state : null;
 
-  headline.textContent = moodInfo ? moodInfo.label : 'Ready when you are.';
-
+  // Determine if returning after >4 hours (Return State Intercept)
+  const lastSessionStr = localStorage.getItem('forward_last_session');
+  let isReturning = false;
+  if (lastSessionStr) {
+    const ageHrs = (Date.now() - parseInt(lastSessionStr, 10)) / 3600000;
+    if (ageHrs > 4 && !S.hasClearedReturnIntercept) {
+      isReturning = true;
+    }
+  }
+  
   // Overwhelmed state — redirect to Rewind, don't surface tasks
   if (moodInfo && moodInfo.state === 'overwhelmed') {
     area.innerHTML = `
@@ -209,26 +380,41 @@ function renderWork() {
           Right now isn't for doing.<br>
           Go inward first. Come back when you're ready.
         </p>
-        <a href="https://yongsiang163.github.io/Rewind/" target="_blank" rel="noopener"
+        <a class="home-rewind-link" onclick="toggleRewindMode()"
            style="display:inline-block; padding:14px 28px; background:rgba(196,149,106,0.1);
            border:1px solid rgba(196,149,106,0.25); border-radius:14px; color:var(--warm);
            text-decoration:none; font-family:var(--ui-font); font-size:14px; letter-spacing:0.5px;">
-          Open Rewind →
+          check in with yourself →
         </a>
-        <p class="work-empty-cta" onclick="S.rewindSession=null; renderWork();"
-           style="margin-top:20px; font-size:12px; color:var(--text-muted);">
-          or continue anyway
-        </p>
       </div>`;
     return;
   }
 
   const candidate = pickWorkItem(moodInfo);
 
+  if (isReturning && candidate) {
+    area.innerHTML = `
+      <div class="work-empty" style="text-align:center;">
+        <p class="work-empty-text" style="color:var(--text);font-size:18px;margin-bottom:24px;">you're here.</p>
+        <div class="inbox-item cat-${candidate.category || candidate.aiCategory || 'task'}" style="margin-bottom:24px;">
+          <div class="inbox-item-bar"></div>
+          <p class="inbox-item-content">${esc(candidate.content)}</p>
+        </div>
+        <p class="work-empty-text" style="margin-bottom:16px;">
+          pick up where you left off,<br>or start fresh.
+        </p>
+        <div style="display:flex;gap:12px;justify-content:center;margin-top:24px;">
+          <button onclick="S.hasClearedReturnIntercept=true; S.currentWorkItem=null; renderWork();" style="flex:1;padding:14px;border:none;border-radius:12px;background:var(--surface2);color:var(--text);font-family:var(--ui-font);cursor:pointer;">Refresh it</button>
+          <button onclick="S.hasClearedReturnIntercept=true; renderWork();" style="flex:1;padding:14px;border:none;border-radius:12px;background:var(--teal);color:var(--bg);font-family:var(--ui-font);font-weight:600;cursor:pointer;">Continue</button>
+        </div>
+      </div>`;
+    return;
+  }
+
   if (!candidate) {
     area.innerHTML = `
       <div class="work-empty">
-        <p class="work-empty-text">Your inbox is clear.<br>Nothing to surface right now.</p>
+        <p class="work-empty-text">nothing queued. you could add one thing, or just be.</p>
         <p class="work-empty-cta" onclick="openCapture()">+ Capture something new</p>
       </div>`;
     return;
@@ -241,9 +427,12 @@ function renderWork() {
   const cat = candidate.aiCategory || candidate.category;
   const label = CAT_LABELS[cat] || '';
 
-  // If it's a project, show phase + next action as the work card
+  // If it's a project-type item, show phase + next action as the work card
+  // Look up by projectId first (reliable), then fall back to name-match for legacy items
   const isProject = cat === 'project';
-  const linkedProject = isProject ? projects.find(p => p.name && candidate.content.toLowerCase().includes(p.name.toLowerCase())) : null;
+  const linkedProject = candidate.projectId
+    ? projects.find(p => p.id === candidate.projectId)
+    : (isProject ? projects.find(p => p.name && candidate.content.toLowerCase().includes(p.name.toLowerCase())) : null);
   const projectContext = linkedProject
     ? `<div class="task-project-context">
         <span class="project-phase-pill" style="margin-right:8px">${(PROJECT_CATS[linkedProject.projectCat || 'open']?.phaseLabels?.[linkedProject.phase] || linkedProject.phase) || ''}</span>
@@ -263,11 +452,39 @@ function renderWork() {
     </div>
     <div class="mvna-wrap" id="mvna-wrap"></div>`;
 
-  // Help Me Start button
+  // AI Daily Brief — ambient orientation on first open of day
+  renderDailyBrief(area, session);
+
+  // AI Companion onboarding card — shown once when no key is configured
+  const hasKey = typeof getGeminiKey === 'function' && getGeminiKey();
+  const companionSeen = localStorage.getItem('forward_companion_seen');
+  if (!hasKey && (!companionSeen || companionSeen === 'setup_prompted')) {
+    const onboardCard = document.createElement('div');
+    onboardCard.className = 'companion-onboard-card';
+    onboardCard.innerHTML =
+      '<p class="companion-onboard-title">your AI companion</p>' +
+      '<p class="companion-onboard-body">Forward\'s AI reads your mood and project context before it speaks. ' +
+      'It won\'t interrupt \u2014 it waits until you ask.</p>' +
+      '<div class="companion-onboard-actions">' +
+      '<button class="companion-onboard-setup" onclick="showScreen(\'settings\'); localStorage.setItem(\'forward_companion_seen\', \'setup_prompted\');">set up in Settings →</button>' +
+      '<button class="companion-onboard-later" onclick="localStorage.setItem(\'forward_companion_seen\', \'dismissed\'); renderWork();">maybe later</button>' +
+      '</div>';
+    area.appendChild(onboardCard);
+  }
+
+  // Help Me Start button — key-guarded with soft onboarding fallback
   const helpBtn = document.createElement('button');
   helpBtn.className = 'help-btn';
-  helpBtn.textContent = 'Help me start →';
-  helpBtn.onclick = () => runHelpMeStart(candidate);
+  helpBtn.textContent = 'help me start →';
+  helpBtn.onclick = function() {
+    var key = typeof getGeminiKey === 'function' ? getGeminiKey() : null;
+    if (!key) {
+      localStorage.removeItem('forward_companion_seen');
+      renderWork();
+      return;
+    }
+    runHelpMeStart(candidate);
+  };
   area.appendChild(helpBtn);
 
   // Quick Wins — for low-energy moods, show 3 shortest tasks as gentle alternatives
@@ -370,7 +587,16 @@ async function runHelpMeStart(item) {
   const thinking = document.getElementById('ai-thinking');
   const wrap = document.getElementById('mvna-wrap');
 
+  if (typeof getGeminiKey === 'function' && !getGeminiKey()) {
+    showToast('Add your Gemini API Key in Settings to use AI.');
+    showScreen('settings');
+    return;
+  }
+
   if (helpBtn) helpBtn.style.display = 'none';
+  
+  // Single pulsing dot for working state, remove the word "thinking..."
+  thinking.innerHTML = '<div class="ai-thinking-orb" style="margin: 0;"></div>';
   thinking.classList.add('visible');
 
   try {
@@ -430,7 +656,7 @@ function completeStep(idx) {
   if (wrap) renderMvna(wrap, S.mvnaSteps);
   if (S.mvnaStep >= S.mvnaSteps.length) {
     showToast('All steps done. That counts.');
-    setTimeout(() => { touchItem(S.currentWorkItem.id); renderWork(); }, 1200);
+    setTimeout(() => { if (S.currentWorkItem) { touchItem(S.currentWorkItem.id); } renderWork(); }, 1200);
   }
 }
 
@@ -452,6 +678,8 @@ function enterFocus() {
 
   document.getElementById('focus-task-text').textContent = item.content;
   document.getElementById('focus-overlay').classList.add('active');
+  const captureBtn = document.getElementById('global-capture-btn');
+  if (captureBtn) captureBtn.style.display = 'none';
 
   S.focusActive = true;
   S.focusStart = Date.now();
@@ -492,6 +720,9 @@ function exitFocus() {
   document.getElementById('focus-overlay').classList.remove('active');
   document.getElementById('focus-time-ring').className = 'focus-time-ring';
   document.getElementById('focus-gentle-msg').classList.remove('visible');
+  const captureBtn = document.getElementById('global-capture-btn');
+  if (captureBtn) captureBtn.style.display = 'flex';
+  
   S.focusActive = false;
   clearInterval(S.focusTimer);
 }
@@ -540,6 +771,8 @@ function renderHome() {
   if (_horizon) _horizon.dataset.mood = moodState;
   renderMomentum();
   updateStats();
+  // Also render work tasks inside home view 
+  renderWork();
 }
 
 function renderMomentum() {
@@ -600,8 +833,10 @@ function updateStats() {
   runLifecycle();
   const active = items.filter(i => i.status !== 'archived');
   const fresh = items.filter(i => i.status === 'fresh');
-  document.getElementById('stat-inbox').textContent = active.length;
-  document.getElementById('stat-fresh').textContent = fresh.length;
+  const statInbox = document.getElementById('stat-inbox');
+  const statFresh = document.getElementById('stat-fresh');
+  if (statInbox) statInbox.textContent = active.length;
+  if (statFresh) statFresh.textContent = fresh.length;
   updateOrbPulse();
 }
 
@@ -741,12 +976,18 @@ function showScreen(id) {
   // Orientation pill — only on plan/work entry
   if (id === 'projects' || id === 'inbox' || id === 'work') showPill(id);
 
-  // Bottom nav active state
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  const navMap = { home: 'nav-home', projects: 'nav-projects', inbox: 'nav-inbox', settings: 'nav-settings' };
-  if (navMap[id]) { const nb = document.getElementById(navMap[id]); if (nb) nb.classList.add('active'); }
+  // Bottom/Sub-nav active state
+  document.querySelectorAll('.plan-sub-btn').forEach(b => b.classList.remove('active'));
+  const subNavMap = { inbox: 'subnav-inbox', projects: 'subnav-projects', tasks: 'subnav-tasks' };
+  if (subNavMap[id]) { 
+    const nb = document.getElementById(subNavMap[id]); 
+    if (nb) nb.classList.add('active'); 
+  }
 
   S.screen = id;
+
+  // Sync floating pill nav active state
+  syncPillNav(id);
 
   // Manage body class for home-specific fixed elements
   document.body.classList.toggle('on-home', id === 'home');

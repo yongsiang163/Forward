@@ -126,7 +126,7 @@ function openCapture() {
   document.getElementById('capture-project-btn').style.borderColor = '';
   onCaptureType();
   stopVoiceCapture();
-  setTimeout(() => ta.focus(), 380);
+  setTimeout(() => ta.focus(), 50); // Instant auto-focus
 }
 
 function onCaptureType() {
@@ -389,7 +389,27 @@ function openProjectSheet(id) {
   document.getElementById('project-sheet').classList.add('active');
 
   // Auto-suggest next action if empty
-  if (!p.nextAction) setTimeout(() => autoSuggestNextAction(p), 800);
+  if (!p.nextAction) setTimeout(function() { autoSuggestNextAction(p); }, 800);
+
+  // AI companion daily project read — fires once per day if vision exists and key is set
+  var todayStr = new Date().toDateString();
+  var hasVision = p.vision && p.vision.trim().length > 0;
+  var keySet = typeof getGeminiKey === 'function' && getGeminiKey();
+  var notReadToday = p.lastAIReadDate !== todayStr;
+  if (hasVision && keySet && notReadToday) {
+    var pIdx = projects.findIndex(function(px) { return px.id === id; });
+    if (pIdx !== -1) {
+      projects[pIdx].lastAIReadDate = todayStr;
+      saveProjects();
+    }
+    setTimeout(function() {
+      var aiThread = document.getElementById('project-ai-thread');
+      if (aiThread && !aiThread.classList.contains('open')) {
+        toggleProjectAI();
+        setTimeout(function() { aiReadProject(p); }, 400);
+      }
+    }, 600);
+  }
 }
 
 function renderProjectItems(projectName) {
@@ -568,6 +588,40 @@ function openItemAction(itemId) {
   }
 
   document.getElementById('item-action-sheet').classList.add('active');
+
+  // Sparks — Rewind echo bridge card
+  var iaItemCat = item.aiCategory || item.category;
+  var echoContainer = document.getElementById('ia-rewind-echo');
+  if (echoContainer) echoContainer.innerHTML = '';
+  if (iaItemCat === 'spark' && echoContainer) {
+    try {
+      var rawSp = localStorage.getItem('rewind_sparks');
+      var rSparks = rawSp ? JSON.parse(rawSp) : [];
+      var iSnippet = (item.content || '').toLowerCase().substring(0, 30);
+      var matchedSpark = null;
+      for (var rsi = 0; rsi < rSparks.length; rsi++) {
+        var rs = rSparks[rsi];
+        var rsText = (rs && rs.text) ? rs.text.toLowerCase() : '';
+        if (iSnippet && rsText && (iSnippet.indexOf(rsText.substring(0, 30)) !== -1 || rsText.indexOf(iSnippet) !== -1)) {
+          matchedSpark = rs;
+          break;
+        }
+      }
+      if (matchedSpark) {
+        var echoDate = matchedSpark.date ? timeAgo(matchedSpark.date) : '';
+        var echoText = (matchedSpark.text || '').substring(0, 80) + ((matchedSpark.text || '').length > 80 ? '\u2026' : '');
+        echoContainer.innerHTML =
+          '<div class="rewind-echo-card">' +
+          '<p class="rewind-echo-label">this echoed in Rewind</p>' +
+          '<p class="rewind-echo-text">\u201c' + esc(echoText) + '\u201d</p>' +
+          '<div class="rewind-echo-footer">' +
+          '<span class="rewind-echo-date">' + echoDate + '</span>' +
+          '<a class="rewind-echo-link" onclick="toggleRewindMode()">\u2197 open Rewind</a>' +
+          '</div>' +
+          '</div>';
+      }
+    } catch (e) { /* graceful no-op */ }
+  }
 }
 
 function iaSetCat(cat) {
@@ -616,7 +670,8 @@ function toggleTaskCompletion(itemId) {
   if (!item) return;
 
   if (item.status === 'done') {
-    item.status = 'active';
+    // Un-check: revert to 'alive' (not 'active' which is not a valid lifecycle status)
+    item.status = 'alive';
     item.completedAt = null;
   } else {
     item.status = 'done';
@@ -674,6 +729,7 @@ async function iaSummarise() {
   if (!item) return;
 
   const btn = document.getElementById('ia-summarise-btn');
+  if (!btn) return;
   const originalText = btn.textContent;
   btn.textContent = 'Summarising…';
   btn.style.opacity = '0.5';
@@ -711,6 +767,56 @@ async function iaSummarise() {
       btn.style.pointerEvents = 'auto';
     }
   }
+}
+
+function enterItemEditMode() {
+  if (!activeItemId) return;
+  var item = items.find(function(i) { return i.id === activeItemId; });
+  if (!item) return;
+
+  var editPanel   = document.getElementById('ia-edit-panel');
+  var editContent = document.getElementById('ia-edit-content');
+  var editTrigger = document.querySelector('.ia-edit-trigger');
+  if (!editPanel || !editContent) return;
+
+  editContent.value = (item.rawContent && item.rawContent.trim())
+    ? item.rawContent
+    : (item.content || '');
+
+  editPanel.style.display  = 'block';
+  if (editTrigger) editTrigger.style.display = 'none';
+  editContent.focus();
+}
+
+function saveItemEdit() {
+  if (!activeItemId) return;
+  var idx = items.findIndex(function(i) { return i.id === activeItemId; });
+  if (idx === -1) return;
+
+  var editContent = document.getElementById('ia-edit-content');
+  if (!editContent) return;
+  var newText = editContent.value.trim();
+  if (!newText) { showToast('nothing to save'); return; }
+
+  items[idx].content    = newText;
+  items[idx].rawContent = '';
+  items[idx].aiTitle    = '';
+  items[idx].aiSummary  = '';
+  items[idx].aiActions  = [];
+  items[idx].aiPending  = false;
+  items[idx].confirmed  = false;
+  items[idx].touchedAt  = new Date().toISOString();
+
+  save();
+  closeItemAction();
+  showToast('updated');
+}
+
+function cancelItemEdit() {
+  var editPanel   = document.getElementById('ia-edit-panel');
+  var editTrigger = document.querySelector('.ia-edit-trigger');
+  if (editPanel) editPanel.style.display = 'none';
+  if (editTrigger) editTrigger.style.display = 'block';
 }
 
 function iaArchive() {
@@ -752,34 +858,77 @@ function closeExistingProjectSheet() {
 }
 
 // ── REWIND INTEGRATION ────────────────────────────────────
+function animateIntoRewind(callback) {
+  var orbWrap    = document.getElementById('hero-orb-wrap');
+  var homeScreen = document.getElementById('screen-home');
+
+  if (orbWrap) {
+    // The orb has animation: fadeUp forwards which locks opacity:1 in the animation
+    // layer — inline styles lose that battle. Cancel the animation first, then
+    // snapshot opacity:1 as an explicit inline starting value before transitioning.
+    orbWrap.style.animation  = 'none';
+    orbWrap.style.opacity    = '1';
+    void orbWrap.offsetHeight; // flush so browser registers opacity:1 as start
+
+    orbWrap.style.transition = 'opacity 0.8s ease, transform 0.8s ease';
+    void orbWrap.offsetHeight; // flush again before applying new values
+    orbWrap.style.opacity    = '0';
+    orbWrap.style.transform  = 'translateY(60px)';
+  }
+
+  if (homeScreen) {
+    // .screen already has transition: opacity 0.5s in CSS
+    homeScreen.style.opacity = '0';
+  }
+
+  setTimeout(function() { callback(); }, 870);
+}
+
+function resetFromRewind() {
+  var orbWrap    = document.getElementById('hero-orb-wrap');
+  var homeScreen = document.getElementById('screen-home');
+
+  if (orbWrap) {
+    // Restore to CSS-driven state (animation:'' lets CSS rule take over)
+    orbWrap.style.animation  = '';
+    orbWrap.style.transition = '';
+    orbWrap.style.opacity    = '';
+    orbWrap.style.transform  = '';
+  }
+  if (homeScreen) {
+    homeScreen.style.opacity = '';
+  }
+}
+
 function toggleRewindMode() {
-  const container = document.getElementById('rewind-mode-container');
-  const forwardNav = document.getElementById('forward-bottom-nav');
+  var container  = document.getElementById('rewind-mode-container');
+  var forwardNav = document.getElementById('forward-bottom-nav');
   if (!container) return;
 
-  const isShown = container.style.display !== 'none';
+  var isShown = container.style.display !== 'none';
   if (isShown) {
+    // Closing Rewind → restore Forward UI
+    resetFromRewind();
     if (typeof showScreen === 'function') {
       showScreen(S.screen || 'home');
     }
     if (forwardNav) forwardNav.style.display = 'flex';
     container.style.display = 'none';
   } else {
-    // Hide all Forward screens
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    // Un-highlight nav buttons except the rewind one
-    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    // Opening Rewind → animate out then show
+    animateIntoRewind(function() {
+      document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
+      document.querySelectorAll('.nav-btn').forEach(function(b) { b.classList.remove('active'); });
 
-    // Hide Forward nav entirely
-    if (forwardNav) forwardNav.style.display = 'none';
+      if (forwardNav) forwardNav.style.display = 'none';
 
-    // Reset Rewind iframe to welcome screen when entering
-    const iframe = document.getElementById('rewind-iframe');
-    if (iframe && iframe.contentWindow && iframe.contentWindow.navigate) {
-      iframe.contentWindow.navigate('welcome');
-    }
+      var iframe = document.getElementById('rewind-iframe');
+      if (iframe && iframe.contentWindow && iframe.contentWindow.navigate) {
+        iframe.contentWindow.navigate('welcome');
+      }
 
-    container.style.display = 'flex';
+      container.style.display = 'flex';
+    });
   }
 }
 
@@ -787,9 +936,15 @@ function addToProject(projectId, itemId) {
   const p = projects.find(x => x.id === projectId);
   const item = items.find(i => i.id === itemId);
   if (p && item) {
+    // Assign the item to the project — keeps it visible in inbox/tasks and in the project sheet
+    item.projectId = projectId;
+    item.category = 'task';
+    item.confirmed = true;
+    item.aiCategory = 'task';
+    item.touchedAt = new Date().toISOString();
+    // Also append content to project notes for reference
     p.notes = (p.notes ? p.notes + "\n\n" : "") + item.content;
     p.touchedAt = new Date().toISOString();
-    item.status = 'archived';
     save();
     saveProjects();
     renderAllViews();
