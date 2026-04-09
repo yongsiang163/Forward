@@ -1474,35 +1474,47 @@
       gap: 10px;
     }
 
-    .task-btn {
+    /* Primary action (complete) */
+    .task-btn-primary {
       flex: 1;
-      background: transparent;
-      border: 1px solid var(--border);
-      color: var(--warm);
-      font-family: 'DM Sans', sans-serif;
-      font-size: 11px;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      padding: 13px 10px;
-      border-radius: 30px;
-      cursor: pointer;
-      transition: all 0.25s;
+      min-height: 38px;
+      border-radius: 10px;
+      font-size: 9px;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(212, 164, 114, 0.12);
+      border: 1px solid rgba(212, 164, 114, 0.22);
+      color: rgba(212, 164, 114, 0.9);
     }
-
-    .task-btn.primary {
-      background: var(--warm-glow);
-      border-color: var(--warm);
+    /* Secondary (plan/defer) */
+    .task-btn-secondary {
+      flex: 1;
+      min-height: 38px;
+      border-radius: 10px;
+      font-size: 9px;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(126, 184, 164, 0.1);
+      border: 1px solid rgba(126, 184, 164, 0.2);
+      color: rgba(126, 184, 164, 0.85);
     }
-
-    .task-btn.muted {
-      color: var(--text-muted);
-      border-color: var(--border-soft);
-      font-size: 10px;
-    }
-
-    .task-btn:active {
-      background: var(--warm-glow);
-      transform: scale(0.97);
+    /* Ghost (dismiss) */
+    .task-btn-ghost {
+      flex: 1;
+      min-height: 38px;
+      border-radius: 10px;
+      font-size: 9px;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      color: rgba(90, 78, 69, 0.7);
     }
 
     /* Help Me Start */
@@ -1948,11 +1960,11 @@
 
     /* ── CAPTURE SHEET ── */
     .capture-sheet {
-      position: fixed;
-      inset: 0;
-      z-index: 100;
-      display: none;
-      flex-direction: column;
+      background: var(--surface);
+      border-top: 1px solid rgba(212, 164, 114, 0.16);
+      border-radius: 20px 20px 0 0;
+      padding: 16px 16px 12px;
+      box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(212, 164, 114, 0.06);
     }
 
     .capture-sheet.active {
@@ -1986,10 +1998,11 @@
 
     .capture-handle {
       width: 36px;
-      height: 4px;
-      border-radius: 2px;
-      background: var(--border-soft);
-      margin: 0 auto 22px;
+      height: 3px;
+      border-radius: 3px;
+      background: rgba(212, 164, 114, 0.2);
+      box-shadow: 0 0 6px rgba(212, 164, 114, 0.15);
+      margin: 0 auto 12px;
     }
 
     .capture-textarea {
