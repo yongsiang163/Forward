@@ -587,10 +587,23 @@
 
     .reflection-card {
       background: var(--surface);
-      border: 1px solid var(--border-soft);
-      border-radius: 16px;
-      padding: 24px;
-      margin-bottom: 16px;
+      border: 1px solid rgba(212, 164, 114, 0.14);
+      border-radius: 14px;
+      padding: 16px;
+      flex: 1;
+      margin-bottom: 10px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(212, 164, 114, 0.04);
+    }
+    .reflection-card::before {
+      content: '';
+      position: absolute;
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(212, 164, 114, 0.1), transparent 70%);
+      top: -20px; right: -20px;
+      pointer-events: none;
     }
 
     .reflection-card-label {
@@ -659,18 +672,15 @@
       margin: 8px 0 28px;
     }
     .spark-input {
-      width: 100%;
-      background: transparent;
-      border: none;
-      border-bottom: 1px solid rgba(196, 149, 106, 0.2);
-      color: rgba(232, 221, 212, 0.6);
+      background: rgba(8, 6, 3, 0.5);
+      border: 1px solid rgba(212, 164, 114, 0.16);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-family: 'Cormorant Garamond', Georgia, serif;
       font-size: 13px;
-      padding: 10px 0;
-      font-family: inherit;
-      outline: none;
-      text-align: center;
-      transition: border-color 0.2s ease;
-      box-sizing: border-box;
+      font-style: italic;
+      color: rgba(90, 78, 69, 0.6);
+      margin-bottom: 8px;
     }
     .spark-input::placeholder {
       color: rgba(232, 221, 212, 0.25);
@@ -1486,6 +1496,47 @@
 
     .recent-divider:active {
       color: var(--warm);
+    }
+
+    .refl-btn-done {
+      flex: 1;
+      min-height: 38px;
+      border-radius: 10px;
+      font-size: 9px;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(212, 164, 114, 0.12);
+      border: 1px solid rgba(212, 164, 114, 0.22);
+      color: rgba(212, 164, 114, 0.9);
+      cursor: pointer;
+    }
+    .refl-btn-new {
+      flex: 1;
+      min-height: 38px;
+      border-radius: 10px;
+      font-size: 9px;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      color: rgba(90, 78, 69, 0.6);
+      cursor: pointer;
+    }
+
+    @keyframes screenEnter {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .screen.active {
+      animation: screenEnter 500ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+    button:active, [role="button"]:active {
+      transform: scale(0.96);
+      transition: transform 150ms;
     }
   </style>
 </head>
