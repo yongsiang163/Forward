@@ -2069,6 +2069,8 @@
     function initMoodWheel() {
       var canvas = document.getElementById('mood-wheel');
       if (!canvas) return;
+      // Clear previously injected spokes and nodes to prevent duplication
+      canvas.querySelectorAll('.wh-spoke, .wh-node').forEach(function(el) { el.remove(); });
       var center = document.getElementById('wh-center');
       var centerSvg = document.getElementById('wh-center-svg');
       var R = 80, CX = 110, CY = 110;
