@@ -1,4 +1,4 @@
-const CACHE_NAME = 'forward-cache-v25';
+const CACHE_NAME = 'forward-cache-v26';
 
 // Version suffix on JS URLs forces stale-cache misses in older SW generations.
 // When updating any JS asset below, bump ?v= in BOTH index.html and here.
@@ -8,14 +8,18 @@ const urlsToCache = [
     './manifest.json',
     './icon-192.png',
     './icon-512.png',
-    './js/firebase-config.js?v=2',
-    './js/config/constants.js?v=2',
-    './js/data.js?v=2',
-    './js/ai.js?v=2',
-    './js/actions.js?v=2',
-    './js/render.js?v=2',
-    './js/app.js?v=2',
-    './js/launch.js?v=2',
+    './js/firebase-config.js?v=3',
+    './js/config/constants.js?v=3',
+    './js/data.js?v=3',
+    './js/ai/state.js?v=3',
+    './js/ai/client.js?v=3',
+    './js/ai/key.js?v=3',
+    './js/ai/prompts.js?v=3',
+    './js/ai/tasks.js?v=3',
+    './js/actions.js?v=3',
+    './js/render.js?v=3',
+    './js/app.js?v=3',
+    './js/launch.js?v=3',
     './css/main.css',
     './css/layout.css',
     './css/components.css',
