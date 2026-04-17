@@ -2,6 +2,7 @@
   "name": "forward-functions",
   "description": "Cloud Functions for Forward — Gemini API proxy so user keys never live client-side.",
   "private": true,
+  "type": "commonjs",
   "engines": { "node": "20" },
   "main": "index.js",
   "dependencies": {

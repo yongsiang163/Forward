@@ -4,8 +4,8 @@
 // Fallback path: direct Gemini call with a key from localStorage — used only
 // when Cloud Functions aren't deployed or the proxy call 404s.
 
-const GEMINI_MODEL = 'gemini-2.0-flash';
-const GEMINI_API_VERSION = 'v1';   // v1beta is restricted for new API keys; use stable v1
+// GEMINI_MODEL, GEMINI_API_VERSION, SYSTEM_PROMPT_CATEGORISE, SYSTEM_PROMPT_SUMMARISE
+// now live in js/config/constants.js (loaded before this script).
 
 // State: { mode: 'proxy'|'local'|'none', hasKey: bool }. Memoized after first probe.
 let _aiState = null;
@@ -242,17 +242,8 @@ async function _callGeminiDirect(systemPrompt, userPrompt, options = {}, attempt
   return text.trim();
 }
 
-// ── SYSTEM PROMPTS ───────────────────────────────────────
-
-const SYSTEM_PROMPT_CATEGORISE = `You are a classification engine for a personal capture app designed for someone with ADHD.
-
-Classify the user's captured thought into exactly ONE category:
-- task — something with a clear next action
-- project — something with multiple steps, a client context, or a larger initiative
-- spark — an idea, observation, creative thought, or "what if"
-- reminder — time-sensitive, date-sensitive, or something to remember
-
-Respond with ONLY the single lowercase category word. Nothing else.`;
+// ── SYSTEM PROMPT BUILDERS ───────────────────────────────
+// (SYSTEM_PROMPT_CATEGORISE and SYSTEM_PROMPT_SUMMARISE live in constants.js)
 
 function buildMVNASystemPrompt(projectPhase, moodState, maxSteps) {
   const phaseContext = projectPhase ?
@@ -327,25 +318,6 @@ async function aiCategorise(text) {
 }
 
 // ── BRAIN DUMP SUMMARISER ────────────────────────────────
-const SYSTEM_PROMPT_SUMMARISE = `You are a thought-cleanup engine for an ADHD productivity app called Forward.
-
-The user has captured a raw thought — often via voice, often messy, rambling, or stream-of-consciousness. Your job is to extract clarity from chaos.
-
-Return ONLY valid JSON with this exact shape:
-{
-  "title": "3-8 word scannable title",
-  "summary": "1-2 sentence cleaned-up version of the core thought",
-  "actions": ["extracted next action 1", "extracted next action 2"]
-}
-
-RULES:
-1. The title must be short, specific, and scannable — like a good email subject line
-2. The summary must preserve the user's INTENT, not their exact words. Remove filler, repetition, and verbal noise
-3. Extract concrete next-actions ONLY if they are clearly implied or stated. If the capture is purely an idea or observation, return an empty actions array []
-4. Never add actions the user didn't imply. Do not invent tasks
-5. Keep the user's voice and meaning — do not make it sound corporate or robotic
-6. Respond with ONLY the JSON object. No markdown, no code fences, no explanation`;
-
 async function aiSummarise(rawText) {
   // Only summarise longer captures
   if (!rawText || rawText.length < 80) {

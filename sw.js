@@ -1,4 +1,4 @@
-const CACHE_NAME = 'forward-cache-v23';
+const CACHE_NAME = 'forward-cache-v24';
 
 const urlsToCache = [
     './',
@@ -7,11 +7,13 @@ const urlsToCache = [
     './icon-192.png',
     './icon-512.png',
     './js/firebase-config.js',
+    './js/config/constants.js',
     './js/data.js',
     './js/ai.js',
     './js/actions.js',
     './js/render.js',
     './js/app.js',
+    './js/launch.js',
     './css/main.css',
     './css/layout.css',
     './css/components.css',

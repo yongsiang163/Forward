@@ -8,6 +8,7 @@
     "lint:fix": "eslint --fix 'js/**/*.js' sw.js",
     "format": "prettier --write 'js/**/*.js' 'css/**/*.css' '*.html' '*.json'",
     "format:check": "prettier --check 'js/**/*.js' 'css/**/*.css' '*.html' '*.json'",
+    "check": "node -e \"require('fs').readdirSync('js',{recursive:true}).filter(f=>f.endsWith('.js')).forEach(f=>require('child_process').execSync('node --check js/'+f,{stdio:'inherit'}))\"",
     "serve": "npx http-server -c-1 -p 8080"
   },
   "devDependencies": {
