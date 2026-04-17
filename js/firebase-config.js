@@ -30,6 +30,10 @@ db.enablePersistence()
 // Handle Auth State
 auth.onAuthStateChanged((user) => {
     currentUser = user;
+    // Invalidate cached AI proxy state so the new user re-probes (fixes stale
+    // "not set" after anonymous → email upgrade, and vice versa).
+    if (typeof invalidateAIState === 'function') invalidateAIState();
+    if (typeof updateAIKeyStatus === 'function') updateAIKeyStatus();
     const syncTitle = document.getElementById('sync-account-title');
     const syncSub = document.getElementById('sync-account-sub');
     const syncStatus = document.getElementById('sync-account-status');

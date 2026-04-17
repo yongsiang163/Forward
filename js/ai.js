@@ -1,20 +1,89 @@
-// ── GEMINI API — BYOK (Bring Your Own Key) ──────────────
-// Key is stored in localStorage only — never in the codebase.
-// When no key is set, pattern-matching fallback is used.
+// ── GEMINI API ──────────────────────────────────────────
+// Preferred path: Cloud Function proxy (functions/index.js). The user's key
+// lives server-side only and the browser never holds it after initial setup.
+// Fallback path: direct Gemini call with a key from localStorage — used only
+// when Cloud Functions aren't deployed or the proxy call 404s.
 
 const GEMINI_MODEL = 'gemini-2.0-flash';
 const GEMINI_API_VERSION = 'v1';   // v1beta is restricted for new API keys; use stable v1
 
-function getGeminiKey() {
-  return localStorage.getItem('gemini_api_key') || null;
+// State: { mode: 'proxy'|'local'|'none', hasKey: bool }. Memoized after first probe.
+let _aiState = null;
+let _probing = null;
+
+function _functions() {
+  return (typeof firebase !== 'undefined' && firebase.app && firebase.functions)
+    ? firebase.app().functions('asia-southeast1')
+    : null;
 }
 
-function setGeminiKey(key) {
-  if (key && key.trim()) {
-    localStorage.setItem('gemini_api_key', key.trim());
-  } else {
-    localStorage.removeItem('gemini_api_key');
+async function probeAIState() {
+  if (_aiState) return _aiState;
+  if (_probing) return _probing;
+  _probing = (async () => {
+    const fns = _functions();
+    if (fns && typeof currentUser !== 'undefined' && currentUser) {
+      try {
+        const res = await fns.httpsCallable('hasGeminiKey')();
+        _aiState = { mode: 'proxy', hasKey: !!(res && res.data && res.data.hasKey) };
+        // Migrate any legacy localStorage key into the proxy automatically.
+        const legacy = localStorage.getItem('gemini_api_key');
+        if (legacy && !_aiState.hasKey) {
+          try {
+            await fns.httpsCallable('setGeminiKey')({ key: legacy });
+            localStorage.removeItem('gemini_api_key');
+            _aiState.hasKey = true;
+          } catch (e) { /* leave localStorage alone if migration fails */ }
+        } else if (legacy && _aiState.hasKey) {
+          // Proxy already has a key — don't leave a second copy on the device.
+          localStorage.removeItem('gemini_api_key');
+        }
+        return _aiState;
+      } catch (e) {
+        // Functions not deployed, offline, or blocked. Fall back.
+        console.warn('[AI] proxy probe failed, using local fallback:', e && e.message);
+      }
+    }
+    const localKey = localStorage.getItem('gemini_api_key');
+    _aiState = { mode: localKey ? 'local' : 'none', hasKey: !!localKey };
+    return _aiState;
+  })();
+  const r = await _probing; _probing = null; return r;
+}
+
+function invalidateAIState() { _aiState = null; }
+
+// Synchronous "do we have a key?" — used to gate UI. May be stale for a tick
+// after sign-in, but triggers a probe in the background.
+function getGeminiKey() {
+  if (_aiState) return _aiState.hasKey ? 'present' : null;
+  probeAIState().then(updateAIKeyStatus).catch(() => {});
+  const legacy = localStorage.getItem('gemini_api_key');
+  return legacy || null;
+}
+
+async function setGeminiKey(key) {
+  const trimmed = (key || '').trim();
+  const fns = _functions();
+  if (fns && typeof currentUser !== 'undefined' && currentUser) {
+    try {
+      if (trimmed) {
+        await fns.httpsCallable('setGeminiKey')({ key: trimmed });
+      } else {
+        await fns.httpsCallable('clearGeminiKey')();
+      }
+      localStorage.removeItem('gemini_api_key');
+      invalidateAIState();
+      await probeAIState();
+      updateAIKeyStatus();
+      return;
+    } catch (e) {
+      console.warn('[AI] proxy setGeminiKey failed, falling back to local:', e && e.message);
+    }
   }
+  if (trimmed) localStorage.setItem('gemini_api_key', trimmed);
+  else localStorage.removeItem('gemini_api_key');
+  invalidateAIState();
   updateAIKeyStatus();
 }
 
@@ -22,35 +91,43 @@ function updateAIKeyStatus() {
   const status = document.getElementById('ai-key-status');
   const input = document.getElementById('ai-key-input');
   if (!status) return;
-  const key = getGeminiKey();
-  if (key) {
-    status.textContent = '✓ connected';
-    status.className = 'settings-row-action on';
-    if (input && input.value !== key) input.value = key;
-  } else {
-    status.textContent = '○ not set';
-    status.className = 'settings-row-action';
+  const state = _aiState;
+  if (state && state.mode === 'proxy') {
+    status.textContent = state.hasKey ? '✓ connected (secure)' : '○ not set';
+    status.className = state.hasKey ? 'settings-row-action on' : 'settings-row-action';
     if (input) input.value = '';
+    if (input) input.placeholder = state.hasKey ? 'Key stored on server — enter to replace' : 'Paste your API key here…';
+  } else {
+    const legacy = localStorage.getItem('gemini_api_key');
+    if (legacy) {
+      status.textContent = '✓ connected (local)';
+      status.className = 'settings-row-action on';
+    } else {
+      status.textContent = '○ not set';
+      status.className = 'settings-row-action';
+    }
+    if (input && !legacy) input.value = '';
   }
 }
 
 async function testGeminiKey() {
-  const key = getGeminiKey();
-  if (!key) { showToast('Enter an API key first'); return; }
   try {
     const result = await callGemini('Respond with exactly: ok', 'Test');
-    if (result) {
-      showToast('✓ API key works');
-    } else {
-      showToast('Key test failed — check the key');
-    }
+    if (result) showToast('✓ API key works');
+    else showToast('Key test failed — check the key');
   } catch (e) {
-    showToast(e.message || 'Key test failed — check the key');
+    showToast((e && e.message) || 'Key test failed — check the key');
   }
 }
 
-function clearGeminiKey() {
+async function clearGeminiKey() {
+  const fns = _functions();
+  if (fns && typeof currentUser !== 'undefined' && currentUser) {
+    try { await fns.httpsCallable('clearGeminiKey')(); } catch (e) { /* best-effort */ }
+  }
   localStorage.removeItem('gemini_api_key');
+  invalidateAIState();
+  await probeAIState();
   updateAIKeyStatus();
   showToast('API key removed');
 }
@@ -84,9 +161,44 @@ async function callGemini(systemPrompt, userPrompt, options = {}) {
 }
 
 async function _callGeminiDirect(systemPrompt, userPrompt, options = {}, attempt = 0) {
-  const key = getGeminiKey();
-  if (!key) return null;
+  const state = await probeAIState();
+  if (!state || state.mode === 'none' || !state.hasKey) return null;
 
+  // Proxy path: callable function handles the Gemini request server-side with
+  // the stored key. The browser never sees the key.
+  if (state.mode === 'proxy') {
+    try {
+      const fns = _functions();
+      const callable = fns.httpsCallable('geminiProxy');
+      const res = await callable({ systemPrompt, userPrompt, options });
+      const text = res && res.data && res.data.text;
+      if (!text) throw new Error('Empty response from API');
+      return text.trim();
+    } catch (e) {
+      // Firebase callable errors expose a `code` like 'resource-exhausted'.
+      const code = e && e.code;
+      if (code === 'resource-exhausted' && attempt < 3) {
+        const waitSec = Math.pow(2, attempt + 2); // 4s, 8s, 16s
+        console.warn(`[Gemini] Rate limited via proxy, retrying in ${waitSec}s (${attempt + 1}/3)`);
+        await new Promise(r => setTimeout(r, waitSec * 1000));
+        return _callGeminiDirect(systemPrompt, userPrompt, options, attempt + 1);
+      }
+      if (code === 'permission-denied') {
+        throw new Error('API key invalid or quota exceeded — update it in Settings.');
+      }
+      if (code === 'failed-precondition') {
+        throw new Error('No API key stored — add one in Settings.');
+      }
+      if (code === 'unauthenticated') {
+        throw new Error('Sign in required to use AI.');
+      }
+      throw new Error((e && e.message) || 'AI proxy error');
+    }
+  }
+
+  // Local path: direct call from browser with key held in localStorage.
+  const key = localStorage.getItem('gemini_api_key');
+  if (!key) return null;
   const url = `https://generativelanguage.googleapis.com/v1/models/${GEMINI_MODEL}:generateContent?key=${key}`;
   const body = {
     system_instruction: { parts: [{ text: systemPrompt }] },
