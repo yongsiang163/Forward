@@ -216,7 +216,13 @@ async function saveCapture() {
 
   if (itemsSaved > 0) {
     save();
-    showToast(isBrainDump ? 'Captured — AI is summarising ✦' : (itemsSaved > 1 ? `Captured ${itemsSaved} items ✦` : 'Captured ✦'));
+    if (isBrainDump && !navigator.onLine) {
+      showToast('Captured · will summarise when back online');
+    } else if (isBrainDump && !getGeminiKey()) {
+      showToast('Captured · add an AI key in Settings to summarise');
+    } else {
+      showToast(isBrainDump ? 'Captured — AI is summarising ✦' : (itemsSaved > 1 ? `Captured ${itemsSaved} items ✦` : 'Captured ✦'));
+    }
     updateStats();
     if (S.screen === 'inbox') renderInbox();
   }
@@ -262,11 +268,14 @@ function toggleCaptureProjectSelect() {
   }
 
   list.innerHTML = activeProjects.map(p => `
-          <div onclick="selectCaptureProject('${p.id}', '${esc(p.name)}')" style="padding:16px; background:var(--surface2); border:1px solid var(--border-soft); border-radius:12px; margin-bottom:8px; display:flex; justify-content:space-between; cursor:pointer;">
+          <div data-project-id="${esc(p.id)}" data-project-name="${esc(p.name)}" style="padding:16px; background:var(--surface2); border:1px solid var(--border-soft); border-radius:12px; margin-bottom:8px; display:flex; justify-content:space-between; cursor:pointer;">
              <span style="color:var(--text); font-size:14px;">${esc(p.name)}</span>
              ${p.id === activeCaptureProjectId ? '<span style="color:var(--teal)">✓</span>' : ''}
           </div>
        `).join('');
+  list.querySelectorAll('[data-project-id]').forEach(el => {
+    el.addEventListener('click', () => selectCaptureProject(el.dataset.projectId, el.dataset.projectName));
+  });
 }
 
 function selectCaptureProject(id, name) {
@@ -740,10 +749,13 @@ function openAddToExistingProject() {
     return;
   }
   list.innerHTML = activeProjects.map(p => `
-      <button class="ep-list-btn" onclick="addToProject('${p.id}', '${savedItemId}')">
-        <strong>${p.name}</strong>
+      <button class="ep-list-btn" data-project-id="${esc(p.id)}" data-source-item-id="${esc(savedItemId)}">
+        <strong>${esc(p.name)}</strong>
       </button>
    `).join('');
+  list.querySelectorAll('.ep-list-btn').forEach(btn => {
+    btn.addEventListener('click', () => addToProject(btn.dataset.projectId, btn.dataset.sourceItemId));
+  });
   epSheet.classList.add('active');
 }
 

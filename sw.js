@@ -1,4 +1,4 @@
-const CACHE_NAME = 'forward-cache-v22';
+const CACHE_NAME = 'forward-cache-v23';
 
 const urlsToCache = [
     './',
@@ -18,6 +18,23 @@ const urlsToCache = [
     './css/modals.css',
     './css/launch.css'
 ];
+
+// Queue for failed Firestore/Gemini writes while offline — replayed on reconnect.
+const OUTBOX_CACHE = 'forward-outbox-v1';
+async function enqueueOutbox(request) {
+  try {
+    const cache = await caches.open(OUTBOX_CACHE);
+    const body = await request.clone().text();
+    const entry = new Response(JSON.stringify({
+      url: request.url,
+      method: request.method,
+      headers: [...request.headers.entries()],
+      body,
+      queuedAt: Date.now()
+    }), { headers: { 'Content-Type': 'application/json' } });
+    await cache.put(new Request(`queued-${Date.now()}-${Math.random().toString(36).slice(2)}`), entry);
+  } catch (e) { /* best-effort */ }
+}
 self.addEventListener('install', event => {
     event.waitUntil(
         caches.open(CACHE_NAME)
@@ -27,7 +44,9 @@ self.addEventListener('install', event => {
 });
 
 self.addEventListener('fetch', event => {
-    // Bypass caching for external/API calls
+    // Bypass caching for external/API calls.
+    // For POST writes to Firestore/Gemini while offline, enqueue them into the
+    // outbox so we can replay when connectivity returns.
     if (
         event.request.url.includes('firestore.googleapis.com') ||
         event.request.url.includes('securetoken.googleapis.com') ||
@@ -35,6 +54,18 @@ self.addEventListener('fetch', event => {
         event.request.url.includes('gstatic.com') ||
         event.request.url.includes('googleapis.com')
     ) {
+        if (event.request.method === 'POST' && !self.navigator.onLine) {
+            event.respondWith(
+                fetch(event.request.clone()).catch(async () => {
+                    await enqueueOutbox(event.request);
+                    return new Response(JSON.stringify({ queued: true }), {
+                        status: 202,
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                })
+            );
+            return;
+        }
         return;
     }
 

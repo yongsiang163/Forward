@@ -23,27 +23,48 @@ function setTagFilter(tag) {
   renderInbox();
 }
 
+let _tagChipCache = { fingerprint: null, tags: [], activeTag: null };
+
 function renderTagChips() {
   const tagsEl = document.getElementById('inbox-tags');
   if (!tagsEl) return;
 
-  // Collect all unique #tags from active items
-  const tagSet = new Set();
-  items.forEach(item => {
-    if (item.status === 'archived') return;
-    const matches = (item.content || '').match(/#[a-zA-Z0-9_]+/g);
-    if (matches) matches.forEach(t => tagSet.add(t.toLowerCase()));
-  });
+  // Fingerprint = count + ids + content length — cheap proxy that invalidates
+  // only when the item set or content meaningfully changes. Avoids rebuilding
+  // the tag chip DOM on every search keystroke.
+  let fp = '';
+  for (const item of items) {
+    if (item.status === 'archived') continue;
+    fp += item.id + ':' + ((item.content || '').length) + '|';
+  }
 
-  if (tagSet.size === 0) {
+  let tags;
+  if (_tagChipCache.fingerprint === fp) {
+    tags = _tagChipCache.tags;
+    // DOM is already up-to-date unless the active tag changed.
+    if (_tagChipCache.activeTag === _activeTag) return;
+  } else {
+    const tagSet = new Set();
+    items.forEach(item => {
+      if (item.status === 'archived') return;
+      const matches = (item.content || '').match(/#[a-zA-Z0-9_]+/g);
+      if (matches) matches.forEach(t => tagSet.add(t.toLowerCase()));
+    });
+    tags = [...tagSet].sort();
+  }
+  _tagChipCache = { fingerprint: fp, tags, activeTag: _activeTag };
+
+  if (tags.length === 0) {
     tagsEl.innerHTML = '';
     return;
   }
 
-  const tags = [...tagSet].sort();
   tagsEl.innerHTML = tags.map(t =>
-    `<button class="tag-chip ${_activeTag === t ? 'active' : ''}" onclick="setTagFilter('${t}')">${t}</button>`
+    `<button class="tag-chip ${_activeTag === t ? 'active' : ''}" data-tag="${esc(t)}">${esc(t)}</button>`
   ).join('');
+  tagsEl.querySelectorAll('.tag-chip').forEach(btn => {
+    btn.addEventListener('click', () => setTagFilter(btn.dataset.tag));
+  });
 }
 
 function renderInbox() {
@@ -398,8 +419,22 @@ async function runHelpMeStart(item) {
     renderMvna(wrap, steps);
   } catch (e) {
     thinking.classList.remove('visible');
+    // Inline retry affordance instead of a toast that disappears
+    wrap.classList.add('visible');
+    wrap.innerHTML = `
+      <div class="mvna-error" role="alert" style="text-align:center;padding:18px;">
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">
+          Couldn't reach the AI. ${esc(e && e.message ? e.message.slice(0, 100) : '')}
+        </p>
+        <button class="task-btn primary" id="mvna-retry-btn">Try again</button>
+      </div>`;
+    const retry = document.getElementById('mvna-retry-btn');
+    if (retry) retry.addEventListener('click', () => {
+      wrap.innerHTML = '';
+      wrap.classList.remove('visible');
+      runHelpMeStart(item);
+    });
     if (helpBtn) helpBtn.style.display = '';
-    showToast('Could not connect. Try again.');
   }
 }
 
@@ -512,7 +547,7 @@ function renderHome() {
     const moodInfo = MOOD_MAP[session.mood] || MOOD_MAP.Okay;
     const icon = ICONS[session.mood] || '';
     line.className = 'home-state-line';
-    line.innerHTML = `${icon} <em>${session.mood}</em> &middot; ${moodInfo.label}`;
+    line.innerHTML = `${esc(icon)} <em>${esc(session.mood)}</em> &middot; ${esc(moodInfo.label)}`;
     S.attentionState = moodInfo.state;
 
     // Toggle wordmark typography states
@@ -641,10 +676,10 @@ function renderTasks() {
           const rLabel = t.recurring === 'daily' ? 'D' : t.recurring === 'weekly' ? 'W' : 'M';
           return `
           <div class="task-list-item">
-            <div class="task-ring-toggle" onclick="toggleTaskCompletion('${t.id}')"></div>
-            <div class="task-content">${t.content}</div>
+            <div class="task-ring-toggle" onclick="toggleTaskCompletion('${esc(t.id)}')"></div>
+            <div class="task-content">${esc(t.content)}</div>
             <div class="task-item-actions">
-               <button class="recurring-btn active" title="Recurrence: ${t.recurring}">${rLabel}</button>
+               <button class="recurring-btn active" title="Recurrence: ${esc(t.recurring)}">${rLabel}</button>
             </div>
           </div>`;
         }).join('');
@@ -657,11 +692,11 @@ function renderTasks() {
           const rLabel = t.recurring === 'daily' ? 'D' : t.recurring === 'weekly' ? 'W' : 'M';
           return `
           <div class="task-list-item status-done">
-            <div class="task-ring-toggle completed" onclick="toggleTaskCompletion('${t.id}')"></div>
-            <div class="task-content">${t.content}</div>
+            <div class="task-ring-toggle completed" onclick="toggleTaskCompletion('${esc(t.id)}')"></div>
+            <div class="task-content">${esc(t.content)}</div>
             <div class="task-item-actions">
                <span style="font-size:9px; color:var(--text-muted); letter-spacing:0.5px;">${resetLabel[t.recurring] || 'resets'}</span>
-               <button class="recurring-btn active" title="Recurrence: ${t.recurring}">${rLabel}</button>
+               <button class="recurring-btn active" title="Recurrence: ${esc(t.recurring)}">${rLabel}</button>
             </div>
           </div>`;
         }).join('');
@@ -682,8 +717,8 @@ function renderTasks() {
 
     let html = oneOffActive.map(t => `
       <div class="task-list-item">
-        <div class="task-ring-toggle" onclick="toggleTaskCompletion('${t.id}')"></div>
-        <div class="task-content">${t.content}</div>
+        <div class="task-ring-toggle" onclick="toggleTaskCompletion('${esc(t.id)}')"></div>
+        <div class="task-content">${esc(t.content)}</div>
       </div>
     `).join('');
 
@@ -691,8 +726,8 @@ function renderTasks() {
       html += `<p style="font-size:11px; color:var(--text-muted); letter-spacing:1px; margin:20px 0 8px; text-transform:uppercase;">Done today · dismissed after 24h</p>`;
       html += oneOffDone.map(t => `
         <div class="task-list-item status-done">
-          <div class="task-ring-toggle completed" onclick="toggleTaskCompletion('${t.id}')"></div>
-          <div class="task-content">${t.content}</div>
+          <div class="task-ring-toggle completed" onclick="toggleTaskCompletion('${esc(t.id)}')"></div>
+          <div class="task-content">${esc(t.content)}</div>
         </div>
       `).join('');
     }

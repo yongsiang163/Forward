@@ -22,6 +22,24 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 2700);
 }
 
+// ── OFFLINE / ONLINE INDICATOR ────────────────────────────
+function updateOnlineBadge() {
+  let badge = document.getElementById('offline-badge');
+  if (!badge) {
+    badge = document.createElement('div');
+    badge.id = 'offline-badge';
+    badge.setAttribute('role', 'status');
+    badge.setAttribute('aria-live', 'polite');
+    badge.style.cssText = 'position:fixed;top:env(safe-area-inset-top,0);left:0;right:0;margin:auto;z-index:9999;width:fit-content;padding:6px 14px;background:rgba(40,20,10,0.9);color:#f0d4a8;font-family:var(--ui-font,system-ui);font-size:11px;letter-spacing:1px;border-radius:0 0 10px 10px;transform:translateY(-100%);transition:transform 240ms ease;pointer-events:none;';
+    badge.textContent = 'offline · changes saved locally';
+    document.body.appendChild(badge);
+  }
+  badge.style.transform = navigator.onLine ? 'translateY(-100%)' : 'translateY(0)';
+}
+
+window.addEventListener('online', updateOnlineBadge);
+window.addEventListener('offline', updateOnlineBadge);
+
 // ── SWIPE NAVIGATION ─────────────────────────────────────
 // Horizontal: Work ← Home → Plan
 // Vertical on home: swipe up → reveal stats, swipe down → hide stats
@@ -184,6 +202,9 @@ function init() {
 
   // Swipe navigation
   initSwipe();
+
+  // Online/offline badge
+  updateOnlineBadge();
 
   // Backup nudge — once, after 7 days of use
   if (items.length > 0) {

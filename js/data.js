@@ -67,35 +67,60 @@ if (navigator.storage && navigator.storage.persist) {
   });
 }
 
+// Device identity — stable per browser install, used as tiebreak when
+// two devices write the same item within the same millisecond.
+const DEVICE_ID = (() => {
+  try {
+    let id = localStorage.getItem('forward_device_id');
+    if (!id) {
+      id = (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2));
+      localStorage.setItem('forward_device_id', id);
+    }
+    return id;
+  } catch (e) { return 'unknown-device'; }
+})();
+
+// Firestore batch writes cap at 500 ops. Stay well under.
+const FS_BATCH_SIZE = 400;
+
+function _fsChunkedCommit(collectionName, docs) {
+  if (!(typeof currentUser !== 'undefined' && currentUser) || typeof db === 'undefined') return;
+  const col = db.collection('users').doc(currentUser.uid).collection(collectionName);
+  for (let i = 0; i < docs.length; i += FS_BATCH_SIZE) {
+    const slice = docs.slice(i, i + FS_BATCH_SIZE);
+    const batch = db.batch();
+    slice.forEach(d => batch.set(col.doc(d.id), d, { merge: true }));
+    batch.commit().catch(e => console.warn(`Firestore ${collectionName} batch failed:`, e));
+  }
+}
+
+// Stamp device + touchedAt so conflict resolution is deterministic.
+// save() is only called after a local write, so every saved doc is now
+// authored by this device for tiebreak purposes.
+function _stampWriteMeta(docs) {
+  const now = new Date().toISOString();
+  docs.forEach(d => {
+    d.deviceId = DEVICE_ID;
+    if (!d.touchedAt) d.touchedAt = now;
+  });
+}
+
 // ── SAVE ─────────────────────────────────────────────────
 function save() {
+  _stampWriteMeta(items);
   // Mirror to localStorage (fast, synchronous reads on next load)
   try { localStorage.setItem('forward_items', JSON.stringify(items)); } catch (e) { }
   // Write to IndexedDB in background (durable local storage)
   forwardDB.items.bulkPut(items).catch(e => console.warn('IndexedDB save failed:', e));
-  // Write to Firestore cloud if user is signed in
-  if (typeof currentUser !== 'undefined' && currentUser) {
-    const batch = db.batch();
-    items.forEach(item => {
-      const ref = db.collection('users').doc(currentUser.uid).collection('items').doc(item.id);
-      batch.set(ref, item, { merge: true });
-    });
-    batch.commit().catch(e => console.warn('Firestore save failed:', e));
-  }
+  // Write to Firestore cloud if user is signed in (chunked to respect 500-op limit)
+  _fsChunkedCommit('items', items);
 }
 
 function saveProjects() {
+  _stampWriteMeta(projects);
   try { localStorage.setItem('forward_projects', JSON.stringify(projects)); } catch (e) { }
   forwardDB.projects.bulkPut(projects).catch(e => console.warn('IndexedDB saveProjects failed:', e));
-  // Write to Firestore cloud if user is signed in
-  if (typeof currentUser !== 'undefined' && currentUser) {
-    const batch = db.batch();
-    projects.forEach(p => {
-      const ref = db.collection('users').doc(currentUser.uid).collection('projects').doc(p.id);
-      batch.set(ref, p, { merge: true });
-    });
-    batch.commit().catch(e => console.warn('Firestore saveProjects failed:', e));
-  }
+  _fsChunkedCommit('projects', projects);
 }
 
 // ── LOAD ─────────────────────────────────────────────────
@@ -125,36 +150,40 @@ function load() {
         const cloudItems = [];
         snapshot.forEach(doc => cloudItems.push(doc.data()));
 
-        // Merge Strategy: Combine local and cloud, keeping the newest
+        // Merge Strategy: newest wins by touchedAt.
+        // On exact timestamp tie, prefer this device's copy so our own in-flight
+        // edits aren't overwritten by a stale echo from another device.
         const mergedMap = new Map();
-
-        // 1. Add all local items to map
         items.forEach(i => mergedMap.set(i.id, i));
 
-        // 2. Overwrite with cloud if cloud is newer
         cloudItems.forEach(ci => {
           const local = mergedMap.get(ci.id);
           if (!local) {
-            mergedMap.set(ci.id, ci); // Cloud has it, we don't
+            mergedMap.set(ci.id, ci);
           } else {
-            // Both have it, compare timestamps
             const cloudTime = new Date(ci.touchedAt || ci.createdAt || 0).getTime();
             const localTime = new Date(local.touchedAt || local.createdAt || 0).getTime();
-            if (cloudTime >= localTime) {
+            if (cloudTime > localTime) {
               mergedMap.set(ci.id, ci);
+            } else if (cloudTime === localTime && ci.deviceId && ci.deviceId !== DEVICE_ID) {
+              // Equal timestamp from a foreign device: take cloud only if local
+              // has no deviceId stamp (i.e. older schema). Otherwise keep local.
+              if (!local.deviceId) mergedMap.set(ci.id, ci);
             }
           }
         });
 
         const mergedArray = Array.from(mergedMap.values());
 
-        // If the resulting merge is different from what we had, or cloud gave us stuff
         if (mergedArray.length > 0) {
           items = mergedArray;
           try { localStorage.setItem('forward_items', JSON.stringify(items)); } catch (e) { }
 
-          // Re-save to cloud to ensure any local-only items are pushed up
-          save();
+          // Push up only items that aren't in the cloud yet. Avoid re-saving
+          // the full merged set — that would restamp foreign deviceIds with ours.
+          const cloudIds = new Set(cloudItems.map(c => c.id));
+          const localOnly = items.filter(i => !cloudIds.has(i.id));
+          if (localOnly.length) _fsChunkedCommit('items', localOnly);
 
           if (typeof renderInbox === 'function') renderInbox();
         }
@@ -182,36 +211,35 @@ function loadProjects() {
         const cloudProjects = [];
         snapshot.forEach(doc => cloudProjects.push(doc.data()));
 
-        // Merge Strategy: Combine local and cloud, keeping the newest
+        // Merge Strategy: newest wins by updatedAt/touchedAt; device tiebreak on ties.
         const mergedMap = new Map();
-
-        // 1. Add all local projects to map
         projects.forEach(p => mergedMap.set(p.id, p));
 
-        // 2. Overwrite with cloud if cloud is newer
         cloudProjects.forEach(cp => {
           const local = mergedMap.get(cp.id);
           if (!local) {
-            mergedMap.set(cp.id, cp); // Cloud has it, we don't
+            mergedMap.set(cp.id, cp);
           } else {
-            // Both have it, compare timestamps
-            const cloudTime = new Date(cp.updatedAt || cp.createdAt || 0).getTime();
-            const localTime = new Date(local.updatedAt || local.createdAt || 0).getTime();
-            if (cloudTime >= localTime) {
+            const cloudTime = new Date(cp.updatedAt || cp.touchedAt || cp.createdAt || 0).getTime();
+            const localTime = new Date(local.updatedAt || local.touchedAt || local.createdAt || 0).getTime();
+            if (cloudTime > localTime) {
               mergedMap.set(cp.id, cp);
+            } else if (cloudTime === localTime && cp.deviceId && cp.deviceId !== DEVICE_ID) {
+              if (!local.deviceId) mergedMap.set(cp.id, cp);
             }
           }
         });
 
         const mergedArray = Array.from(mergedMap.values());
 
-        // If the resulting merge is different from what we had, or cloud gave us stuff
         if (mergedArray.length > 0) {
           projects = mergedArray;
           try { localStorage.setItem('forward_projects', JSON.stringify(projects)); } catch (e) { }
 
-          // Re-save to cloud to ensure any local-only items are pushed up
-          saveProjects();
+          // Push only cloud-missing local projects so we don't restamp remote provenance.
+          const cloudIds = new Set(cloudProjects.map(c => c.id));
+          const localOnly = projects.filter(p => !cloudIds.has(p.id));
+          if (localOnly.length) _fsChunkedCommit('projects', localOnly);
 
           if (typeof renderProjects === 'function') renderProjects();
         }

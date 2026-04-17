@@ -1,0 +1,17 @@
+{
+  "name": "forward",
+  "version": "1.0.0",
+  "description": "An intentional, attention-aware productivity companion.",
+  "private": true,
+  "scripts": {
+    "lint": "eslint 'js/**/*.js' sw.js",
+    "lint:fix": "eslint --fix 'js/**/*.js' sw.js",
+    "format": "prettier --write 'js/**/*.js' 'css/**/*.css' '*.html' '*.json'",
+    "format:check": "prettier --check 'js/**/*.js' 'css/**/*.css' '*.html' '*.json'",
+    "serve": "npx http-server -c-1 -p 8080"
+  },
+  "devDependencies": {
+    "eslint": "^9.0.0",
+    "prettier": "^3.0.0"
+  }
+}

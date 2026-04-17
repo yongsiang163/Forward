@@ -1,1 +1,23 @@
 .claude/
+.firebase/
+node_modules/
+dist/
+build/
+
+# Secrets
+.env
+.env.*
+*.pem
+*.key
+
+# Logs & tmp
+*.log
+*.tmp
+tmp/
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+*.swp

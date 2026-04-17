@@ -375,14 +375,18 @@ function buildAIReadResponse(p, phase, mood) {
   const alive = ['Alive', 'Calm'].includes(mood);
   const maxSteps = fatigued ? 1 : alive ? 3 : 2;
 
+  const pn = esc(p.name);
+  const ph = esc(phase);
+  const na = esc(p.nextAction);
+  const vs = p.vision ? esc(p.vision.substring(0, 80)) : '';
   const reads = {
-    idwork: `<em>${p.name}</em> is in ${phase}. ${p.nextAction ? `The declared next step is: "${p.nextAction}".` : 'No next step set yet.'}`,
-    life: `<em>${p.name}</em> — you placed this in ${phase}. ${p.vision ? `You wrote: "${p.vision.substring(0, 80)}…"` : ''} Let's find what's true right now.`,
-    business: `<em>${p.name}</em> is at ${phase}. ${p.nextAction ? `You said the next move was: "${p.nextAction}".` : 'No move declared yet.'} What's the actual blocker?`,
-    learning: `<em>${p.name}</em> — you're in the ${phase} stage. The question is always: what's the one thing to do with the next 20 minutes?`,
-    open: `<em>${p.name}</em> — ${phase}. What's true about where this sits right now?`
+    idwork: `<em>${pn}</em> is in ${ph}. ${na ? `The declared next step is: "${na}".` : 'No next step set yet.'}`,
+    life: `<em>${pn}</em> — you placed this in ${ph}. ${vs ? `You wrote: "${vs}…"` : ''} Let's find what's true right now.`,
+    business: `<em>${pn}</em> is at ${ph}. ${na ? `You said the next move was: "${na}".` : 'No move declared yet.'} What's the actual blocker?`,
+    learning: `<em>${pn}</em> — you're in the ${ph} stage. The question is always: what's the one thing to do with the next 20 minutes?`,
+    open: `<em>${pn}</em> — ${ph}. What's true about where this sits right now?`
   };
-  return { text: reads[p.projectCat] || reads.open, maxSteps };
+  return { text: reads[p.projectCat] || reads.open, maxSteps, trustedHtml: true };
 }
 
 function appendAIMessage(response, p) {
@@ -390,8 +394,11 @@ function appendAIMessage(response, p) {
   if (!msgs) return;
   const div = document.createElement('div');
   div.className = 'ai-message';
-  // If response.text contains bullet points, format them
-  const formatted = response.text.replace(/•\s*/g, '<br>• ');
+  // Trusted-html flag is set only by our own fallback responses that include <em>.
+  // All other text (e.g. API output) is escaped to prevent XSS.
+  const raw = response.text || '';
+  const safe = response.trustedHtml ? raw : esc(raw);
+  const formatted = safe.replace(/•\s*/g, '<br>• ');
   div.innerHTML = `<p class="ai-message-text">${formatted}</p>`;
   msgs.appendChild(div);
 
@@ -500,18 +507,20 @@ async function sendProjectAI() {
   let replyText = '';
   let steps = [];
 
+  const phEsc = esc(phase);
+  const moodEsc = mood ? esc(mood.toLowerCase()) : '';
   if (/stuck|block|can't|not sure|don't know/i.test(msg)) {
-    replyText = `Being stuck in ${phase} usually means one of two things: the next action is too large, or there's a decision underneath it that hasn't been made. Which feels more true?`;
+    replyText = `Being stuck in ${phEsc} usually means one of two things: the next action is too large, or there's a decision underneath it that hasn't been made. Which feels more true?`;
   } else if (/next|what|do|start|begin/i.test(msg)) {
-    replyText = `Given you're in ${phase} and ${mood ? `feeling ${mood.toLowerCase()}` : 'where you are today'}, here are the right-sized next steps:`;
+    replyText = `Given you're in ${phEsc} and ${moodEsc ? `feeling ${moodEsc}` : 'where you are today'}, here are the right-sized next steps:`;
     steps = fatigued
       ? ['Do just one thing — the very first physical action you can take right now']
       : ['Open whatever you need to start', 'Do the first action only — decide nothing else yet', 'Note what you learn or what shifts'];
   } else {
-    replyText = `Noted. Given where <em>${(p && p.name) ? p.name : 'this project'}</em> is — ${phase} — what would make the next hour count?`;
+    replyText = `Noted. Given where <em>${(p && p.name) ? esc(p.name) : 'this project'}</em> is — ${phEsc} — what would make the next hour count?`;
   }
 
-  const response = { text: replyText, steps: steps.slice(0, maxSteps) };
+  const response = { text: replyText, steps: steps.slice(0, maxSteps), trustedHtml: true };
   appendAIMessage(response, p);
   if (steps.length) renderAISteps(steps.slice(0, maxSteps));
 }
