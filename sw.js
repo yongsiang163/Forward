@@ -1,7 +1,8 @@
-const CACHE_NAME = 'forward-cache-v26';
+const CACHE_NAME = 'forward-cache-v27';
 
-// Version suffix on JS URLs forces stale-cache misses in older SW generations.
-// When updating any JS asset below, bump ?v= in BOTH index.html and here.
+// Version suffix on JS/CSS URLs forces stale-cache misses in older SW
+// generations. When updating any asset below, bump ?v= in BOTH index.html
+// and here.
 const urlsToCache = [
     './',
     './index.html',
@@ -20,11 +21,10 @@ const urlsToCache = [
     './js/render.js?v=3',
     './js/app.js?v=3',
     './js/launch.js?v=3',
-    './css/main.css',
-    './css/layout.css',
-    './css/components.css',
-    './css/modals.css',
-    './css/launch.css'
+    './css/main.css?v=3',
+    './css/layout.css?v=3',
+    './css/modals.css?v=3',
+    './css/launch.css?v=3'
 ];
 
 // Queue for failed Firestore/Gemini writes while offline — replayed on reconnect.
@@ -44,10 +44,19 @@ async function enqueueOutbox(request) {
   } catch (e) { /* best-effort */ }
 }
 self.addEventListener('install', event => {
+    // Resilient precache: fetch each URL individually so one missing/404
+    // file doesn't abort the whole install (which would pin users on the
+    // previous SW generation with stale assets). cache.addAll() is atomic;
+    // this replaces it with a best-effort loop that logs failures but
+    // always lets the new SW activate.
     event.waitUntil(
-        caches.open(CACHE_NAME)
-            .then(cache => cache.addAll(urlsToCache))
-            .then(() => self.skipWaiting())
+        caches.open(CACHE_NAME).then(cache =>
+            Promise.all(urlsToCache.map(url =>
+                cache.add(url).catch(err => {
+                    console.warn('[SW] precache skipped:', url, err && err.message);
+                })
+            ))
+        ).then(() => self.skipWaiting())
     );
 });
 
