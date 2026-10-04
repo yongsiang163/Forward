@@ -2,8 +2,17 @@
 // Key is stored in localStorage only — never in the codebase.
 // When no key is set, pattern-matching fallback is used.
 
-const GEMINI_MODEL = 'gemini-2.0-flash';
-const GEMINI_API_VERSION = 'v1';   // v1beta is restricted for new API keys; use stable v1
+// gemini-2.0-flash was shut down by Google on 1 June 2026, which silently broke every AI
+// feature. Models are now tried in order: if Google retires one (404), the next is used.
+// To try a newer model without a code change, set localStorage 'gemini_model' in the console.
+const GEMINI_MODELS = ['gemini-2.5-flash-lite', 'gemini-2.5-flash'];
+const GEMINI_API_VERSION = 'v1';
+let _geminiModelIdx = 0; // advances past retired models for the rest of the session
+
+function _geminiModelList() {
+  const override = localStorage.getItem('gemini_model');
+  return override ? [override, ...GEMINI_MODELS.filter(m => m !== override)] : GEMINI_MODELS;
+}
 
 function getGeminiKey() {
   return localStorage.getItem('gemini_api_key') || null;
@@ -87,7 +96,9 @@ async function _callGeminiDirect(systemPrompt, userPrompt, options = {}, attempt
   const key = getGeminiKey();
   if (!key) return null;
 
-  const url = `https://generativelanguage.googleapis.com/v1/models/${GEMINI_MODEL}:generateContent?key=${key}`;
+  const models = _geminiModelList();
+  const model = models[Math.min(_geminiModelIdx, models.length - 1)];
+  const url = `https://generativelanguage.googleapis.com/${GEMINI_API_VERSION}/models/${model}:generateContent`;
   const body = {
     system_instruction: { parts: [{ text: systemPrompt }] },
     contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
@@ -99,9 +110,17 @@ async function _callGeminiDirect(systemPrompt, userPrompt, options = {}, attempt
 
   const res = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    // Key in a header rather than the URL, so it doesn't end up in logs or history
+    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
     body: JSON.stringify(body)
   });
+
+  // Model retired or unknown → move to the next model in the list and retry once per model
+  if (res.status === 404 && _geminiModelIdx < models.length - 1) {
+    console.warn(`[Gemini] Model ${model} unavailable, falling back to ${models[_geminiModelIdx + 1]}`);
+    _geminiModelIdx++;
+    return _callGeminiDirect(systemPrompt, userPrompt, options, attempt);
+  }
 
   // Auto-retry on rate limit (429) with exponential backoff
   if (res.status === 429 && attempt < 3) {
@@ -114,9 +133,14 @@ async function _callGeminiDirect(systemPrompt, userPrompt, options = {}, attempt
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     const msg = err?.error?.message || `API error ${res.status}`;
-    // Surface key-restriction errors clearly so the user knows to get a fresh key
-    if (res.status === 400 && /no longer available|new user|update your code/i.test(msg)) {
-      throw new Error('API key not supported — generate a new key at aistudio.google.com/apikey and update it in Settings.');
+    // Google also signals retired models with a 400 "no longer available" — try the next model
+    if (res.status === 400 && /no longer available|new user|update your code|not found|not supported/i.test(msg)) {
+      if (_geminiModelIdx < models.length - 1) {
+        console.warn(`[Gemini] Model ${model} rejected (${msg}), falling back`);
+        _geminiModelIdx++;
+        return _callGeminiDirect(systemPrompt, userPrompt, options, attempt);
+      }
+      throw new Error(`AI model unavailable (${model}). Forward needs a code update — ${msg}`);
     }
     if (res.status === 403) {
       throw new Error('API key invalid or quota exceeded — check your key in Settings.');

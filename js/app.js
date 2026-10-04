@@ -273,7 +273,7 @@ function checkNotificationTriggers() {
   // 1. Sunday Review Nudge (Sundays between 9am and 8pm)
   if (now.getDay() === 0 && now.getHours() >= 9 && now.getHours() <= 20) {
     const lastReviewNudge = localStorage.getItem('forward_last_review_nudge');
-    const todayStr = now.toISOString().slice(0, 10);
+    const todayStr = localDateKey(now);
 
     if (lastReviewNudge !== todayStr) {
       sendLocalNotification('Your Week', 'Your weekly review is ready. Tap to reflect on what moved.');
@@ -284,7 +284,7 @@ function checkNotificationTriggers() {
 
   // 2. Stale Project Nudge (If haven't nudged today)
   const lastStaleNudge = localStorage.getItem('forward_last_stale_nudge');
-  const todayStr = now.toISOString().slice(0, 10);
+  const todayStr = localDateKey(now);
 
   if (lastStaleNudge !== todayStr) {
     const staleProjects = projects.filter(p => {

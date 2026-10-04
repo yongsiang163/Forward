@@ -261,18 +261,22 @@ function toggleCaptureProjectSelect() {
     return;
   }
 
+  // Pass only the id — a project name with an apostrophe (e.g. "Mum's kitchen")
+  // used to break this onclick and the picker silently did nothing
   list.innerHTML = activeProjects.map(p => `
-          <div onclick="selectCaptureProject('${p.id}', '${esc(p.name)}')" style="padding:16px; background:var(--surface2); border:1px solid var(--border-soft); border-radius:12px; margin-bottom:8px; display:flex; justify-content:space-between; cursor:pointer;">
+          <div onclick="selectCaptureProject('${p.id}')"style="padding:16px; background:var(--surface2); border:1px solid var(--border-soft); border-radius:12px; margin-bottom:8px; display:flex; justify-content:space-between; cursor:pointer;">
              <span style="color:var(--text); font-size:14px;">${esc(p.name)}</span>
              ${p.id === activeCaptureProjectId ? '<span style="color:var(--teal)">✓</span>' : ''}
           </div>
        `).join('');
 }
 
-function selectCaptureProject(id, name) {
+function selectCaptureProject(id) {
+  const p = projects.find(x => x.id === id);
+  if (!p) return;
   activeCaptureProjectId = id;
   const btn = document.getElementById('capture-project-btn');
-  btn.textContent = `@ ${name}`;
+  btn.textContent = `@ ${p.name}`;
   btn.style.borderColor = 'var(--teal)';
   closeCaptureProjectSelect();
 }
@@ -470,8 +474,9 @@ function deleteProjectPrompt() {
     if (!editingProjectId) return;
     const projectIndex = projects.findIndex(x => x.id === editingProjectId);
     if (projectIndex > -1) {
-      projects.splice(projectIndex, 1);
-      saveProjects();
+      // deleteDoc also clears it from IndexedDB and the cloud — a plain splice let it
+      // come back on the next launch or sync
+      deleteDoc('projects', editingProjectId);
       renderProjects();
       closeProjectSheet();
       showToast('Project deleted');
@@ -616,7 +621,7 @@ function toggleTaskCompletion(itemId) {
   if (!item) return;
 
   if (item.status === 'done') {
-    item.status = 'active';
+    item.status = 'alive'; // 'active' isn't a lifecycle status — it hid the task from the inbox
     item.completedAt = null;
   } else {
     item.status = 'done';
@@ -741,7 +746,7 @@ function openAddToExistingProject() {
   }
   list.innerHTML = activeProjects.map(p => `
       <button class="ep-list-btn" onclick="addToProject('${p.id}', '${savedItemId}')">
-        <strong>${p.name}</strong>
+        <strong>${esc(p.name)}</strong>
       </button>
    `).join('');
   epSheet.classList.add('active');

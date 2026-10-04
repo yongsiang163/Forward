@@ -67,163 +67,144 @@ if (navigator.storage && navigator.storage.persist) {
   });
 }
 
-// ── SAVE ─────────────────────────────────────────────────
-function save() {
-  // Mirror to localStorage (fast, synchronous reads on next load)
-  try { localStorage.setItem('forward_items', JSON.stringify(items)); } catch (e) { }
-  // Write to IndexedDB in background (durable local storage)
-  forwardDB.items.bulkPut(items).catch(e => console.warn('IndexedDB save failed:', e));
-  // Write to Firestore cloud if user is signed in
-  if (typeof currentUser !== 'undefined' && currentUser) {
+// ── SYNC BOOKKEEPING ─────────────────────────────────────
+// Only documents that actually changed are written to Firestore. Previously every save
+// rewrote every item, which burned the free daily write quota and, past 500 items,
+// exceeded Firestore's batch limit so cloud saves failed silently.
+//
+// Deletions are recorded as tombstones ({id, deleted:true}) so other devices — and this
+// device's own local caches — learn about them instead of resurrecting the document.
+const _synced = { items: new Map(), projects: new Map() }; // id → JSON last seen in cloud
+const _snapReady = { items: false, projects: false };      // don't push before first snapshot
+let _syncedUid = null;
+let _unsubs = { items: null, projects: null };
+
+let deletedIds = {}; // id → collection name
+try { deletedIds = JSON.parse(localStorage.getItem('forward_deleted') || '{}') || {}; } catch (e) { deletedIds = {}; }
+function _saveTombstones() {
+  try { localStorage.setItem('forward_deleted', JSON.stringify(deletedIds)); } catch (e) { }
+}
+
+function _arr(col) { return col === 'items' ? items : projects; }
+function _setArr(col, arr) { if (col === 'items') items = arr; else projects = arr; }
+function _signedIn() { return typeof currentUser !== 'undefined' && currentUser && typeof db !== 'undefined'; }
+function _docTime(d) { return new Date(d.touchedAt || d.updatedAt || d.createdAt || 0).getTime(); }
+// Firestore rejects `undefined` field values — a JSON round-trip strips them
+function _clean(d) { return JSON.parse(JSON.stringify(d)); }
+
+function _pushChanges(col) {
+  if (!_signedIn() || !_snapReady[col]) return;
+  const synced = _synced[col];
+  const ref = db.collection('users').doc(currentUser.uid).collection(col);
+  const writes = [];
+  _arr(col).forEach(d => {
+    if (!d || !d.id || deletedIds[d.id]) return;
+    const json = JSON.stringify(_clean(d));
+    if (synced.get(d.id) !== json) writes.push({ id: d.id, data: JSON.parse(json), json });
+  });
+  Object.keys(deletedIds).forEach(id => {
+    if (deletedIds[id] === col && synced.get(id) !== 'deleted') {
+      writes.push({ id, data: { id, deleted: true, touchedAt: new Date().toISOString() }, json: 'deleted' });
+    }
+  });
+  if (!writes.length) return;
+  // Firestore batches hold max 500 writes
+  for (let i = 0; i < writes.length; i += 400) {
+    const chunk = writes.slice(i, i + 400);
     const batch = db.batch();
-    items.forEach(item => {
-      const ref = db.collection('users').doc(currentUser.uid).collection('items').doc(item.id);
-      batch.set(ref, item, { merge: true });
+    chunk.forEach(w => batch.set(ref.doc(w.id), w.data));
+    chunk.forEach(w => synced.set(w.id, w.json));
+    batch.commit().catch(e => {
+      console.warn(`Firestore ${col} save failed:`, e);
+      chunk.forEach(w => synced.delete(w.id)); // retry these on the next save
     });
-    batch.commit().catch(e => console.warn('Firestore save failed:', e));
   }
 }
 
-function saveProjects() {
-  try { localStorage.setItem('forward_projects', JSON.stringify(projects)); } catch (e) { }
-  forwardDB.projects.bulkPut(projects).catch(e => console.warn('IndexedDB saveProjects failed:', e));
-  // Write to Firestore cloud if user is signed in
-  if (typeof currentUser !== 'undefined' && currentUser) {
-    const batch = db.batch();
-    projects.forEach(p => {
-      const ref = db.collection('users').doc(currentUser.uid).collection('projects').doc(p.id);
-      batch.set(ref, p, { merge: true });
-    });
-    batch.commit().catch(e => console.warn('Firestore saveProjects failed:', e));
-  }
+function _persistLocal(col) {
+  const key = col === 'items' ? 'forward_items' : 'forward_projects';
+  try { localStorage.setItem(key, JSON.stringify(_arr(col))); } catch (e) { }
+  forwardDB[col].bulkPut(_arr(col)).catch(e => console.warn(`IndexedDB ${col} save failed:`, e));
+}
+
+// ── SAVE ─────────────────────────────────────────────────
+function save() { _persistLocal('items'); _pushChanges('items'); }
+function saveProjects() { _persistLocal('projects'); _pushChanges('projects'); }
+
+// Permanently delete a project (or item) on every device
+function deleteDoc(col, id) {
+  _setArr(col, _arr(col).filter(d => d.id !== id));
+  deletedIds[id] = col;
+  _saveTombstones();
+  forwardDB[col].delete(id).catch(e => console.warn('IndexedDB delete failed:', e));
+  if (col === 'items') save(); else saveProjects();
 }
 
 // ── LOAD ─────────────────────────────────────────────────
 // Synchronous load from localStorage first (instant boot),
 // then async IndexedDB load with merge (durable source of truth)
 // Firestore onSnapshot listener keeps data live while user is signed in
-let itemsUnsubscribe = null;
-let projectsUnsubscribe = null;
-
-function load() {
-  let localItems = [];
-  try {
-    const d = localStorage.getItem('forward_items');
-    if (d) localItems = JSON.parse(d);
-  } catch (e) { localItems = []; }
-
-  // Set initial state to local while waiting for cloud
-  if (localItems.length > 0 && items.length === 0) {
-    items = localItems;
-  }
-
-  // Attach Firestore real-time listener (only when signed in)
-  if (typeof currentUser !== 'undefined' && currentUser && typeof db !== 'undefined') {
-    if (itemsUnsubscribe) itemsUnsubscribe();
-    itemsUnsubscribe = db.collection('users').doc(currentUser.uid).collection('items')
-      .onSnapshot(snapshot => {
-        const cloudItems = [];
-        snapshot.forEach(doc => cloudItems.push(doc.data()));
-
-        // Merge Strategy: Combine local and cloud, keeping the newest
-        const mergedMap = new Map();
-
-        // 1. Add all local items to map
-        items.forEach(i => mergedMap.set(i.id, i));
-
-        // 2. Overwrite with cloud if cloud is newer
-        cloudItems.forEach(ci => {
-          const local = mergedMap.get(ci.id);
-          if (!local) {
-            mergedMap.set(ci.id, ci); // Cloud has it, we don't
-          } else {
-            // Both have it, compare timestamps
-            const cloudTime = new Date(ci.touchedAt || ci.createdAt || 0).getTime();
-            const localTime = new Date(local.touchedAt || local.createdAt || 0).getTime();
-            if (cloudTime >= localTime) {
-              mergedMap.set(ci.id, ci);
-            }
-          }
-        });
-
-        const mergedArray = Array.from(mergedMap.values());
-
-        // If the resulting merge is different from what we had, or cloud gave us stuff
-        if (mergedArray.length > 0) {
-          items = mergedArray;
-          try { localStorage.setItem('forward_items', JSON.stringify(items)); } catch (e) { }
-
-          // Re-save to cloud to ensure any local-only items are pushed up
-          save();
-
-          if (typeof renderInbox === 'function') renderInbox();
-        }
-      }, err => console.warn('Firestore items listener error:', err));
-  }
+function _loadLocal(col) {
+  const key = col === 'items' ? 'forward_items' : 'forward_projects';
+  let local = [];
+  try { local = JSON.parse(localStorage.getItem(key) || '[]') || []; } catch (e) { local = []; }
+  local = local.filter(d => d && !deletedIds[d.id]);
+  if (local.length > 0 && _arr(col).length === 0) _setArr(col, local);
 }
 
-function loadProjects() {
-  let localProjects = [];
-  try {
-    const d = localStorage.getItem('forward_projects');
-    if (d) localProjects = JSON.parse(d);
-  } catch (e) { localProjects = []; }
+function _onSnapshot(col, snapshot) {
+  const synced = _synced[col];
+  const merged = new Map();
+  _arr(col).forEach(d => merged.set(d.id, d));
+  let tombstonesLearned = false;
 
-  // Set initial state to local while waiting for cloud
-  if (localProjects.length > 0 && projects.length === 0) {
-    projects = localProjects;
-  }
+  snapshot.forEach(doc => {
+    const cd = doc.data();
+    const id = cd.id || doc.id;
+    if (cd.deleted) {
+      // Deleted on another device (or by us) — drop it everywhere locally
+      synced.set(id, 'deleted');
+      merged.delete(id);
+      if (!deletedIds[id]) { deletedIds[id] = col; tombstonesLearned = true; }
+      forwardDB[col].delete(id).catch(() => { });
+      return;
+    }
+    synced.set(id, JSON.stringify(cd));
+    if (deletedIds[id]) return; // deleted here; our tombstone push will win
+    const local = merged.get(id);
+    if (!local || _docTime(cd) >= _docTime(local)) merged.set(id, cd);
+  });
+  if (tombstonesLearned) _saveTombstones();
 
-  // Attach Firestore real-time listener
-  if (typeof currentUser !== 'undefined' && currentUser && typeof db !== 'undefined') {
-    if (projectsUnsubscribe) projectsUnsubscribe();
-    projectsUnsubscribe = db.collection('users').doc(currentUser.uid).collection('projects')
-      .onSnapshot(snapshot => {
-        const cloudProjects = [];
-        snapshot.forEach(doc => cloudProjects.push(doc.data()));
+  _setArr(col, Array.from(merged.values()));
+  _snapReady[col] = true;
+  if (col === 'items') save(); else saveProjects(); // persists locally + pushes local-only changes
 
-        // Merge Strategy: Combine local and cloud, keeping the newest
-        const mergedMap = new Map();
-
-        // 1. Add all local projects to map
-        projects.forEach(p => mergedMap.set(p.id, p));
-
-        // 2. Overwrite with cloud if cloud is newer
-        cloudProjects.forEach(cp => {
-          const local = mergedMap.get(cp.id);
-          if (!local) {
-            mergedMap.set(cp.id, cp); // Cloud has it, we don't
-          } else {
-            // Both have it, compare timestamps
-            const cloudTime = new Date(cp.updatedAt || cp.createdAt || 0).getTime();
-            const localTime = new Date(local.updatedAt || local.createdAt || 0).getTime();
-            if (cloudTime >= localTime) {
-              mergedMap.set(cp.id, cp);
-            }
-          }
-        });
-
-        const mergedArray = Array.from(mergedMap.values());
-
-        // If the resulting merge is different from what we had, or cloud gave us stuff
-        if (mergedArray.length > 0) {
-          projects = mergedArray;
-          try { localStorage.setItem('forward_projects', JSON.stringify(projects)); } catch (e) { }
-
-          // Re-save to cloud to ensure any local-only items are pushed up
-          saveProjects();
-
-          if (typeof renderProjects === 'function') renderProjects();
-        }
-      }, err => console.warn('Firestore projects listener error:', err));
-  }
+  if (col === 'items') { if (typeof renderInbox === 'function') renderInbox(); if (typeof updateStats === 'function') updateStats(); }
+  else if (typeof renderProjects === 'function') renderProjects();
 }
+
+function _listen(col) {
+  if (!_signedIn()) return;
+  if (_syncedUid !== currentUser.uid) {
+    // Different account → forget what we think the cloud holds
+    _synced.items.clear(); _synced.projects.clear();
+    _snapReady.items = false; _snapReady.projects = false;
+    _syncedUid = currentUser.uid;
+  }
+  if (_unsubs[col]) _unsubs[col]();
+  _unsubs[col] = db.collection('users').doc(currentUser.uid).collection(col)
+    .onSnapshot(snap => _onSnapshot(col, snap), err => console.warn(`Firestore ${col} listener error:`, err));
+}
+
+function load() { _loadLocal('items'); _listen('items'); }
+function loadProjects() { _loadLocal('projects'); _listen('projects'); }
 
 // Async IndexedDB load — runs after init, merges with localStorage data
 async function loadFromIndexedDB() {
   try {
-    const dbItems = await forwardDB.items.toArray();
-    const dbProjects = await forwardDB.projects.toArray();
+    const dbItems = (await forwardDB.items.toArray()).filter(d => !deletedIds[d.id]);
+    const dbProjects = (await forwardDB.projects.toArray()).filter(d => !deletedIds[d.id]);
 
     if (dbItems.length > 0 || dbProjects.length > 0) {
       // IndexedDB has data — use it as source of truth
@@ -284,6 +265,19 @@ function computeStatus(item) {
   return 'alive';
 }
 
+// Local calendar helpers (toISOString() is UTC — in KL that shifts days at 8am)
+function localDateKey(d) {
+  const x = new Date(d);
+  return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
+}
+function _dayStart(d) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x.getTime(); }
+
+function recurringPeriodElapsed(period, last, now) {
+  if (period === 'weekly') return Math.round((_dayStart(now) - _dayStart(last)) / 86400000) >= 7;
+  if (period === 'monthly') return (now.getFullYear() * 12 + now.getMonth()) > (last.getFullYear() * 12 + last.getMonth());
+  return _dayStart(now) > _dayStart(last); // daily (default)
+}
+
 function runLifecycle() {
   let changed = false;
   const now = Date.now();
@@ -291,11 +285,10 @@ function runLifecycle() {
     const s = computeStatus(item);
     if (s !== item.status) { item.status = s; changed = true; }
 
-    // Recurring tasks: reset when period elapses
+    // Recurring tasks: reset at the start of the next local day / week / month.
+    // (Previously "daily" meant 24h after ticking — done at 9pm, still done at 8am next day.)
     if (item.status === 'done' && item.recurring && item.lastCompletedAt) {
-      const elapsed = now - new Date(item.lastCompletedAt).getTime();
-      const periods = { daily: 86400000, weekly: 604800000, monthly: 2592000000 };
-      if (elapsed >= (periods[item.recurring] || 86400000)) {
+      if (recurringPeriodElapsed(item.recurring, new Date(item.lastCompletedAt), new Date(now))) {
         item.status = 'fresh'; // 'active' is not a valid lifecycle status — use 'fresh' to re-surface it
         item.completedAt = null;
         changed = true;
@@ -324,7 +317,7 @@ function getActivityDays() {
   items.forEach(item => {
     [item.createdAt, item.touchedAt, item.completedAt, item.lastCompletedAt].forEach(d => {
       if (d && new Date(d).getTime() >= sevenDaysAgo) {
-        days.add(new Date(d).toISOString().slice(0, 10));
+        days.add(localDateKey(d));
       }
     });
   });
@@ -332,7 +325,7 @@ function getActivityDays() {
   // Check projects — touches
   projects.forEach(p => {
     if (p.touchedAt && new Date(p.touchedAt).getTime() >= sevenDaysAgo) {
-      days.add(new Date(p.touchedAt).toISOString().slice(0, 10));
+      days.add(localDateKey(p.touchedAt));
     }
   });
 

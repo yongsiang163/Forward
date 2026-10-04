@@ -5,7 +5,7 @@
 
 Forward is a mobile-first web prototype designed to rethink how we interact with our tasks and projects. Built as a companion to "Rewind," Forward moves away from overwhelming backlogs and instead adapts to your current energy levels, offering right-sized next steps and gentle focus protection.
 
-Currently, this repository contains a high-fidelity frontend prototype utilizing HTML, CSS, and Vanilla JavaScript with `localStorage` and simulated AI interactions.
+It's a vanilla HTML/CSS/JavaScript PWA with offline-first local storage (IndexedDB), Firebase sync across devices, and Gemini-powered AI (bring your own key).
 
 ### ✦ Core Features
 
@@ -24,14 +24,14 @@ This project has evolved from a monolithic single file into a modular, highly in
 
 * **UI/UX:** Custom CSS with fluid animations, a dark ambient aesthetic, grain overlays, and breathing "orb" indicators.
 * **Architecture:** Modular JavaScript setup (`app.js`, `actions.js`, `data.js`, `render.js`) for better maintainability.
-* **PWA & Offline First:** Full Progressive Web App support allows installation to the home screen. Data is kept locally via `localStorage`.
-* **Data Sync (Preview):** Initial integration with Firebase/Firestore is laid out (currently commented out/disabled) to prepare for cross-device syncing via anonymous and email-linked accounts.
-* **AI Integration:** Currently uses simulated delays (`setTimeout`) to mock LLM categorization and advice generation.
+* **PWA & Offline First:** Installable to the home screen. Data lives in IndexedDB (via Dexie) with a `localStorage` mirror, so the app works fully offline.
+* **Data Sync:** Firebase Auth (anonymous by default, upgradable to email or Google) and Firestore keep devices in sync. Only changed records are written; deletions sync as tombstones so they don't reappear.
+* **AI Integration:** Google Gemini via your own API key (Settings → AI). Models are tried in order (`gemini-2.5-flash-lite`, then `gemini-2.5-flash`) and the app falls back automatically if Google retires one. Without a key, simple pattern-matching fallbacks are used.
 
 ### ✦ Roadmap
 
 * [x] Split monolithic architecture into modular CSS/JS files.
 * [x] Implement full PWA (Progressive Web App) support for offline use.
-* [ ] Reactivate and finalize **Firebase/Firestore** integration to enable reliable cross-device cloud syncing.
-* [ ] Wire up live LLM integration (e.g., Claude or Gemini APIs) for the categorisation and "Help Me Start" features.
+* [x] Firebase/Firestore integration for cross-device cloud syncing.
+* [x] Live LLM integration (Gemini) for categorisation, brain-dump summaries, "Help Me Start", the project companion, and the weekly review.
 * [ ] Refactor into a modern component-based framework (e.g., React/Next.js or SvelteKit) for long-term scalability.

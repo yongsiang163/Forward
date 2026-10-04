@@ -559,7 +559,7 @@ function renderMomentum() {
   for (let i = 6; i >= 0; i--) {
     const d = new Date(today);
     d.setDate(d.getDate() - i);
-    const iso = d.toISOString().slice(0, 10);
+    const iso = localDateKey(d);
     const active = activityDays.has(iso);
     const isToday = i === 0;
     dotsHtml += `<div class="momentum-dot ${active ? 'active' : ''} ${isToday ? 'today' : ''}">
@@ -642,7 +642,7 @@ function renderTasks() {
           return `
           <div class="task-list-item">
             <div class="task-ring-toggle" onclick="toggleTaskCompletion('${t.id}')"></div>
-            <div class="task-content">${t.content}</div>
+            <div class="task-content">${esc(t.content)}</div>
             <div class="task-item-actions">
                <button class="recurring-btn active" title="Recurrence: ${t.recurring}">${rLabel}</button>
             </div>
@@ -658,7 +658,7 @@ function renderTasks() {
           return `
           <div class="task-list-item status-done">
             <div class="task-ring-toggle completed" onclick="toggleTaskCompletion('${t.id}')"></div>
-            <div class="task-content">${t.content}</div>
+            <div class="task-content">${esc(t.content)}</div>
             <div class="task-item-actions">
                <span style="font-size:9px; color:var(--text-muted); letter-spacing:0.5px;">${resetLabel[t.recurring] || 'resets'}</span>
                <button class="recurring-btn active" title="Recurrence: ${t.recurring}">${rLabel}</button>
@@ -683,7 +683,7 @@ function renderTasks() {
     let html = oneOffActive.map(t => `
       <div class="task-list-item">
         <div class="task-ring-toggle" onclick="toggleTaskCompletion('${t.id}')"></div>
-        <div class="task-content">${t.content}</div>
+        <div class="task-content">${esc(t.content)}</div>
       </div>
     `).join('');
 
@@ -692,7 +692,7 @@ function renderTasks() {
       html += oneOffDone.map(t => `
         <div class="task-list-item status-done">
           <div class="task-ring-toggle completed" onclick="toggleTaskCompletion('${t.id}')"></div>
-          <div class="task-content">${t.content}</div>
+          <div class="task-content">${esc(t.content)}</div>
         </div>
       `).join('');
     }
